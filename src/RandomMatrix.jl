@@ -10,7 +10,7 @@ function RandomUnitaryMatrix(n::Int)
     return Q
 end
 function RandomOrthogonalMatrix(n::Int)
-    A = randn(ComplexF64,n,n)
+    A = randn(n,n)
     Q = convert(Matrix,qr(A).Q)
     return Q
 end
