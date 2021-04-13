@@ -2,3 +2,6 @@ name = "RandomMatrix"
 uuid = "0af1cf96-9b30-454e-9d9e-87908f700846"
 authors = ["weiyang607 <weiyang607@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
