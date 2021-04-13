@@ -24,7 +24,7 @@ Generate a random norm-square sampling Matrix S.
 S is usually used to sample k    columns of A and rows of B
 
 
-```julia-repl
+```julia
 S = Norm2SamplingMatrix(rand(2,3),rand(3,2),k=2)
 
 3×2 Matrix{Float64}:
