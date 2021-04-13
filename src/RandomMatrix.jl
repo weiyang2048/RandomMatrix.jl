@@ -44,7 +44,7 @@ S = Norm2SamplingMatrix(rand(2,3),rand(3,2),k=2)
  1.15342  0.0
 ```
 """
-function Norm2SamplingMatrix(A::Matrix,B=Matrix(A')::Matrix; k=floor(Int,Size(A)[2]/2)::Int)
+function Norm2SamplingMatrix(A::Matrix,B=Matrix(A')::Matrix; k=floor(Int,size(A)[2]/2)::Int)
     n, m = size(A)
     if size(B)[1] != m
         return "The matrices can not be multiplied "
