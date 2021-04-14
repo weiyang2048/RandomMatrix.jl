@@ -28,10 +28,11 @@ export Haar
 
 struct Haar <: ContinuousMatrixDistribution
     beta::Int
-    Haar(beta) = beta in (1,2) ? new(beta) : error("Only take beta=1 for orthogonal,beta=2 for unitary")
+    n::Int
+    Haar(beta,n) = beta in (1,2) ? new(beta,n) : error("Only take beta = 1 for orthogonal, beta = 2 for unitary")
 end
-
-Base.rand(d::Haar, n::Int) = d.beta == 1 ? RandomOrthogonalMatrix(n) : RandomUnitaryMatrix(n)
+Base.size(d::Haar) = d.n
+Base.rand(d::Haar) = d.beta == 1 ? RandomOrthogonalMatrix(d.n) : RandomUnitaryMatrix(d.n)
 
 export RandomNormSamplingMatrix
 
