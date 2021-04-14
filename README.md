@@ -23,9 +23,7 @@ RandomNormSamplingMatrix(A::Matrix, B=Matrix(A')::Matrix; k=0::Int)``
 Generate a random norm-squared sampling random Matrix `S`, E(SS')=I.
 ASS'B is typically used to approximate AB.
 
-
-# Examples
-```julia-repl
+```julia
 S = RandomNormSamplingMatrix(rand(2,3),rand(3,2),k=2)
 
 3×2 Matrix{Float64}:
