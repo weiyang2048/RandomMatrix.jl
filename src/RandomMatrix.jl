@@ -2,7 +2,7 @@ module RandomMatrix
 
 using LinearAlgebra, StatsBase, Distributions
 
-export RandomUnitaryMatrix, RandomOrthogonalMatrix 
+export RandomUnitaryMatrix, RandomOrthogonalMatrix , Haar
 
 """
 ```julia
@@ -23,8 +23,6 @@ function RandomOrthogonalMatrix(n::Int)
     Q = convert(Matrix,qr(A).Q)
     return Q
 end
-
-export Haar
 
 struct Haar <: ContinuousMatrixDistribution
     beta::Int
