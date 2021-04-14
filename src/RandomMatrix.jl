@@ -25,18 +25,20 @@ function RandomOrthogonalMatrix(n::Int)
 end
 
 
-export Norm2SamplingMatrix
+export RandomNormSamplingMatrix
 
 
 """
-Norm2SamplingMatrix(A::Matrix,B=Matrix(A')::Matrix; k::Int)
+```julia
+RandomNormSamplingMatrix(A::Matrix, B=Matrix(A')::Matrix; k=0::Int)``
+```
+Generate a random norm-squared sampling random Matrix `S`, E(SS')=I.
+ASS'B is typically used to approximate AB.
 
-Generate a random norm-square sampling Matrix S.
-S is usually used to sample k    columns of A and rows of B
 
 # Examples
 ```julia-repl
-S = Norm2SamplingMatrix(rand(2,3),rand(3,2),k=2)
+S = RandomNormSamplingMatrix(rand(2,3),rand(3,2),k=2)
 
 3×2 Matrix{Float64}:
  0.0      0.0
@@ -44,7 +46,12 @@ S = Norm2SamplingMatrix(rand(2,3),rand(3,2),k=2)
  1.15342  0.0
 ```
 """
-function Norm2SamplingMatrix(A::Matrix,B=Matrix(A')::Matrix; k=floor(Int,size(A)[2]/2)::Int)
+function RandomNormSamplingMatrix(A::Matrix,B=Matrix(A')::Matrix; k=0::Int)
+    if k <= 0 
+        k = floor(Int,size(A)[2]/2)
+        print("k was <= $(0) or not provided, it is now set to $(k) by default")
+    end
+    
     n, m = size(A)
     if size(B)[1] != m
         return "The matrices can not be multiplied "
