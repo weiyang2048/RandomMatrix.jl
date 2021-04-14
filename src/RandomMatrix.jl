@@ -1,6 +1,6 @@
 module RandomMatrix
 
-using LinearAlgebra, StatsBase
+using LinearAlgebra, StatsBase, Distributions
 
 export RandomUnitaryMatrix, RandomOrthogonalMatrix 
 
@@ -24,6 +24,14 @@ function RandomOrthogonalMatrix(n::Int)
     return Q
 end
 
+export Haar
+
+struct Haar <: ContinuousMatrixDistribution
+    beta::Int
+    Haar(beta) = beta in (1,2) ? new(beta) : error("Only take beta=1 for orthogonal,beta=2 for unitary")
+end
+
+Base.rand(d::Haar, n::Int) = d.beta == 1 ? RandomOrthogonalMatrix(n) : RandomUnitaryMatrix(n)
 
 export RandomNormSamplingMatrix
 
