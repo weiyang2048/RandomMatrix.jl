@@ -1,22 +1,33 @@
 export randUnitary, randOrthogonal , Haar
 
 """
-```julia
-randUnitary(3)
-3×3 Matrix{ComplexF64}:
- -0.173896+0.299143im  -0.173916+0.627558im  -0.666748-0.107907im
-  0.338596+0.832271im  0.0660322-0.146868im    0.18828-0.362351im
- -0.202431-0.17881im    0.724265-0.159481im  -0.277831-0.547599im
-```
+- To generate a 3 by 3 **random Unitary matrix** run 
+  - ```julia
+    randUnitary(3)
+    # or
+    rand(Haar(2,3))
+    ``` 
 """
 function randUnitary(n::Int)
     A = randn(ComplexF64,n,n)
-    Q = convert(Matrix,qr(A).Q)
+    Q,R = qr(A)
+    Q,R = convert(Matrix,Q),convert(Matrix,R)
+    Q = Q*Diagonal(sign.(diag(R)))
     return Q
 end
+"""
+- To generate a 3 by 3 **random Orthogonal matrix** run 
+  - ```julia
+    randOrthogonal(3)
+    # or
+    rand(Haar(1,3))
+    ```
+"""
 function randOrthogonal(n::Int)
     A = randn(n,n)
-    Q = convert(Matrix,qr(A).Q)
+    Q,R = qr(A)
+    Q,R = convert(Matrix,Q),convert(Matrix,R)
+    Q = Q*Diagonal(sign.(diag(R)))
     return Q
 end
 
