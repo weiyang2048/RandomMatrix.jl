@@ -1,10 +1,10 @@
 
-export RandomSamplingMatrix
+export randSampling
 
 
 """
 ```julia
-RandomSamplingMatrix(A::Matrix, B=I::Matrix; k=0::Int)
+randSampling(A::Matrix, B=I::Matrix; k=0::Int)
 ```
 Generate a random sampling random Matrix `S`, E(SS')=I.
 ASS'B is typically used to approximate AB.
@@ -12,7 +12,7 @@ ASS'B is typically used to approximate AB.
 
 # Examples
 ```julia
-S = RandomSamplingMatrix(rand(2,3),rand(3,2),k=2)
+S = randSampling(rand(2,3),rand(3,2),k=2)
 
 3×2 Matrix{Float64}:
  0.0      0.0
@@ -20,7 +20,7 @@ S = RandomSamplingMatrix(rand(2,3),rand(3,2),k=2)
  1.15342  0.0
 ```
 """
-function RandomSamplingMatrix(A::Matrix,B=I::Matrix; k=0::Int)
+function randSampling(A::Matrix,B=I::Matrix; k=0::Int)
     if k <= 0 
         k = floor(Int,size(A)[2]/2)
         print("k was <= $(0) or not provided, it is now set to $(k) by default")
