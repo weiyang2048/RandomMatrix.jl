@@ -8,4 +8,6 @@ include("UnitaryMatrix.jl")
 
 include("SamplingMatrix.jl")
 
+include("Transformations.jl")
+
 end # module
