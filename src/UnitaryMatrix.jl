@@ -1,4 +1,4 @@
-export randUnitary, randOrthogonal , Haar
+export randUnitary, randOrthogonal , Haar, randPermutation
 
 """
 - To generate a 3 by 3 **random Unitary matrix** run 
@@ -38,3 +38,18 @@ struct Haar <: ContinuousMatrixDistribution
 end
 Base.size(d::Haar) = d.n
 Base.rand(d::Haar) = d.beta == 1 ? randOrthogonal(d.n) : randUnitary(d.n)
+
+"""
+```julia
+randPermutation(n)
+```
+> Generates a random n by n permutation matrix
+"""
+function randPermutation(n::Int)
+    A = shuffle(1:n)
+    M = spzeros(Int8,n,n)
+    for i in 1:n
+      M[i,A[i]] = 1
+    end
+    return M
+end

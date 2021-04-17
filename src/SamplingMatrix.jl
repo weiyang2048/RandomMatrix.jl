@@ -32,7 +32,7 @@ function randSampling(A::Matrix,B=I::Matrix; k=0::Int)
     else
         Lens = [norm(A[:,i])*norm(B[i,:]) for i = 1:m ]
         Total = sum(Lens)
-        S = zeros(m,k)
+        S = spzeros(m,k)
         for (i,j) in enumerate([sample([1:m...], Weights(Lens) ) for i = 1 : k])
             S[j,i] = 1/sqrt(Lens[j]/Total*k) # normalizing so that E[SS']=I
         end

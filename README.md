@@ -23,6 +23,10 @@ randOrthogonal(3)
 rand(Haar(1,3))
 ```
 >Generates a 3 by 3 **random Orthogonal matrix**
+```julia
+randPermutation(n)
+```
+> Generates a  n by n **random permutation matrix**
 #### Hermitian Matrices
 ```julia
 randHermitian(2)
