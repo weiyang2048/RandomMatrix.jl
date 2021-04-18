@@ -1,6 +1,11 @@
 export randHermitian
 
 """
+```julia
+randHermitian(d::T, n::Int; norm = false::Bool) where T <: Union{Distribution{Univariate}, DataType, AbstractArray, Tuple}
+randHermitian(n::Int; norm = false::Bool)
+```
+If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
 # Examples
 - ```julia
 randHermitian(2)
@@ -22,20 +27,27 @@ randHermitian(1:10,2)
 randHermitian([-1,pi],2)
 ```
 """
-function randHermitian(d::T, n::Int, normalize = false::Bool)  where T<:Union{Distribution{Univariate}
-                                                                 ,DataType,AbstractArray, Tuple}
-    M = zeros(Number,n,n)
+function randHermitian(d::T, n::Int; norm = false::Bool)  where T<:Union{Distribution{Univariate}
+                                            ,DataType,AbstractArray, Tuple}
+
+
+    if occursin("Complex",string(typeof(rand(d)))) # to walk around the InexactError
+        M = zeros(ComplexF64,n,n)                  # when using eigvals(M)
+    else    
+        M = zeros(Number,n,n)
+    end
+
     for i in 1:n, j in i:n
         M[i,j] = rand(d)
     end
 
-    if normalize
+    if norm
         M/=sqrt(n)
     end
 
     return Hermitian(M)
 end
 
-function randHermitian(n::Int, normalize = false::Bool)
-    return randHermitian(Normal(), n, normalize)
+function randHermitian(n::Int; norm = false::Bool)
+    return randHermitian(Normal(), n; norm = norm)
 end

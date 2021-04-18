@@ -28,6 +28,14 @@ randPermutation(n)
 ```
 > Generates a  n by n **random permutation matrix**
 #### Hermitian Matrices
+***
+```julia
+randHermitian(d::T, n::Int; norm = false::Bool) where T <: Union{Distribution{Univariate}, DataType, AbstractArray, Tuple}
+
+randHermitian(n::Int; norm = false::Bool)
+```
+If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+***
 ```julia
 randHermitian(2)
 ```  
