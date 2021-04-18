@@ -1,6 +1,10 @@
 module RandomMatrix
 
-using LinearAlgebra, StatsBase, Distributions , Random,  SparseArrays
+using StatsBase: sample, Weights 
+using Distributions
+using Random: shuffle
+using LinearAlgebra 
+using SparseArrays: spzeros
 
 include("HermitianMatrix.jl")
 
