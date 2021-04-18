@@ -40,16 +40,26 @@ Base.size(d::Haar) = d.n
 Base.rand(d::Haar) = d.beta == 1 ? randOrthogonal(d.n) : randUnitary(d.n)
 
 """
+
+> ```julia
+> randPermutation(n::Int, fix = 0::Int) 
+> ```
+Generate a random permutation matrix.  If `fix = x`, `randPermutation(n,x)` will have atleast `x` fixed points
 ```julia
 randPermutation(n)
 ```
 > Generates a random n by n permutation matrix
 """
-function randPermutation(n::Int)
-    A = shuffle(1:n)
+function randPermutation(n::Int, fix = 0::Int) 
+    O = sample(1:n,n-fix,replace=false)
+    E = shuffle(O) 
     M = spzeros(Int8,n,n)
-    for i in 1:n
-      M[i,A[i]] = 1
+    for i in 1:n-fix
+      M[O[i],E[i]] = 1
+    end
+    for i in setdiff(1:n,O)
+      M[i,i] = 1
     end
     return M
 end
+

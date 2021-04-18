@@ -23,6 +23,12 @@ randOrthogonal(3)
 rand(Haar(1,3))
 ```
 >Generates a 3 by 3 **random Orthogonal matrix**
+***
+```julia
+randPermutation(n::Int, fix = 0::Int) 
+```
+Generate a random permutation matrix.  If `fix = x`, `randPermutation(n,x)` will have atleast `x` fixed points.
+***
 ```julia
 randPermutation(n)
 ```
