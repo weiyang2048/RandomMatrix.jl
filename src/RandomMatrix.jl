@@ -14,6 +14,8 @@ include("SamplingMatrix.jl")
 
 include("Transformations.jl")
 
+include("Distributions.jl")
+
 include("Combinatorics.jl")
 
 end # module

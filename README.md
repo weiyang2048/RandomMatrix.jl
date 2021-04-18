@@ -33,7 +33,7 @@ randHermitian(2)
 ```  
 >Generates a 2 by 2 random Symmetric/Hermitian matrix with entries from the real Gaussian(0,1).
 ```julia
-randHermitian(ComplexF64,2)
+randHermitian(ComplexNormal(),2)
 ```  
 >Generates a 2 by 2 random Hermitian matrix with entries from the standard complex Gaussian.
 ```julia
@@ -41,6 +41,14 @@ randHermitian(Poisson(2),2)
 ```   
 >Generate a random 2 by 2 Hermitian Matrix with entries  `Poisson(2)` rvs.  
 *Need to import the `Distributions` package for `Poisson(2)`*
+```julia
+randHermitian(1:10,2)
+```
+> Entries uniformly from 1,2,3,...,10 
+ ```julia
+randHermitian([-1,pi],2)
+```
+> Entries uniformly from [-1,pi]
 
 ### Transformations
 #### Resolvent
