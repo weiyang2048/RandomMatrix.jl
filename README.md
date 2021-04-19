@@ -35,35 +35,51 @@ randPermutation(n)
 > Generates a  n by n **random permutation matrix**
 #### Hermitian Matrices
 ***
+***
+***
 ```julia
-randHermitian(d::T, n::Int; norm = false::Bool) where T <: Union{Distribution{Univariate}, DataType, AbstractArray, Tuple}
-
+randHermitian(d::T, n::Int; norm = false::Bool,complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
 randHermitian(n::Int; norm = false::Bool)
 ```
-If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+- If one knows that all entries will be real, set `complex=false`,
+    or equivalently use ` randSymmetric(d::T, n::Int; norm = false::Bool)  where T<:Union{Distribution{Univariate}, DataType,AbstractArray, Tuple}`
 ***
 ```julia
 randHermitian(2)
-```  
->Generates a 2 by 2 random Symmetric/Hermitian matrix with entries from the real Gaussian(0,1).
-```julia
-randHermitian(ComplexNormal(),2)
-```  
->Generates a 2 by 2 random Hermitian matrix with entries from the standard complex Gaussian.
+``` 
+>Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
+
 ```julia
 randHermitian(Poisson(2),2)
-```   
->Generate a random 2 by 2 Hermitian Matrix with entries  `Poisson(2)` rvs.  
-*Need to import the `Distributions` package for `Poisson(2)`*
+``` 
+or
 ```julia
-randHermitian(1:10,2)
+randSymmetric(Poisson(2),2)
 ```
-> Entries uniformly from 1,2,3,...,10 
+>Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs.  
+  *Need to import the `Distributions` package for `Poisson(2)`*
+ ```julia
+randHermitian(1:10,2)
+``` 
  ```julia
 randHermitian([-1,pi],2)
 ```
-> Entries uniformly from [-1,pi]
-
+***
+```julia
+randSymmetric(d::T, n::Int; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randSymmetric(n::Int; norm = false::Bool)
+```
+- Essentially equivalent to `randHermitian` with `complex = false`
+- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+***
+```julia
+randSymmetric(2)
+``` 
+> Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
+***
+***
+***
 ### Transformations
 #### Resolvent
 ```julia
