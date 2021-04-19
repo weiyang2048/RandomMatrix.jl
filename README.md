@@ -33,10 +33,10 @@ Generate a random permutation matrix.  If `fix = x`, `randPermutation(n,x)` will
 randPermutation(n)
 ```
 > Generates a  n by n **random permutation matrix**
+***
+***
 #### Hermitian Matrices
-***
-***
-***
+
 ```julia
 randHermitian(d::T, n::Int; norm = false::Bool,complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
 randHermitian(n::Int; norm = false::Bool)
@@ -77,7 +77,6 @@ randSymmetric(n::Int; norm = false::Bool)
 randSymmetric(2)
 ``` 
 > Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
-***
 ***
 ***
 ### Transformations
