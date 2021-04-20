@@ -5,6 +5,7 @@ using Distributions
 using Random: shuffle
 using LinearAlgebra 
 using SparseArrays: spzeros
+using Plots: heatmap, cgrad
 
 include("HermitianMatrix.jl")
 
@@ -18,4 +19,5 @@ include("Distributions.jl")
 
 include("Combinatorics.jl")
 
+include("Plots.jl")
 end # module
