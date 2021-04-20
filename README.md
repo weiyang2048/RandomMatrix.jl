@@ -31,7 +31,7 @@ randMatrix(Poisson(2), 2, norm = true)
 
 >Generate a normalized random 2 by 2  Matrix with entries  `Poisson(2)` rvs. 
 >*Need to import the `Distributions` package for `Poisson(2)`*
-"""
+
 ***
 ***
 #### Hermitian Matrices
