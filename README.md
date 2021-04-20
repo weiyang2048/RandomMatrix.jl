@@ -12,30 +12,26 @@ Note that there is an existing package [`RandomMatrices.jl`](https://github.com/
 ## Random Matrix Theory
 
 ### Random Matrix Models
-#### Unitary Matrices 
+
+#### Random IID Matrix
+
 ```julia
-randUnitary(3)
-# or
-rand(Haar(2,3))
+randMatrix(d::T, n::Int; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randMatrix(n::Int; norm = false::Bool)
+```
+- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+
+```julia
+randMatrix(2)
 ``` 
->Generates a 3 by 3 **random Unitary matrix** 
+>Generates a 2 by 2 random matrix with entries from the Standard  Gaussian.
 ```julia
-randOrthogonal(3)
-# or
-rand(Haar(1,3))
-```
->Generates a 3 by 3 **random Orthogonal matrix**
-***
-```julia
-randPermutation(n::Int, fix = 0::Int) 
-```
->Generate a random permutation matrix.  If `fix =x`, 
->`randPermutation(n,x)` will have at-least `x` fixed points.
-***
-```julia
-randPermutation(n) # fun fact, trace of a large random Permutation matrix is a Poisson(1) rv.
-```
-> Generates a  n by n **random permutation matrix**
+randMatrix(Poisson(2), 2, norm = true)
+``` 
+
+>Generate a normalized random 2 by 2  Matrix with entries  `Poisson(2)` rvs. 
+>*Need to import the `Distributions` package for `Poisson(2)`*
+"""
 ***
 ***
 #### Hermitian Matrices
@@ -46,7 +42,7 @@ randHermitian(n::Int; norm = false::Bool)
 ```
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
 - If one knows that all entries will be real, set `complex=false`,
-    or equivalently use ` randSymmetric(d::T, n::Int; norm = false::Bool)  where T<:Union{Distribution{Univariate}, DataType,AbstractArray, Tuple}`
+    or equivalently use ` randSymmetric`
 ***
 ```julia
 randHermitian(2)
@@ -82,6 +78,33 @@ randSymmetric(2)
 > Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
 ***
 ***
+#### Unitary Matrices 
+```julia
+randUnitary(3)
+# or
+rand(Haar(2,3))
+``` 
+>Generates a 3 by 3 **random Unitary matrix** 
+```julia
+randOrthogonal(3)
+# or
+rand(Haar(1,3))
+```
+>Generates a 3 by 3 **random Orthogonal matrix**
+***
+```julia
+randPermutation(n::Int, fix = 0::Int) 
+```
+>Generate a random permutation matrix.  If `fix =x`, 
+>`randPermutation(n,x)` will have at-least `x` fixed points.
+***
+```julia
+randPermutation(n) # fun fact, trace of a large random Permutation matrix is a Poisson(1) rv.
+```
+> Generates a  n by n **random permutation matrix**
+***
+***
+
 ### Transformations
 #### Resolvent
 ```julia

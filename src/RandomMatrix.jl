@@ -7,6 +7,8 @@ using LinearAlgebra
 using SparseArrays: spzeros
 using Plots: heatmap, cgrad
 
+include("randMatrix.jl")
+
 include("HermitianMatrix.jl")
 
 include("UnitaryMatrix.jl")

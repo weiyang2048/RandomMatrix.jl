@@ -7,7 +7,7 @@ randHermitian(n::Int; norm = false::Bool)
 ```
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
 - If one knows that all entries will be real, set `complex=false`,
-    or equivalently use ` randSymmetric(d::T, n::Int; norm = false::Bool)  where T<:Union{Distribution{Univariate}, DataType,AbstractArray, Tuple}`
+    or equivalently use `randSymmetric`
 # Examples
 ```julia
 randHermitian(2)
