@@ -27,7 +27,8 @@ rand(Haar(1,3))
 ```julia
 randPermutation(n::Int, fix = 0::Int) 
 ```
-Generate a random permutation matrix.  If `fix = x`, `randPermutation(n,x)` will have atleast `x` fixed points.
+>Generate a random permutation matrix.  If `fix =x`, 
+>`randPermutation(n,x)` will have at-least `x` fixed points.
 ***
 ```julia
 randPermutation(n)

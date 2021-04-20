@@ -1,0 +1,1 @@
+#heatmap((qresolvent(randn(1000,1000)/sqrt(1000))(1,0.1im).|>norm),yflip=true,c=cgrad(:binary, 50, categorical = true))

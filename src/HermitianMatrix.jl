@@ -9,23 +9,23 @@ randHermitian(n::Int; norm = false::Bool)
 - If one knows that all entries will be real, set `complex=false`,
     or equivalently use ` randSymmetric(d::T, n::Int; norm = false::Bool)  where T<:Union{Distribution{Univariate}, DataType,AbstractArray, Tuple}`
 # Examples
-- ```julia
+```julia
 randHermitian(2)
 ``` 
-Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
-- ```julia
+>Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
+```julia
 randHermitian(Poisson(2),2)
 ``` 
 or
 ```julia
 randSymmetric(Poisson(2),2)
 ```
-Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs.  
-  *Need to import the `Distributions` package for `Poisson(2)`*
-- ```julia
+>Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
+>*Need to import the `Distributions` package for `Poisson(2)`*
+```julia
 randHermitian(1:10,2)
 ``` 
-- ```julia
+```julia
 randHermitian([-1,pi],2)
 ```
 """
@@ -61,10 +61,10 @@ randSymmetric(n::Int; norm = false::Bool)
 - Essentially equivalent to `randHermitian` with `complex = false`
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
 # Examples
-- ```julia
+```julia
 randSymmetric(2)
 ``` 
-Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
+>Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
 """
 function  randSymmetric(d::T, n::Int; norm = false::Bool)  where T<:Union{Distribution{Univariate}
     ,DataType,AbstractArray, Tuple}

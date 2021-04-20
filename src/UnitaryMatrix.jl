@@ -17,11 +17,11 @@ function randUnitary(n::Int)
 end
 """
 - To generate a 3 by 3 **random Orthogonal matrix** run 
-  - ```julia
+  ```julia
     randOrthogonal(3)
     # or
     rand(Haar(1,3))
-    ```
+  ```
 """
 function randOrthogonal(n::Int)
     A = randn(n,n)
@@ -41,10 +41,10 @@ Base.rand(d::Haar) = d.beta == 1 ? randOrthogonal(d.n) : randUnitary(d.n)
 
 """
 
-> ```julia
-> randPermutation(n::Int, fix = 0::Int) 
-> ```
-Generate a random permutation matrix.  If `fix = x`, `randPermutation(n,x)` will have atleast `x` fixed points
+```julia
+randPermutation(n::Int, fix = 0::Int) 
+```
+>Generate a random permutation matrix.  If `fix = x`, `randPermutation(n,x)` will have atleast `x` fixed points
 ```julia
 randPermutation(n)
 ```
