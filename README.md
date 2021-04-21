@@ -17,7 +17,7 @@ Note that there is an existing package [`RandomMatrices.jl`](https://github.com/
 
 ```julia
 randMatrix(d::T, n::Int, m = n::Int; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
-randMatrix(n::Int; norm = false::Bool)
+
 randMatrix(n::Int, m = n ::Int; norm = false::Bool)
 ```
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
@@ -44,6 +44,7 @@ randMatrix(Poisson(2), 2, norm = true)
 
 ```julia
 randHermitian(d::T, n::Int; norm = false::Bool,complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+
 randHermitian(n::Int; norm = false::Bool)
 ```
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
@@ -73,6 +74,7 @@ randHermitian([-1,pi],2)
 ***
 ```julia
 randSymmetric(d::T, n::Int; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+
 randSymmetric(n::Int; norm = false::Bool)
 ```
 - Essentially equivalent to `randHermitian` with `complex = false`
