@@ -46,7 +46,7 @@ randPermutation(n::Int, fix = 0::Int)
 ```
 >Generate a random permutation matrix.  If `fix = x`, `randPermutation(n,x)` will have atleast `x` fixed points
 ```julia
-randPermutation(n)
+randPermutation(n) # fun fact, trace of a large random Permutation matrix is a Poisson(1) rv.
 ```
 > Generates a random n by n permutation matrix
 """

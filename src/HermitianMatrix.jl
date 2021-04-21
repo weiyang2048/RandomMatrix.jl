@@ -3,6 +3,7 @@ export randHermitian, randSymmetric
 """
 ```julia
 randHermitian(d::T, n::Int; norm = false::Bool, complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+
 randHermitian(n::Int; norm = false::Bool)
 ```
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
@@ -56,6 +57,7 @@ end
 """
 ```julia
 randSymmetric(d::T, n::Int; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+
 randSymmetric(n::Int; norm = false::Bool)
 ```
 - Essentially equivalent to `randHermitian` with `complex = false`

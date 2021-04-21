@@ -2,6 +2,7 @@ export randMatrix
 """
 ```julia
 randMatrix(d::T, n::Int, m = n ::Int ; ; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+
 randMatrix(n::Int, m = n :: Int; norm = false::Bool)
 ```
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
