@@ -41,21 +41,21 @@ randMatrix(Poisson(2), 2, norm = true)
 ***
 ***
 #### Hermitian Matrices
-
+***
 ```julia
-randHermitian(d::T, n::Int; norm = false::Bool,complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randHermitian(d::T, n::Int; Diag=d::T, norm = false::Bool, complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
 
 randHermitian(n::Int; norm = false::Bool)
 ```
+- To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
 - If one knows that all entries will be real, set `complex=false`,
-    or equivalently use ` randSymmetric`
+    or equivalently use `randSymmetric`
 ***
 ```julia
 randHermitian(2)
 ``` 
 >Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
-
 ```julia
 randHermitian(Poisson(2),2)
 ``` 
@@ -63,27 +63,29 @@ or
 ```julia
 randSymmetric(Poisson(2),2)
 ```
->Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs.  
-  *Need to import the `Distributions` package for `Poisson(2)`*
- ```julia
+>Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
+>*Need to import the `Distributions` package for `Poisson(2)`*
+```julia
 randHermitian(1:10,2)
 ``` 
- ```julia
+```julia
 randHermitian([-1,pi],2)
 ```
 ***
 ```julia
-randSymmetric(d::T, n::Int; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randSymmetric(d::T, n::Int; Diag = d::T,  norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
 
 randSymmetric(n::Int; norm = false::Bool)
 ```
 - Essentially equivalent to `randHermitian` with `complex = false`
-- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
-***
+- To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
+- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).
+***  
 ```julia
 randSymmetric(2)
 ``` 
-> Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
+>Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
+
 ***
 ***
 #### Unitary Matrices 

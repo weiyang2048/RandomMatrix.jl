@@ -2,10 +2,11 @@ export randHermitian, randSymmetric
 
 """
 ```julia
-randHermitian(d::T, n::Int; norm = false::Bool, complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randHermitian(d::T, n::Int; Diag = d, norm = false::Bool, complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
 
 randHermitian(n::Int; norm = false::Bool)
 ```
+- To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
 - If one knows that all entries will be real, set `complex=false`,
     or equivalently use `randSymmetric`
@@ -30,15 +31,19 @@ randHermitian(1:10,2)
 randHermitian([-1,pi],2)
 ```
 """
-function randHermitian(d::T, n::Int; norm = false::Bool, complex=true::Bool)  where T<:Union{Distribution{Univariate}
+function randHermitian(d::T, n::Int; Diag=d::T, norm = false::Bool, complex=true::Bool)  where T<:Union{Distribution{Univariate}
                                             ,DataType,AbstractArray, Tuple}
     if complex
         M = zeros(ComplexF64,n,n)
     else
         M =zeros(n,n)
     end
-    for i in 1:n, j in i:n
+
+    for i in 1:n, j in i+1:n
         M[i,j] = rand(d)
+    end
+    for i in 1:n
+        M[i,i] = rand(Diag)
     end
 
     if norm
@@ -50,17 +55,18 @@ end
 
 
 function randHermitian(n::Int; norm = false::Bool)
-    return randHermitian(ComplexNormal(), n; norm = norm)
+    return randHermitian(ComplexNormal(), n, Diag=Normal(), norm = norm)
 end
 
 
 """
 ```julia
-randSymmetric(d::T, n::Int; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randSymmetric(d::T, n::Int; Diag = d::T,  norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
 
 randSymmetric(n::Int; norm = false::Bool)
 ```
 - Essentially equivalent to `randHermitian` with `complex = false`
+- To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
 - If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
 # Examples
 ```julia
@@ -68,11 +74,11 @@ randSymmetric(2)
 ``` 
 >Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
 """
-function  randSymmetric(d::T, n::Int; norm = false::Bool)  where T<:Union{Distribution{Univariate}
+function  randSymmetric(d::T, n::Int; Diag = d::T, norm = false::Bool)  where T<:Union{Distribution{Univariate}
     ,DataType,AbstractArray, Tuple}
-    return randHermitian(d, n; norm = norm, complex=false)
+    return randHermitian(d, n, Diag=Diag, norm = norm, complex=false)
 end
 
 function randSymmetric(n::Int; norm = false::Bool)
-    return randSymmetric(Normal(), n; norm = norm)
+    return randSymmetric(Normal(), n, norm = norm)
 end
