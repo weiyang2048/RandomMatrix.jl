@@ -2,7 +2,7 @@ module RandomMatrix
 
 using StatsBase: sample, Weights 
 using Distributions
-using Random: shuffle
+using Random
 using LinearAlgebra 
 using SparseArrays: spzeros
 using Plots: heatmap, cgrad
