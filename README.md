@@ -131,3 +131,14 @@ qresolvent(A)
  ```  
 >If A is a n by m matrix and B is a m by w matrix.  Run `randSampling(A,B,k=2)` will generate a random  sampling matrix S of size m by k. Where E(SS')=I and 
   that E(ASS'B)=AB.  For definition, check the code or look for definition S:=SD at the end of section 2.2 (right before section 2.3) in https://arxiv.org/pdf/1608.04481.pdf.
+
+## Probability
+### Distributions
+```julia
+Gaussian(beta=1,μ=0,σ=1)
+````
+- `beta`: 1 for Real Gaussian, 2 for Complex Gaussian 
+
+```julia
+ComplexNormal(μ=0,σ=1) 
+```
