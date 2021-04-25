@@ -6,6 +6,18 @@ Hoping to add-in enough functionalities and publish in Aug 2021.
 
 Note that there is an existing package [`RandomMatrices.jl`](https://github.com/JuliaMath/RandomMatrices.jl) on Random Matrix, but it is no longer maintained (the lastest version is released in 2019 Julia 1.1 era, some of the codes no longer work), and it doesn't provide all the functionalities that I need in my work.  Thus it probably will be easier to start my own package.  If there is any functionality you want me to implement, please raise an issue.
 
+- [RandomMatrix.jl](#randommatrixjl)
+- [Examples](#examples)
+  - [Random Matrix Theory](#random-matrix-theory)
+    - [Random Matrix Models](#random-matrix-models)
+      - [Random IID Matrices](#random-iid-matrices)
+      - [Hermitian Matrices](#hermitian-matrices)
+      - [Unitary Matrices](#unitary-matrices)
+    - [Transformations](#transformations)
+      - [Resolvent](#resolvent)
+  - [Randomized Linear Algebra](#randomized-linear-algebra)
+  - [Probability](#probability)
+    - [Distributions](#distributions)
 
 # Examples
 
@@ -13,7 +25,7 @@ Note that there is an existing package [`RandomMatrices.jl`](https://github.com/
 
 ### Random Matrix Models
 
-#### Random IID Matrix
+#### Random IID Matrices
 
 ```julia
 randMatrix(d::T, n::Int, m = n::Int; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}

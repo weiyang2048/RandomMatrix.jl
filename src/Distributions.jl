@@ -1,4 +1,7 @@
-export  ComplexNormal, Gaussian
+export ComplexNormal, Gaussian,
+        
+        # re-export    
+        mean, var
 
 """
 ```julia
@@ -10,6 +13,12 @@ struct  ComplexNormal <:ContinuousUnivariateDistribution
     σ::Float64
     function ComplexNormal(μ=0,σ=1) new(μ,σ) end
 end
+
+Base.eltype(::Type{ComplexNormal}) = ComplexF64
+Base.rand(rng::AbstractRNG, d::ComplexNormal) = randn(rng,ComplexF64)*d.σ+d.μ;
+
+mean(d::ComplexNormal)=d.μ
+var(d::ComplexNormal)=d.σ
 
 """
 ```julia
@@ -23,6 +32,3 @@ struct Gaussian <: ContinuousUnivariateDistribution
     σ::Float64
     function Gaussian(beta=1,μ=0,σ=1)  beta==1 ? Normal(μ,σ) : ComplexNormal(μ,σ) end
 end
-
-Base.rand(rng::AbstractRNG, d::ComplexNormal) = randn(rng,ComplexF64)*d.σ+d.μ;
-Base.eltype(::Type{ComplexNormal}) = ComplexF64
