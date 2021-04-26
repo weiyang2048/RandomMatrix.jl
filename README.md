@@ -15,12 +15,13 @@ Note that there is an existing package [`RandomMatrices.jl`](https://github.com/
       - [Unitary Matrices](#unitary-matrices)
     - [Transformations](#transformations)
       - [Resolvent](#resolvent)
+      - [Quaternion Resolvent](#quaternion-resolvent)
   - [Randomized Linear Algebra](#randomized-linear-algebra)
-  - [Probability](#probability)
-    - [Distributions](#distributions)
-      - [Complex Gaussian](#complex-gaussian)
-      - [Circular Law](#circular-law)
-      - [Elliptical Law](#elliptical-law)
+    - [Sampling Matrix](#sampling-matrix)
+  - [Distributions](#distributions)
+    - [Complex Gaussian](#complex-gaussian)
+    - [Circular Law](#circular-law)
+    - [Elliptical Law](#elliptical-law)
 
 # Examples
 
@@ -136,20 +137,22 @@ randPermutation(n) # fun fact, trace of a large random Permutation matrix is a P
 resolvent(A)
 ```
 >return the resolvent ***function*** of A
+#### Quaternion Resolvent
 ```julia
 qresolvent(A)
 ```
 >returns the quaternion resolvent ***function*** of A.
 ## Randomized Linear Algebra
+### Sampling Matrix
  ```julia
  randSampling(A,B,k=2)
  ```  
 >If A is a n by m matrix and B is a m by w matrix.  Run `randSampling(A,B,k=2)` will generate a random  sampling matrix S of size m by k. Where E(SS')=I and 
   that E(ASS'B)=AB.  For definition, check the code or look for definition S:=SD at the end of section 2.2 (right before section 2.3) in https://arxiv.org/pdf/1608.04481.pdf.
 
-## Probability
-### Distributions
-#### Complex Gaussian
+
+## Distributions
+### Complex Gaussian
 ***
 ```julia
 Gaussian(beta=1,μ=0,σ=1)
@@ -160,7 +163,7 @@ Gaussian(beta=1,μ=0,σ=1)
 ComplexNormal(μ=0,σ=1) 
 ```
 ***
-#### Circular Law
+### Circular Law
 ```julia
 Circular(c=0,R=1)
 ```
@@ -172,10 +175,10 @@ rand(Circular(1,10),200)
 ```
 > Generates 200 uniform r.v.s on the complex disk of center 1 radius 10.
 
-#### Elliptical Law
+### Elliptical Law
 ***
 ```julia
 Elliptic(ρ=0.5,c=0,R=1)
 ```
-- the uniform rv on a ellipse of Width `2(1+ρ)R`, height `2(1-rho)R` centered at `c`
+- the uniform rv on an ellipse of width `2(1+ρ)R`, height `2(1-ρ)R` centered at `c`
 ***

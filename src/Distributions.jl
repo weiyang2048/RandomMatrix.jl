@@ -66,7 +66,7 @@ end
 ```julia
 Elliptic(ρ=0.5,c=0,R=1)
 ```
-- the uniform rv on a ellipse of Width `2(1+ρ)R`, height `2(1-rho)R` centered at `c`
+- the uniform rv on an ellipse of width `2(1+ρ)R`, height `2(1-ρ)R` centered at `c`
 """
 struct  Elliptic <:ContinuousUnivariateDistribution
     ρ::Float64
