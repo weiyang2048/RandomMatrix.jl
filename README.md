@@ -19,7 +19,8 @@ Note that there is an existing package [`RandomMatrices.jl`](https://github.com/
   - [Probability](#probability)
     - [Distributions](#distributions)
       - [Complex Gaussian](#complex-gaussian)
-      - [Circular Distribution](#circular-distribution)
+      - [Circular Law](#circular-law)
+      - [Elliptical Law](#elliptical-law)
 
 # Examples
 
@@ -159,7 +160,7 @@ Gaussian(beta=1,μ=0,σ=1)
 ComplexNormal(μ=0,σ=1) 
 ```
 ***
-#### Circular Distribution
+#### Circular Law
 ```julia
 Circular(c=0,R=1)
 ```
@@ -170,3 +171,11 @@ Circular(c=0,R=1)
 rand(Circular(1,10),200)
 ```
 > Generates 200 uniform r.v.s on the complex disk of center 1 radius 10.
+
+#### Elliptical Law
+***
+```julia
+Elliptic(ρ=0.5,c=0,R=1)
+```
+- the uniform rv on a ellipse of Width `2(1+ρ)R`, height `2(1-rho)R` centered at `c`
+***
