@@ -3,6 +3,6 @@ activate(pwd())
 cd("docs")
 
 
-using Documenter, RandomMatrix
+using Documenter, RandomMatrix, Distributions
 
 makedocs(sitename="Documentation")

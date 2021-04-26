@@ -18,6 +18,8 @@ Note that there is an existing package [`RandomMatrices.jl`](https://github.com/
   - [Randomized Linear Algebra](#randomized-linear-algebra)
   - [Probability](#probability)
     - [Distributions](#distributions)
+      - [Complex Gaussian](#complex-gaussian)
+      - [Circular Distribution](#circular-distribution)
 
 # Examples
 
@@ -146,11 +148,25 @@ qresolvent(A)
 
 ## Probability
 ### Distributions
+#### Complex Gaussian
+***
 ```julia
 Gaussian(beta=1,μ=0,σ=1)
 ````
 - `beta`: 1 for Real Gaussian, 2 for Complex Gaussian 
-
+***
 ```julia
 ComplexNormal(μ=0,σ=1) 
 ```
+***
+#### Circular Distribution
+```julia
+Circular(c=0,R=1)
+```
+- The uniform distribution on the complex disk with center `c` and radius `R`
+***
+
+```julia
+rand(Circular(1,10),200)
+```
+> Generates 200 uniform r.v.s on the complex disk of center 1 radius 10.
