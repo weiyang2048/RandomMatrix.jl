@@ -1,26 +1,28 @@
 export randMatrix
 """
 ```julia
-randMatrix(d::T, n::Int, m = n ::Int ; ; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randMatrix(d::T, n::Int, m = n::Int  ; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
 
 randMatrix(n::Int, m = n :: Int; norm = false::Bool)
 ```
-- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+- `d` : entry distribution
+- `n` , 'm' : dimensions, if `m` is not provided, by default `m=n` 
+- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+
+```julia
 # Examples
-```julia
+
+# Generates a 2 by 2 random  matrix with entries from the Standard  Gaussian.
 randMatrix(2)
-``` 
->Generates a 2 by 2 random  matrix with entries from the Standard  Gaussian.
-```julia
+
+# Generates a 3 by 2 random  matrix with entries uniformly from {1,2,3,...,10}.
 randMatrix(1:10,3,2)
-``` 
->Generates a 3 by 2 random  matrix with entries uniform in {1,2,3,...,10}.
-```julia
+
+# Generate a normalized random 2 by 2  Matrix with entries  `Poisson(2)` rvs. 
+# Need to import the `Distributions` package for `Poisson(2)`
 randMatrix(Poisson(2),2,norm = true)
 ``` 
 
->Generate a normalized random 2 by 2  Matrix with entries  `Poisson(2)` rvs. 
->*Need to import the `Distributions` package for `Poisson(2)`*
 """
 function randMatrix(d::T, n::Int, m = n ::Int ; norm = false::Bool)  where T<:Union{Distribution{Univariate}
                                             ,DataType,AbstractArray, Tuple}
