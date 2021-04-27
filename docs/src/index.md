@@ -5,6 +5,8 @@ randMatrix
 
 randHermitian
 
+ComplexNormal
+
 Gaussian
 
 MarchenkoPastur

@@ -15,13 +15,16 @@ If there is any functionality you want me to implement, please raise an issue.
     - [Transformations](#transformations)
       - [Resolvent](#resolvent)
       - [Quaternion Resolvent](#quaternion-resolvent)
-  - [Randomized Linear Algebra](#randomized-linear-algebra)
-    - [Sampling Matrix](#sampling-matrix)
   - [Distributions](#distributions)
     - [Complex Gaussian](#complex-gaussian)
+      - [Gaussian](#gaussian)
     - [Circular Law](#circular-law)
     - [Elliptical Law](#elliptical-law)
     - [Marchenko-Pastur Law](#marchenko-pastur-law)
+  - [Graphics](#graphics)
+    - [Norm View](#norm-view)
+  - [Randomized Linear Algebra](#randomized-linear-algebra)
+    - [Sampling Matrix](#sampling-matrix)
 
 # Examples
 
@@ -36,7 +39,7 @@ randMatrix(d::T, n::Int, m = n::Int  ; norm = false::Bool) where T<:Union{Distri
 randMatrix(n::Int, m = n :: Int; norm = false::Bool)
 ```
 - `d` : entry distribution
-- `n` , 'm' : dimensions, if `m` is not provided, by default `m=n` 
+- `n` , `m` : dimensions, if `m` is not provided, by default `m=n` 
 - `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
 
 ```julia
@@ -139,17 +142,25 @@ resolvent(A)
 qresolvent(A)
 ```
 >returns the quaternion resolvent ***function*** of A.
-## Randomized Linear Algebra
-### Sampling Matrix
- ```julia
- randSampling(A,B,k=2)
- ```  
->If A is a n by m matrix and B is a m by w matrix.  Run `randSampling(A,B,k=2)` will generate a random  sampling matrix S of size m by k. Where E(SS')=I and 
-  that E(ASS'B)=AB.  For definition, check the code or look for definition S:=SD at the end of section 2.2 (right before section 2.3) in https://arxiv.org/pdf/1608.04481.pdf.
-
 
 ## Distributions
 ### Complex Gaussian
+```julia
+ComplexNormal
+```
+- `μ` : mean, `μ = 0` by default
+- `σ` : standard deviation, `σ  =1 ` by default
+
+```julia 
+# Examples
+
+# Generates 10 iid standard Complex Gaussian r.v.s
+rand(ComplexNormal(), 10) 
+
+# Generates complex normal with mean 1+1im, variance 4
+rand(ComplexNormal(1+1im,2)) 
+```
+#### Gaussian
 
 ```julia
 Gaussian{Int8,ComplexF64,Float64} 
@@ -211,3 +222,23 @@ rand(MarchenkoPastur(0.1,2),100)
 # Compute the desity for the MP distribution with λ=1.6 at the point 0
 pdf(MarchenkoPastur(1.6),0)
 ```
+## Graphics
+### Norm View
+```julia
+normview(M::AbstractMatrix)
+```
+
+```julia
+# Example
+
+# The resolvent of a random Hermitian matrix is approximately diagonal, see Section 3 in https://arxiv.org/pdf/1903.10060.pdf
+ normview(resolvent(randHermitian(1000,norm=true))(0.5+0.1im))
+```
+
+## Randomized Linear Algebra
+### Sampling Matrix
+ ```julia
+ randSampling(A,B,k=2)
+ ```  
+>If A is a n by m matrix and B is a m by w matrix.  Run `randSampling(A,B,k=2)` will generate a random  sampling matrix S of size m by k. Where E(SS')=I and 
+  that E(ASS'B)=AB.  For definition, check the code or look for definition S:=SD at the end of section 2.2 (right before section 2.3) in https://arxiv.org/pdf/1608.04481.pdf.

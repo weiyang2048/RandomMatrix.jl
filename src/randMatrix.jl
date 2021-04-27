@@ -6,7 +6,7 @@ randMatrix(d::T, n::Int, m = n::Int  ; norm = false::Bool) where T<:Union{Distri
 randMatrix(n::Int, m = n :: Int; norm = false::Bool)
 ```
 - `d` : entry distribution
-- `n` , 'm' : dimensions, if `m` is not provided, by default `m=n` 
+- `n` , `m` : dimensions, if `m` is not provided, by default `m=n` 
 - `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
 
 ```julia
