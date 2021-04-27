@@ -53,37 +53,38 @@ randMatrix(1:10,3,2)
 randMatrix(Poisson(2),2,norm = true)
 ``` 
 #### Hermitian Matrices
-***
 ```julia
-randHermitian(d::T, n::Int; Diag=d::T, norm = false::Bool, complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randHermitian(d::T, n::Int; Diag = d, norm = false::Bool, complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
 
 randHermitian(n::Int; norm = false::Bool)
 ```
-- To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
-- If `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
-- If one knows that all entries will be real, set `complex=false`,
+- `d` : entry distribution
+- `n`  : dimensions 
+- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+- `Diag` : the distribution for diagonal entries, by default `Diag=d`. 
+    To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
+- `complex` : by default `complex = true`, we assume entries will be complex, if one knows that all entries will be real, set `complex=false`,
     or equivalently use `randSymmetric`
-***
+
+
 ```julia
+# Examples
+
+# Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
 randHermitian(2)
-``` 
->Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
-```julia
+
+# Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
+# *Need to import the `Distributions` package for `Poisson(2)`*
 randHermitian(Poisson(2),2)
-``` 
-or
-```julia
+# or equivalently 
 randSymmetric(Poisson(2),2)
-```
->Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
->*Need to import the `Distributions` package for `Poisson(2)`*
-```julia
+
+# Entries uniformly from {1,2,3,...,10}
 randHermitian(1:10,2)
-``` 
-```julia
+
+# Entries either -1 or pi with equal probability
 randHermitian([-1,pi],2)
-```
-***
+``` 
 ```julia
 randSymmetric(d::T, n::Int; Diag = d::T,  norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
 
