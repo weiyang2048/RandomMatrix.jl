@@ -2,9 +2,8 @@
 
 A package for Random Matrix Theory.
 
-Hoping to add-in enough functionalities and publish in Aug 2021.
-
-Note that there is an existing package [`RandomMatrices.jl`](https://github.com/JuliaMath/RandomMatrices.jl) on Random Matrix, but it is [no longer maintained](https://github.com/JuliaMath/RandomMatrices.jl/issues/58)(the lastest version is released in 2019 with most of the code written before v1.0, some of the codes no longer work), and it doesn't provide all the functionalities that I need in my work.  Thus it probably will be easier to start my own package.  If there is any functionality you want me to implement, please raise an issue.
+Hoping to add-in enough functionalities and register in Aug 2021.
+If there is any functionality you want me to implement, please raise an issue.
 
 - [RandomMatrix.jl](#randommatrixjl)
 - [Examples](#examples)
