@@ -2,4 +2,6 @@
 
 ```@docs
 randHermitian
+
+MarchenkoPastur
 ```

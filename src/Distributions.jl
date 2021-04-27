@@ -4,7 +4,7 @@ export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur
         mean, var
 """
 ```julia
-MarchenkoPastur(λ=0.5,σ=1)
+MarchenkoPastur(λ::Float64,σ::Float64)
 ```
 - Marchenko-Pastur r.v. with  asymptotic ratio λ and scale parameter σ.
 - λ by default is 0.5
@@ -14,12 +14,20 @@ MarchenkoPastur(λ=0.5,σ=1)
 pdf(d::MarchenkoPastur,x::Real)  
 ```
 
-
-# Examples:
 ```julia
+# Examples 
+
+# Generate a MP rv with ρ = 0.5, σ =1
 rand(MarchenkoPastur()) 
+
+# Generate a 100 by 100 matrix with entries i.i.d MP rvs with ρ=0.2
 rand(MarchenkoPastur(0.2),100,100)
+
+# Generate 100 MP rvs with ρ=0.1 and σ=2
 rand(MarchenkoPastur(0.1,2),100)
+
+# Compute the desity for the MP distribution with λ=1.6 at the point 0
+using Distributions
 pdf(MarchenkoPastur(1.6),0)
 ```
 """
@@ -68,7 +76,9 @@ ComplexNormal(μ=0,σ=1)
 struct  ComplexNormal <:ContinuousUnivariateDistribution
     μ::ComplexF64
     σ::Float64
-    function ComplexNormal(μ=0,σ=1) new(μ,σ) end
+    function ComplexNormal(μ=0,σ=1) 
+        σ >=0  ? new(μ,σ) : error("σ must be non-negative") 
+    end
 end
 
 Base.eltype(::Type{ComplexNormal}) = ComplexF64
@@ -79,15 +89,30 @@ var(d::ComplexNormal)=d.σ
 
 """
 ```julia
-Gaussian(beta=1,μ=0,σ=1)
+Gaussian{Int8,ComplexF64,Float64} 
 ````
-- `beta` 1 for Real Gaussian, 2 for Complex Gaussian 
+- `beta` : 1 (default) for Real Gaussian, 2 for Complex Gaussian 
+- `μ` : mean, `μ = 0` by default
+-  `σ` : standard deviation, `σ  =1 ` by default
+
+```julia 
+# Generates 10 iid standard normal r.v.s
+rand(Gaussian(), 10) 
+
+# Generates a complex normal with mean 1+1im, variance 4
+rand(Gaussian(2,1+1im,2)) 
 """
-struct Gaussian <: ContinuousUnivariateDistribution
+struct Gaussian{Int8,ComplexF64,Float64} <: ContinuousUnivariateDistribution
     beta::Int8
     μ::Union{ComplexF64,Float64}
     σ::Float64
-    function Gaussian(beta=1,μ=0,σ=1)  beta==1 ? Normal(μ,σ) : ComplexNormal(μ,σ) end
+    function Gaussian(beta=1::Int,μ=0::Int,σ=1::Int)  
+        if σ >=0  
+            (beta==1 ? Normal(μ,σ) : ComplexNormal(μ,σ)) 
+        else
+            error("σ must be non-negative")  
+        end
+    end
 end
 
 mean(d::Gaussian)=d.μ
