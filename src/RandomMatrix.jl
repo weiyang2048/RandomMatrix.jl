@@ -1,7 +1,7 @@
 module RandomMatrix
 
 using StatsBase: sample, Weights 
-import Statistics: mean, var
+import Distributions: mean, var
 using Distributions
 using Random
 using LinearAlgebra 
@@ -20,7 +20,7 @@ include("Transformations.jl")
 
 include("Distributions.jl")
 
-include("Combinatorics.jl")
+include("Math.jl")
 
 include("Plots.jl")
 end # module

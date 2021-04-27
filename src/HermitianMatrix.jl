@@ -7,7 +7,7 @@ randHermitian(d::T, n::Int; Diag = d, norm = false::Bool, complex=true::Bool) wh
 randHermitian(n::Int; norm = false::Bool)
 ```
 - To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
-- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+- If `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
 - If one knows that all entries will be real, set `complex=false`,
     or equivalently use `randSymmetric`
 # Examples
@@ -67,7 +67,7 @@ randSymmetric(n::Int; norm = false::Bool)
 ```
 - Essentially equivalent to `randHermitian` with `complex = false`
 - To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
-- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+- If `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
 # Examples
 ```julia
 randSymmetric(2)

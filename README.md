@@ -22,6 +22,7 @@ Note that there is an existing package [`RandomMatrices.jl`](https://github.com/
     - [Complex Gaussian](#complex-gaussian)
     - [Circular Law](#circular-law)
     - [Elliptical Law](#elliptical-law)
+    - [Marchenko-Pastur Law](#marchenko-pastur-law)
 
 # Examples
 
@@ -64,7 +65,7 @@ randHermitian(d::T, n::Int; Diag=d::T, norm = false::Bool, complex=true::Bool) w
 randHermitian(n::Int; norm = false::Bool)
 ```
 - To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
-- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+- If `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
 - If one knows that all entries will be real, set `complex=false`,
     or equivalently use `randSymmetric`
 ***
@@ -95,7 +96,7 @@ randSymmetric(n::Int; norm = false::Bool)
 ```
 - Essentially equivalent to `randHermitian` with `complex = false`
 - To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
-- If `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).
+- If `norm` set to `true`, then the matrix will be normalized with n^(-1/2).
 ***  
 ```julia
 randSymmetric(2)
@@ -182,3 +183,24 @@ Elliptic(ρ=0.5,c=0,R=1)
 ```
 - the uniform rv on an ellipse of width `2(1+ρ)R`, height `2(1-ρ)R` centered at `c`
 ***
+
+### Marchenko-Pastur Law
+```julia
+MarchenkoPastur(λ=0.5,σ=1)
+```
+- Marchenko-Pastur r.v. with  asymptotic ratio λ and scale parameter σ.
+- λ by default is 0.5
+- σ by default is 1, the value 1 for σ is typically used in Random Matrix Theory.
+
+```julia
+pdf(d::MarchenkoPastur,x::Real)  
+```
+
+
+**Examples:**
+```julia
+rand(MarchenkoPastur()) 
+rand(MarchenkoPastur(0.2),100,100)
+rand(MarchenkoPastur(0.1,2),100)
+pdf(MarchenkoPastur(1.6),0)
+```

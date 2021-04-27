@@ -1,7 +1,64 @@
-export ComplexNormal, Gaussian, Circular, Elliptic
+export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur
         
         # re-export    
         mean, var
+"""
+```julia
+MarchenkoPastur(λ=0.5,σ=1)
+```
+- Marchenko-Pastur r.v. with  asymptotic ratio λ and scale parameter σ.
+- λ by default is 0.5
+- σ by default is 1, the value 1 for σ is typically used in Random Matrix Theory.
+
+```julia
+pdf(d::MarchenkoPastur,x::Real)  
+```
+
+
+# Examples:
+```julia
+rand(MarchenkoPastur()) 
+rand(MarchenkoPastur(0.2),100,100)
+rand(MarchenkoPastur(0.1,2),100)
+pdf(MarchenkoPastur(1.6),0)
+```
+"""
+struct  MarchenkoPastur <:ContinuousUnivariateDistribution
+    λ::Float64
+    σ::Float64
+    function MarchenkoPastur(λ=0.5,σ=1) new(λ,σ) end
+end
+
+function Distributions.pdf(d::MarchenkoPastur,x::Real) 
+    
+    if d.λ > 1
+        if x < 0 return 0 end
+        if x == 0 return 1-1/d.λ end
+    end
+
+    λ₋,λ₊ = d.σ^2 * ±(1,sqrt(d.λ)).^2 
+    if x<λ₋ || x> λ₊
+        return 0
+    else
+        return 1/(2π*d.σ^2)*(sqrt((λ₊-x)*(x-λ₋)))/(d.λ*x)
+    end
+end
+
+function Base.rand(rng::AbstractRNG, d::MarchenkoPastur) 
+    if d.λ > 1
+        if rand() <= 1-1/d.λ
+            return 0
+        end
+    end
+
+    λ₋,λ₊ = d.σ^2 * ±(1,sqrt(d.λ)).^2 
+    while true
+        x = rand(Uniform(λ₋,λ₊))
+        if rand() <= pdf(d,x)
+            return x
+        end
+    end
+end
 
 """
 ```julia
@@ -33,7 +90,8 @@ struct Gaussian <: ContinuousUnivariateDistribution
     function Gaussian(beta=1,μ=0,σ=1)  beta==1 ? Normal(μ,σ) : ComplexNormal(μ,σ) end
 end
 
-
+mean(d::Gaussian)=d.μ
+var(d::Gaussian)=d.σ
 """
 ```julia
 Circular(c=0,R=1)
@@ -62,6 +120,9 @@ function Base.rand(rng::AbstractRNG, d::Circular)
     end
 end
 
+mean(d::Circular)=d.c
+
+
 """
 ```julia
 Elliptic(ρ=0.5,c=0,R=1)
@@ -86,3 +147,5 @@ function Base.rand(rng::AbstractRNG, d::Elliptic)
         end
     end
 end
+
+mean(d::Elliptic)=d.c

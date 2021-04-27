@@ -1,3 +1,5 @@
+export powerset, ±
+
 """
 Generate the powerset of 
 ```julia
@@ -12,3 +14,7 @@ function powerset(x::AbstractArray)
     end
     result
 end
+
+
+
+±(a,b) = [a-b,a+b]
