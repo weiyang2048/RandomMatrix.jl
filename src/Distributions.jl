@@ -1,7 +1,7 @@
 export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur
         
         # re-export    
-        mean, var
+export mean, var, pdf
 """
 ```julia
 MarchenkoPastur(λ::Float64,σ::Float64)
