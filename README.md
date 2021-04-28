@@ -270,7 +270,6 @@ rand(MarchenkoPastur(0.2),100,100)
 rand(MarchenkoPastur(0.1,2),100)
 
 # Compute the desity for the MP distribution with λ=1.6 at the point 0
-using Distributions
 pdf(MarchenkoPastur(1.6),0)
 ```
 ## Graphics
