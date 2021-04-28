@@ -8,7 +8,7 @@ randHermitian(n::Int; norm = false::Bool)
 ```
 - `d` : entry distribution
 - `n`  : dimensions 
-- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
 - `Diag` : the distribution for diagonal entries, by default `Diag=d`. 
     To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
 - `complex` : by default `complex = true`, we assume entries will be complex, if one knows that all entries will be real, set `complex=false`,
@@ -69,13 +69,19 @@ randSymmetric(d::T, n::Int; Diag = d::T,  norm = false::Bool) where T<:Union{Dis
 randSymmetric(n::Int; norm = false::Bool)
 ```
 - Essentially equivalent to `randHermitian` with `complex = false`
-- To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
-- If `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
-# Examples
+- `d` : entry distribution
+- `n` : dimensions 
+- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
+- `Diag` : the distribution for diagonal entries, by default `Diag=d`. 
+    To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
+
+
 ```julia
+# Examples
+
+# Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
 randSymmetric(2)
 ``` 
->Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
 """
 function  randSymmetric(d::T, n::Int; Diag = d::T, norm = false::Bool)  where T<:Union{Distribution{Univariate}
     ,DataType,AbstractArray, Tuple}

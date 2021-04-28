@@ -5,6 +5,16 @@ randMatrix
 
 randHermitian
 
+randSymmetric
+
+randUnitary
+
+randOrthogonal
+
+Haar
+
+randPermutation
+
 ComplexNormal
 
 Gaussian
