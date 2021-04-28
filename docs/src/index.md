@@ -15,6 +15,8 @@ Haar
 
 randPermutation
 
+resolvent
+
 ComplexNormal
 
 Gaussian

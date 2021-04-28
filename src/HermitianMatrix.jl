@@ -34,8 +34,9 @@ randHermitian(1:10,2)
 randHermitian([-1,pi],2)
 ``` 
 """
-function randHermitian(d::T, n::Int; Diag=d::T, norm = false::Bool, complex=true::Bool)  where T<:Union{Distribution{Univariate}
-                                            ,DataType,AbstractArray, Tuple}
+function randHermitian(d::T, n::Int; Diag=d::T, norm = false::Bool, complex=true::Bool) where 
+    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+    
     if complex
         M = zeros(ComplexF64,n,n)
     else
@@ -83,8 +84,9 @@ randSymmetric(n::Int; norm = false::Bool)
 randSymmetric(2)
 ``` 
 """
-function  randSymmetric(d::T, n::Int; Diag = d::T, norm = false::Bool)  where T<:Union{Distribution{Univariate}
-    ,DataType,AbstractArray, Tuple}
+function  randSymmetric(d::T, n::Int; Diag = d::T, norm = false::Bool)  where 
+    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+    
     return randHermitian(d, n, Diag=Diag, norm = norm, complex=false)
 end
 

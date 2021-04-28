@@ -2,9 +2,21 @@ export resolvent, qresolvent
 
 """
 ```julia
-resolvent(A)
+resolvent(A::Matrix)
 ```
-return the resolvent ***function*** of A
+
+- return the resolvent ***function*** of `A`, ``R(z)= (A-zI)^{-1}``
+
+```julia
+# Examples
+
+# This returns the resolvent **function** of a 500 by 500 Hermitian 
+resolvent(randHermitian(500, norm = true)) # this is a generic function
+
+# One can use the above return as a function
+f = resolvent(randHermitian(500, norm = true))
+f(0+0.1im) # this returns a matrix
+```
 """
 function resolvent(A::AbstractMatrix)
     return function f(z::Number)

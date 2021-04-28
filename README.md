@@ -24,13 +24,13 @@ If there is any functionality you want me to implement, please raise an issue.
     - [Circular Law](#circular-law)
     - [Elliptical Law](#elliptical-law)
     - [Marchenko-Pastur Law](#marchenko-pastur-law)
-  - [Graphics](#graphics)
-    - [Norm View](#norm-view)
   - [Randomized Linear Algebra](#randomized-linear-algebra)
     - [Sampling Matrix](#sampling-matrix)
   - [Utility functions](#utility-functions)
     - [Operations](#operations)
       - [plus-minus](#plus-minus)
+    - [Graphics](#graphics)
+      - [Norm View](#norm-view)
 
 # Examples
 
@@ -188,9 +188,21 @@ randPermutation(100,fix=10)
 ### Transformations
 #### Resolvent
 ```julia
-resolvent(A)
+resolvent(A::Matrix)
 ```
->return the resolvent ***function*** of A
+
+- return the resolvent ***function*** of `A`, ``R(z)= (A-zI)^{-1}``
+
+```julia
+# Examples
+
+# This returns the resolvent **function** of a 500 by 500 Hermitian 
+resolvent(randHermitian(500, norm = true)) # this is a generic function
+
+# One can use the above return as a function
+f = resolvent(randHermitian(500, norm = true))
+f(0+0.1im) # this returns a matrix
+```
 #### Quaternion Resolvent
 ```julia
 qresolvent(A)
@@ -275,19 +287,6 @@ rand(MarchenkoPastur(0.1,2),100)
 # Compute the desity for the MP distribution with λ=1.6 at the point 0
 pdf(MarchenkoPastur(1.6),0)
 ```
-## Graphics
-### Norm View
-```julia
-normview(M::AbstractMatrix)
-```
-
-```julia
-# Example
-
-# The resolvent of a random Hermitian matrix is approximately diagonal,
-# see Section 3 in https://arxiv.org/pdf/1903.10060.pdf
- normview(resolvent(randHermitian(1000,norm=true))(0.5+0.1im))
-```
 
 ## Randomized Linear Algebra
 ### Sampling Matrix
@@ -307,4 +306,17 @@ normview(M::AbstractMatrix)
 # Examples
 
 1 ± 0.5  # returns (0.5,1.5)
+```
+### Graphics
+#### Norm View
+```julia
+normview(M::AbstractMatrix)
+```
+
+```julia
+# Example
+
+# The resolvent of a random Hermitian matrix is approximately diagonal,
+# see Section 3 in https://arxiv.org/pdf/1903.10060.pdf
+ normview(resolvent(randHermitian(1000,norm=true))(0.5+0.1im))
 ```
