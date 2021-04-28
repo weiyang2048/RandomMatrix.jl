@@ -28,6 +28,9 @@ If there is any functionality you want me to implement, please raise an issue.
     - [Norm View](#norm-view)
   - [Randomized Linear Algebra](#randomized-linear-algebra)
     - [Sampling Matrix](#sampling-matrix)
+  - [Utility functions](#utility-functions)
+    - [Operations](#operations)
+      - [±](#)
 
 # Examples
 
@@ -293,3 +296,15 @@ normview(M::AbstractMatrix)
  ```  
 >If A is a n by m matrix and B is a m by w matrix.  Run `randSampling(A,B,k=2)` will generate a random  sampling matrix S of size m by k. Where E(SS')=I and 
   that E(ASS'B)=AB.  For definition, check the code or look for definition S:=SD at the end of section 2.2 (right before section 2.3) in https://arxiv.org/pdf/1608.04481.pdf.
+##  Utility functions
+### Operations
+#### ±
+```julia
+±(a,b)
+```
+- returns (a-b,a+b)
+```julia
+# Examples
+
+1 ± 0.5  # returns (0.5,1.5)
+```

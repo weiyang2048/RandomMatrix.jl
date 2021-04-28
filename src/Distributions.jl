@@ -43,7 +43,7 @@ function Distributions.pdf(d::MarchenkoPastur,x::Real)
         if x == 0 return 1-1/d.λ end
     end
 
-    λ₋,λ₊ = d.σ^2 * ±(1,sqrt(d.λ)).^2 
+    λ₋,λ₊ = d.σ^2 * (1 ± sqrt(d.λ)).^2 
     if x<λ₋ || x> λ₊
         return 0
     else
