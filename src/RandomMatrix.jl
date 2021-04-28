@@ -14,6 +14,8 @@ include("HermitianMatrix.jl")
 
 include("UnitaryMatrix.jl")
 
+include("CorrelatedMatrices.jl")
+
 include("SamplingMatrix.jl")
 
 include("Transformations.jl")
@@ -23,4 +25,6 @@ include("Distributions.jl")
 include("Math.jl")
 
 include("Plots.jl")
+
+
 end # module

@@ -10,6 +10,9 @@ If there is any functionality you want me to implement, please raise an issue.
       - [Hermitian Matrices](#hermitian-matrices)
         - [Hermitian](#hermitian)
         - [Symmetric](#symmetric)
+      - [Elliptic Matrices](#elliptic-matrices)
+        - [NORTA](#norta)
+        - [Elliptic Matrices](#elliptic-matrices-1)
       - [Unitary Matrices](#unitary-matrices)
         - [Unitary](#unitary)
         - [Orthogonal](#orthogonal)
@@ -116,6 +119,12 @@ randSymmetric(n::Int; norm = false::Bool)
 # Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
 randSymmetric(2)
 ``` 
+#### Elliptic Matrices
+##### NORTA
+```
+NORTA(d, ρ ,ρhat)
+```
+##### Elliptic Matrices
 
 #### Unitary Matrices 
 ##### Unitary
