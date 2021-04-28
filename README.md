@@ -30,7 +30,7 @@ If there is any functionality you want me to implement, please raise an issue.
     - [Sampling Matrix](#sampling-matrix)
   - [Utility functions](#utility-functions)
     - [Operations](#operations)
-      - [±](#)
+      - [plus-minus](#plus-minus)
 
 # Examples
 
@@ -298,7 +298,7 @@ normview(M::AbstractMatrix)
   that E(ASS'B)=AB.  For definition, check the code or look for definition S:=SD at the end of section 2.2 (right before section 2.3) in https://arxiv.org/pdf/1608.04481.pdf.
 ##  Utility functions
 ### Operations
-#### ±
+#### plus-minus
 ```julia
 ±(a,b)
 ```
