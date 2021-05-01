@@ -60,16 +60,25 @@ A = randEllipic(500,norm=true)
 
 # Plot the eigenvalues of A, this should look like an ellipse
 A|>eigvals|>scatter
+
+# Generate a normalized random elliptic matrix, with entries `Poisson(10)` correlation 0.1
+using Distributions
+randEllipic(Poisson(10),500, r=0.1 , norm=true)
 ```
 """
 function randEllipic(d::T, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where 
     T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+    if r==1
+        return randHermitian(d,n,Diag=Diag,norm=norm)
+    end
+    # TODO: take care of the r=-1 case.
+
     r = preNORTA(d,r).ρhat
     M = zeros(n,n)
     for i in 1:n
         M[i,i] = rand(Diag)
         for j in i+1:n
-            M[i,j],M[j,i] = rand(MvNormal([1 0.2;0.2 1]))
+            M[i,j],M[j,i] = rand(MvNormal([1 r;r 1]))
         end
     end
 

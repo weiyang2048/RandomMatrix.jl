@@ -147,7 +147,12 @@ A = randEllipic(500,norm=true)
 
 # Plot the eigenvalues of A, this should look like an ellipse
 A|>eigvals|>scatter
+
+# Generate a normalized random elliptic matrix, with entries `Poisson(10)` correlation 0.1
+using Distributions
+randEllipic(Poisson(10),500, r=0.1 , norm=true)
 ```
+
 #### Unitary Matrices 
 ##### Unitary
 ```julia
