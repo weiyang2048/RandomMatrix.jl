@@ -1,7 +1,7 @@
 export randMatrix
 """
 ```julia
-randMatrix(d::T, n::Int, m = n::Int  ; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randMatrix(d::D, n::Int, m = n::Int  ; norm = false::Bool) where D<:Any
 
 randMatrix(n::Int, m = n :: Int; norm = false::Bool)
 ```
@@ -24,8 +24,7 @@ randMatrix(Poisson(2),2,norm = true)
 ``` 
 
 """
-function randMatrix(d::T, n::Int, m = n ::Int ; norm = false::Bool)  where T<:Union{Distribution{Univariate}
-                                            ,DataType,AbstractArray, Tuple}
+function randMatrix(d::D, n::Int, m = n ::Int ; norm = false::Bool)  where D<:Any
  
     M = reshape([rand(d) for i = 1:n*m],(n,m))
 
