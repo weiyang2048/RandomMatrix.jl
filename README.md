@@ -126,6 +126,28 @@ NORTA(d, ρ ,ρhat)
 ```
 ##### Elliptic Matrices
 
+```julia
+randEllipic(d::T, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where 
+    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+
+randEllipic(n::Int; r=0.5::Float64, norm = false::Bool)
+```
+- `d` : default `Normal()`, entry distribution
+- `n`  : dimensions 
+- `r` : default `0.5`, the correlation of ``H_{ij},H_{ji}`` pairs
+- `norm` : default `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
+- `Diag` : default `Diag=d`, the distribution for diagonal entries.
+    To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
+
+```julia
+# Examples
+
+# Generate a normalized random elliptic matrix, with correlation 0.5
+A = randEllipic(500,norm=true)
+
+# Plot the eigenvalues of A, this should look like an ellipse
+A|>eigvals|>scatter
+```
 #### Unitary Matrices 
 ##### Unitary
 ```julia

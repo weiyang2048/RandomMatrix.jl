@@ -15,6 +15,8 @@ Haar
 
 randPermutation
 
+randEllipic
+
 resolvent
 
 ComplexNormal

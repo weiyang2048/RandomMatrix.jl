@@ -1,9 +1,9 @@
-export preNORTA
+export preNORTA, randEllipic
 
 """
-- `d` : pair distribution
-- `ρ` : entries
-- `preNORTA` : Look for a `phat` that when used in NORTA will provided  
+-  Look for a `phat`, such that when used in NORTA, it will return correlations approximately `ρ`
+- `d` : distribution
+- `ρ` : target correlation
 - NORTA method for generating Random Vectors with Arbitrary Marginal Distribution 
     fand CorrelationMatrices first appears in the following paper
     https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.48.281&rep=rep1&type=pdf
@@ -14,7 +14,7 @@ struct preNORTA
     ρ::Float64
     ρhat::Float64
     function preNORTA(d,ρ,ρhat=ρ)
-        L , H = minmax(sign(ρ)*0.999,0) # Lower bound, Higher bound
+        L , H = minmax(sign(ρ),0) # Lower bound, Higher bound
         while true
             N = [rand(MvNormal([1 ρhat;ρhat 1])) for i=1:10000]
             X = []
@@ -26,15 +26,59 @@ struct preNORTA
             end
              
             temp = cor(X,Y)
-            if abs(temp-ρ) <0.001 || H - L <0.001
+            if abs(temp-ρ) <0.01 || H - L <0.01
                 break
             end
             if temp < ρ
-                ρhat, L = (ρhat+H)/2 ,  (L+ρhat)/2
+                ρhat, L = (ρhat+H)/2 ,  (L+ρhat*4)/5
             else
-                ρhat, H = (ρhat+L)/2 , (H+ρhat)/2
+                ρhat, H = (ρhat+L)/2 , (H+ρhat*4)/5
             end
         end
         new(d,ρ,ρhat)
     end
 end 
+"""
+```julia
+randEllipic(d::T, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where 
+    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+
+randEllipic(n::Int; r=0.5::Float64, norm = false::Bool)
+```
+- `d` : default `Normal()`, entry distribution
+- `n`  : dimensions 
+- `r` : default `0.5`, the correlation of ``H_{ij},H_{ji}`` pairs
+- `norm` : default `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
+- `Diag` : default `Diag=d`, the distribution for diagonal entries.
+    To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
+
+```julia
+# Examples
+
+# Generate a normalized random elliptic matrix, with correlation 0.5
+A = randEllipic(500,norm=true)
+
+# Plot the eigenvalues of A, this should look like an ellipse
+A|>eigvals|>scatter
+```
+"""
+function randEllipic(d::T, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where 
+    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+    r = preNORTA(d,r).ρhat
+    M = zeros(n,n)
+    for i in 1:n
+        M[i,i] = rand(Diag)
+        for j in i+1:n
+            M[i,j],M[j,i] = rand(MvNormal([1 0.2;0.2 1]))
+        end
+    end
+
+    if norm
+        M /= sqrt(n)
+    end
+    return M
+end
+
+function randEllipic(n::Int; r=0.5::Float64, norm = false::Bool)
+    return randEllipic(Normal(),n, r=r, norm=norm)
+end
