@@ -11,8 +11,8 @@ If there is any functionality you want me to implement, please raise an issue.
         - [Hermitian](#hermitian)
         - [Symmetric](#symmetric)
       - [Elliptic Matrices](#elliptic-matrices)
-        - [NORTA](#norta)
-        - [Elliptic Matrices](#elliptic-matrices-1)
+      - [Stoachastic Matrices](#stoachastic-matrices)
+        - [Row or Column stochastic](#row-or-column-stochastic)
       - [Unitary Matrices](#unitary-matrices)
         - [Unitary](#unitary)
         - [Orthogonal](#orthogonal)
@@ -43,7 +43,7 @@ If there is any functionality you want me to implement, please raise an issue.
 
 #### Random IID Matrices
 ```julia
-randMatrix(d::T, n::Int, m = n::Int  ; norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randMatrix(d::D, n::Int, m = n::Int  ; norm = false::Bool) where T<:Any
 
 randMatrix(n::Int, m = n :: Int; norm = false::Bool)
 ```
@@ -67,7 +67,7 @@ randMatrix(Poisson(2),2,norm = true)
 #### Hermitian Matrices
 ##### Hermitian
 ```julia
-randHermitian(d::T, n::Int; Diag = d, norm = false::Bool, complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randHermitian(d::D, n::Int; Diag = d::D, norm = false::Bool, complex=true::Bool) where D<:Any
 
 randHermitian(n::Int; norm = false::Bool)
 ```
@@ -101,7 +101,7 @@ randHermitian([-1,pi],2)
 
 ##### Symmetric
 ```julia
-randSymmetric(d::T, n::Int; Diag = d::T,  norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randSymmetric(d::D, n::Int; Diag = d::D,  norm = false::Bool) where D<:Any
 
 randSymmetric(n::Int; norm = false::Bool)
 ```
@@ -120,15 +120,9 @@ randSymmetric(n::Int; norm = false::Bool)
 randSymmetric(2)
 ``` 
 #### Elliptic Matrices
-##### NORTA
-```
-NORTA(d, ρ ,ρhat)
-```
-##### Elliptic Matrices
 
 ```julia
-randEllipic(d::T, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where 
-    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randEllipic(d::D, n::Int; r = 0.5::Float64, Diag=d::D, norm = false::Bool) where D<:any
 
 randEllipic(n::Int; r=0.5::Float64, norm = false::Bool)
 ```
@@ -152,7 +146,23 @@ A|>eigvals|>scatter
 using Distributions
 randEllipic(Poisson(10),500, r=0.1 , norm=true)
 ```
+#### Stoachastic Matrices
+##### Row or Column stochastic
+```julia
+randStochastic(n::Int; type = 1 ::Int)
+```
+- `n`: dimension
+- `type` : default `type = 1`, `1` for row, `2` for column stochastic
 
+```julia 
+# Examples
+
+# Generates a 1000 by 1000 row stochastic random matrix
+randStochastic(1000)
+
+# Generates a 1000 by 1000 column stochastic random matrix
+randStochastic(1000,type=2)
+```
 #### Unitary Matrices 
 ##### Unitary
 ```julia

@@ -1,4 +1,4 @@
-export preNORTA, randEllipic
+export randEllipic,randStochastic
 
 """
 -  Look for a `phat`, such that when used in NORTA, it will return correlations approximately `ρ`
@@ -10,7 +10,7 @@ export preNORTA, randEllipic
     The generated vector entries usually have a smaller correlation than what is aimed for.
 """
 struct preNORTA 
-    d::T where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+    d::D where D<:Any
     ρ::Float64
     ρhat::Float64
     function preNORTA(d,ρ,ρhat=ρ)
@@ -40,8 +40,7 @@ struct preNORTA
 end 
 """
 ```julia
-randEllipic(d::T, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where 
-    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randEllipic(d::D, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where  D<:Any
 
 randEllipic(n::Int; r=0.5::Float64, norm = false::Bool)
 ```
@@ -66,8 +65,7 @@ using Distributions
 randEllipic(Poisson(10),500, r=0.1 , norm=true)
 ```
 """
-function randEllipic(d::T, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where 
-    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+function randEllipic(d::D, n::Int; r = 0.5::Float64, Diag=d::D, norm = false::Bool) where  D<:Any
     if r==1
         return randHermitian(d,n,Diag=Diag,norm=norm)
     end
@@ -90,4 +88,34 @@ end
 
 function randEllipic(n::Int; r=0.5::Float64, norm = false::Bool)
     return randEllipic(Normal(),n, r=r, norm=norm)
+end
+
+"""
+```julia
+randStochastic(n::Int; type = 1 ::Int)
+```
+- `n`: dimension
+- `type` : default `type = 1`, `1` for row, `2` for column stochastic
+
+```julia 
+# Examples
+
+# Generates a 1000 by 1000 row stochastic random matrix
+randStochastic(1000)
+
+# Generates a 1000 by 1000 column stochastic random matrix
+randStochastic(1000,type=2)
+```
+"""
+function randStochastic(n::Int; type = 1 ::Int)
+    M = rand(n,n)
+    for i in 1:n
+        M[i,:] /= sum(M[i,:])
+    end
+
+    if type == 2
+        return M'
+    end
+
+    return M
 end

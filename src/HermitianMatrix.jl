@@ -2,7 +2,7 @@ export randHermitian, randSymmetric
 
 """
 ```julia
-randHermitian(d::T, n::Int; Diag = d, norm = false::Bool, complex=true::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randHermitian(d::D, n::Int; Diag = d::D, norm = false::Bool, complex=true::Bool) where T<:Any
 
 randHermitian(n::Int; norm = false::Bool)
 ```
@@ -34,8 +34,7 @@ randHermitian(1:10,2)
 randHermitian([-1,pi],2)
 ``` 
 """
-function randHermitian(d::T, n::Int; Diag=d::T, norm = false::Bool, complex=true::Bool) where 
-    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+function randHermitian(d::D, n::Int; Diag=d::D, norm = false::Bool, complex=true::Bool)  where D<:Any
     
     if complex
         M = zeros(ComplexF64,n,n)
@@ -65,7 +64,7 @@ end
 
 """
 ```julia
-randSymmetric(d::T, n::Int; Diag = d::T,  norm = false::Bool) where T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
+randSymmetric(d::D, n::Int; Diag = d::D,  norm = false::Bool) where T<:Any
 
 randSymmetric(n::Int; norm = false::Bool)
 ```
@@ -84,9 +83,8 @@ randSymmetric(n::Int; norm = false::Bool)
 randSymmetric(2)
 ``` 
 """
-function  randSymmetric(d::T, n::Int; Diag = d::T, norm = false::Bool)  where 
-    T<:Union{Distribution{Univariate},DataType,AbstractArray, Tuple}
-    
+function  randSymmetric(d::D, n::Int; Diag = d::D, norm = false::Bool)  where D<:Any
+
     return randHermitian(d, n, Diag=Diag, norm = norm, complex=false)
 end
 
