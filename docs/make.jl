@@ -1,6 +1,6 @@
 using Documenter, RandomMatrix
 
-makedocs(  modules = [RandomMatri],
+makedocs(  modules = [RandomMatrix],
       sitename="RandomMatrix.jl")
 
 deploydocs(repo = "github.com/weiyang2048/RandomMatrix.jl.git")
