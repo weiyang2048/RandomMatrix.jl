@@ -1,9 +1,5 @@
-import Pkg: activate
-activate(pwd())
-cd("docs")
 
-
-using Documenter, RandomMatrix, Distributions
+using Documenter, RandomMatrix
 
 makedocs(sitename="Documentation")
 
