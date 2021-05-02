@@ -12,6 +12,8 @@ include("randMatrix.jl")
 
 include("HermitianMatrix.jl")
 
+include("StructuredMatrices.jl")
+
 include("UnitaryMatrix.jl")
 
 include("CorrelatedMatrices.jl")

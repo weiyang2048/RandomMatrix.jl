@@ -11,8 +11,9 @@ If there is any functionality you want me to implement, please raise an issue.
         - [Hermitian](#hermitian)
         - [Symmetric](#symmetric)
       - [Elliptic Matrices](#elliptic-matrices)
-      - [Stoachastic Matrices](#stoachastic-matrices)
+      - [Structured](#structured)
         - [Row or Column stochastic](#row-or-column-stochastic)
+        - [Toeplitz Matrices](#toeplitz-matrices)
       - [Unitary Matrices](#unitary-matrices)
         - [Unitary](#unitary)
         - [Orthogonal](#orthogonal)
@@ -146,7 +147,7 @@ A|>eigvals|>scatter
 using Distributions
 randEllipic(Poisson(10),500, r=0.1 , norm=true)
 ```
-#### Stoachastic Matrices
+#### Structured
 ##### Row or Column stochastic
 ```julia
 randStochastic(n::Int; type = 1 ::Int)
@@ -163,6 +164,12 @@ randStochastic(1000)
 # Generates a 1000 by 1000 column stochastic random matrix
 randStochastic(1000,type=2)
 ```
+##### Toeplitz Matrices
+```julia
+randToeplitz(d::D, n::Int;  norm = false::Bool, hermitian=true::Bool, complex =false::Bool)  where D<:Any
+```
+- The limiting spectral distribution of random Toeplitz matrices is still an open problem
+
 #### Unitary Matrices 
 ##### Unitary
 ```julia
