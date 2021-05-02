@@ -15,6 +15,7 @@ struct preNORTA
     ρhat::Float64
     function preNORTA(d,ρ,ρhat=ρ)
         L , H = minmax(sign(ρ),0) # Lower bound, Higher bound
+        ϵ = min(0.01,(1-abs(ρ))/10)
         while true
             N = [rand(MvNormal([1 ρhat;ρhat 1])) for i=1:10000]
             X = []
@@ -26,7 +27,7 @@ struct preNORTA
             end
              
             temp = cor(X,Y)
-            if abs(temp-ρ) <0.01 || H - L <0.01
+            if abs(temp-ρ) < ϵ || H - L < ϵ
                 break
             end
             if temp < ρ
