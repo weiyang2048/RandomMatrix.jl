@@ -7,7 +7,7 @@ If there is any functionality you want me to implement, please raise an issue.
 > 
 > The following list will not be receiving any update   05/03/21
 > 
-> names not listed below:  randDiagonal, randTriangular, GOE, GUE
+> names not listed below:  randDiagonal, randTriangular, GOE, GUE   (05/03/21)
 - [Examples](#examples)
   - [Random Matrix Theory](#random-matrix-theory)
     - [Random Matrix Models](#random-matrix-models)
