@@ -2,7 +2,9 @@ A package for Random Matrix Theory.
 
 Hoping to add-in enough functionalities and register in Aug 2021.
 If there is any functionality you want me to implement, please raise an issue.
+
 > Examples will be slowly moving to the documentation page (still creating)  05/03/21
+> 
 > The following list will not be receiving any update   05/03/21
 - [Examples](#examples)
   - [Random Matrix Theory](#random-matrix-theory)
