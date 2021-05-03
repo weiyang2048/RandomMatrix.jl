@@ -6,6 +6,8 @@ If there is any functionality you want me to implement, please raise an issue.
 > Examples will be slowly moving to the documentation page (still creating)  05/03/21
 > 
 > The following list will not be receiving any update   05/03/21
+> 
+> names not listed below:  randDiagonal, randTriangular, GOE, GUE
 - [Examples](#examples)
   - [Random Matrix Theory](#random-matrix-theory)
     - [Random Matrix Models](#random-matrix-models)
