@@ -2,7 +2,7 @@ using Documenter, RandomMatrix
 
 const PAGES = Any["Home" =>"index.md",
       "Random Matrix Models" =>[
-            "IID Matrices.md"=>"IID Matrices.md",
+            "I.I.D. entries"=>"IID Matrices.md",
             "Others" =>"Others.md"
       ] 
 

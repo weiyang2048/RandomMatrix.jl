@@ -1,6 +1,4 @@
 ```@docs
-randMatrix
-
 randHermitian
 
 randSymmetric
