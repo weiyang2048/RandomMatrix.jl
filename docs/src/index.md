@@ -1,29 +1,6 @@
 # RandomMatrix.jl Documentation
 
-```@docs
-randMatrix
+A package for Random Matrix Theory.
 
-randHermitian
+Hoping to add-in enough functionalities and register in Aug 2021. If there is any functionality you want me to implement, please raise an issue.
 
-randSymmetric
-
-randUnitary
-
-randOrthogonal
-
-Haar
-
-randPermutation
-
-randEllipic
-
-resolvent
-
-ComplexNormal
-
-Gaussian
-
-MarchenkoPastur
-
-±
-```
