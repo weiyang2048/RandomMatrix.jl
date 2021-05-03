@@ -8,7 +8,14 @@ using LinearAlgebra
 using SparseArrays: spzeros
 using Plots: heatmap, cgrad
 
-include("randMatrix.jl")
+
+const S = Union{Tuple,AbstractArray,Distribution,DataType}
+
+export 
+    randMatrix, randDiagonal, randTriangular, 
+     randHermitian, randSymmetric, GOE, GUE
+
+include("IID Matrices.jl")
 
 include("HermitianMatrix.jl")
 

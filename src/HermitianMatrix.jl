@@ -1,32 +1,9 @@
-export randDiagonal,randTriangular, randHermitian, randSymmetric, GOE, GUE
 
-function randDiagonal(d::D, n::Int)  where D<:Any
-    Diagonal(rand(d,n))
-end
-
-randDiagonal(n::Int) =  randDiagonal(Normal(), n::Int)
-
-###############################
-function randTriangular(d::D, n::Int; Diag=d::D ,diag=true, upper = true)  where D<:Any
-    M = UpperTriangular(zeros(eltype(d),n,n)) 
-    for i in 1:n, j in i+1:n
-        M[i,j] = rand(d)
-    end
-    if diag
-        M+=randDiagonal(Diag,n)
-    end
-
-    if !upper
-        M=transpose(M)
-    end
-    M
-end
-randTriangular(n::Int;diag=true, upper = true) = randTriangular(Normal(),n,diag=diag,upper=upper)
 
 #################################################
 """
 ```julia
-randHermitian(d::D, n::Int; Diag = d::D, norm = false::Bool) where T<:Any
+randHermitian(d::D, n::Int; Diag = d::D, norm = false::Bool) where T<:S
 
 randHermitian(n::Int; norm = false::Bool)
 ```
@@ -54,7 +31,7 @@ randHermitian(1:10,2)
 randHermitian([-1,pi],2)
 ``` 
 """
-function randHermitian(d::D, n::Int; Diag=d::D, norm = false::Bool)  where D<:Any
+function randHermitian(d::D, n::Int; Diag=d::D, norm = false::Bool)  where D<:S
     
     M = randTriangular(d,n,Diag=Diag)
 
@@ -73,7 +50,7 @@ end
 
 """
 ```julia
-randSymmetric(d::D, n::Int; Diag = d::D,  norm = false::Bool) where T<:Any
+randSymmetric(d::D, n::Int; Diag = d::D,  norm = false::Bool) where T<:S
 
 randSymmetric(n::Int; norm = false::Bool)
 ```
@@ -89,7 +66,7 @@ randSymmetric(n::Int; norm = false::Bool)
 randSymmetric(2)
 ``` 
 """
-function  randSymmetric(d::D, n::Int; Diag = d::D, norm = false::Bool)  where D<:Any
+function  randSymmetric(d::D, n::Int; Diag = d::D, norm = false::Bool)  where D<:S
 
     M = randTriangular(d,n,Diag=Diag)
 

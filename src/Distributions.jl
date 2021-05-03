@@ -148,7 +148,7 @@ struct  Circular <:ContinuousUnivariateDistribution
 end
 
 Base.eltype(::Type{Circular}) = ComplexF64
-function Base.rand(rng::AbstractRNG, d::Circular) 
+function rand(rng::AbstractRNG, d::Circular) 
     while true 
         x_1 = rand(rng,Uniform(-1,1))
         x_2 = rand(rng,Uniform(-1,1))
@@ -176,7 +176,7 @@ end
 
 Base.eltype(::Type{Elliptic}) = ComplexF64
 
-function Base.rand(rng::AbstractRNG, d::Elliptic) 
+function rand(rng::AbstractRNG, d::Elliptic) 
     while true 
         x_1 = rand(rng,Uniform(-(1+d.ρ),(1+d.ρ)))
         x_2 = rand(rng,Uniform(-(1-d.ρ),(1-d.ρ)))

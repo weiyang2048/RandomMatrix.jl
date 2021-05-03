@@ -2,11 +2,11 @@ export randToeplitz
 
 """
 ```julia
-randToeplitz(d::D, n::Int;  norm = false::Bool, hermitian=true::Bool)  where D<:Any
+randToeplitz(d::D, n::Int;  norm = false::Bool, hermitian=true::Bool)  where D<:S
 ```
 - The limiting spectral distribution of random Toeplitz matrices is still an open problem
 """
-function  randToeplitz(d::D, n::Int;  norm = false::Bool, hermitian=true::Bool)  where D<:Any
+function  randToeplitz(d::D, n::Int;  norm = false::Bool, hermitian=true::Bool)  where D<:S
     if hermitian
       t = rand(d,n)
       t = [t[n:-1:2]'..., t...]

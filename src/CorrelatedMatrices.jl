@@ -10,7 +10,7 @@ export randEllipic,randStochastic
     The generated vector entries usually have a smaller correlation than what is aimed for.
 """
 struct preNORTA 
-    d::D where D<:Any
+    d::D where D<:S
     ρ::Float64
     ρhat::Float64
     function preNORTA(d,ρ,ρhat=ρ)
@@ -41,7 +41,7 @@ struct preNORTA
 end 
 """
 ```julia
-randEllipic(d::D, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where  D<:Any
+randEllipic(d::D, n::Int; r = 0.5::Float64, Diag=d::T, norm = false::Bool) where  D<:S
 
 randEllipic(n::Int; r=0.5::Float64, norm = false::Bool)
 ```
@@ -66,7 +66,7 @@ using Distributions
 randEllipic(Poisson(10),500, r=0.1 , norm=true)
 ```
 """
-function randEllipic(d::D, n::Int; r = 0.5::Float64, Diag=d::D, norm = false::Bool) where  D<:Any
+function randEllipic(d::D, n::Int; r = 0.5::Float64, Diag=d::D, norm = false::Bool) where  D<:S
     if r==1
         return randHermitian(d,n,Diag=Diag,norm=norm)
     end
