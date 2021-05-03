@@ -1,7 +1,7 @@
 module RandomMatrix
 
 using StatsBase: sample, Weights 
-import Distributions: mean, var
+import Distributions: mean, var, rand
 using Distributions
 using Random
 using LinearAlgebra 

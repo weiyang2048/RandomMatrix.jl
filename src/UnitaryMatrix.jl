@@ -73,7 +73,7 @@ struct Haar <: ContinuousMatrixDistribution
     Haar(beta,n) = beta in (1,2) ? new(beta,n) : error("Only take beta = 1 for orthogonal, beta = 2 for unitary")
 end
 Base.size(d::Haar) = d.n
-Base.rand(d::Haar) = d.beta == 1 ? randOrthogonal(d.n) : randUnitary(d.n)
+rand(d::Haar) = d.beta == 1 ? randOrthogonal(d.n) : randUnitary(d.n)
 
 """
 ```julia

@@ -1,7 +1,7 @@
 export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur
         
         # re-export    
-export mean, var, pdf
+export mean, var, pdf,rand
 
 """
 ```julia
@@ -94,7 +94,7 @@ struct ComplexNormal<:ContinuousUnivariateDistribution
 end
 
 Base.eltype(::Type{ComplexNormal}) = ComplexF64
-Base.rand(rng::AbstractRNG, d::ComplexNormal) = randn(rng,ComplexF64)*d.σ+d.μ;
+rand(rng::AbstractRNG, d::ComplexNormal) = randn(rng,ComplexF64)*d.σ+d.μ;
 
 mean(d::ComplexNormal)=d.μ
 var(d::ComplexNormal)=d.σ
