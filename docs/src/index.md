@@ -3,15 +3,15 @@
 A package for Random Matrix Theory.
 
 Hoping to add-in enough functionalities and register in Aug 2021. If there is any functionality you want me to implement, please raise an issue.
-```@example
+```@eval
 using Plots, RandomMatrix, LinearAlgebra
-gr() # hide
-Plots.reset_defaults() # hide
+gr()  
+Plots.reset_defaults()  
 M = randMatrix(1000)
 H = Hermitian(M)
 
 l=@layout[c c]
-colors = [:red,:blue,:green,:purple]
+colors = [:red,:blue,:blue,:blue,:green,:green,:purple,:purple,:purple,:purple]
 @gif for n = 1:10:1000
      
   p1 = M[1:n,1:n]/sqrt(n)|>
