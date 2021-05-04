@@ -12,7 +12,7 @@ H = Hermitian(M)
 
 l=@layout[c c]
 colors = [:red,:blue,:green,:purple]
-@gif for n = 1:1:1000
+@gif for n = 1:10:1000
      
   p1 = M[1:n,1:n]/sqrt(n)|>
         eigvals|>
@@ -23,11 +23,11 @@ colors = [:red,:blue,:green,:purple]
     
   p2 = H[1:n,1:n]/sqrt(n)|>
         eigvals|>
-        x->histogram(x,norm=true,
-        ylims=(0,0.5), xlims=(-2.5,2.5),
-        nbins = ceil(Int,sqrt(n)), label="n = $(n)",c=rand(colors))
+         x->histogram(x,norm=true,
+           ylims=(0,0.5), xlims=(-2.5,2.5),
+            nbins = ceil(Int,sqrt(n)), label="n = $(n)",c=rand(colors))
   title!("Semicircle Law")  
-  
+
   plot(p1,p2,size = (1000, 500))
 end 
 
