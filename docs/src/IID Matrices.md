@@ -1,22 +1,26 @@
-# Matrices with IID Entries
+### Matrices with IID Entries
 
-## Diagonal Matrices
+### Diagonal Matrices
 ```@docs
 randDiagonal
 ```
 
-## TriangularMatrices
+### TriangularMatrices
 ```@docs
 randTriangular
 ```
 
-## Full Matrices
+### Full Matrices
 ```@docs
 randMatrix
 ```
 
-```@eval
-using RandomMatrix, LinearAlgebra, Plots
+
+
+```@eval circularlaw
+using RandomMatrix, LinearAlgebra
+using Plots; gr()
+Plots.reset_defaults()
 
 @gif for n = 1:10:500
      

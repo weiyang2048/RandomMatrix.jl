@@ -1,5 +1,9 @@
 using Documenter, RandomMatrix, Plots, LinearAlgebra
 
+ENV["GRDIR"] = ""
+Pkg.build("GR")
+
+
 const PAGES = Any["Home" =>"index.md",
       "Random Matrix Models" =>[
             "I.I.D. entries"=>"IID Matrices.md",

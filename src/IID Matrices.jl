@@ -35,7 +35,7 @@ randTriangular(n::Int;diag=true, upper = true)
 - `n` : dimension
 - `Diag` : default `Diag = d`, diagonal entry distribution
 - `diag` : default `diag = true`, `true` includes diagonal, `false` with diagonal entries 0
-- `upper` : default `upper = true`, `true` gives upper triangular, false gives lower triangular
+- `upper` : default `upper = true`, `true` gives upper triangular, `false` gives lower triangular
 """
 function randTriangular(d::D, n::Int; Diag=d::D ,diag=true, upper = true)  where D<:S
     M = UpperTriangular(zeros(eltype(d),n,n)) 
