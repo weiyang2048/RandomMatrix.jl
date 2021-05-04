@@ -1,4 +1,4 @@
-using Documenter, RandomMatrix, Plots
+using Documenter, RandomMatrix, Plots, LinearAlgebra
 
 const PAGES = Any["Home" =>"index.md",
       "Random Matrix Models" =>[

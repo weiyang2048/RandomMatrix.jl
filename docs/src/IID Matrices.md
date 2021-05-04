@@ -1,30 +1,29 @@
-# Diagonal Matrices
+# Matrices with IID Entries
+
+## Diagonal Matrices
 ```@docs
 randDiagonal
 ```
 
-# TriangularMatrices
+## TriangularMatrices
 ```@docs
 randTriangular
 ```
 
-# Full Matrices
+## Full Matrices
 ```@docs
 randMatrix
 ```
 
 ```@eval
-using RandomMatrix, Plots
+using RandomMatrix, LinearAlgebra, Plots
 
-anim = @animate for n = 1:10:1000
+@gif for n = 1:10:500
      
     randMatrix(n,norm = true)|>
     eigvals|>
-    x->scatter(x,ratio=1,xlims=(-1.5,1.5),label="n = $(n)")
+    x->scatter(x,ratio=1,xlims=(-1.5,1.5),label="n = $(n)",axis=false)
 
     title!("Circular Law")
-end
-
-gif(anim,raw"Circular Law.gif",fps=20)
+end 
 ```
-![](Circular Law.gif)
