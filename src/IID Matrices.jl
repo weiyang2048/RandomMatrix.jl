@@ -1,5 +1,23 @@
 
+"""
+```julia
+randDiagonal(d, n) 
 
+randDiagonal(n) 
+````
+- `d` : entry distribution
+- `n` : dimension
+
+```julia
+# Examples
+
+# generates a 5 by 5 diagonal matrix, with non-zero elements from `Normal(0,1)`
+randDiagonal(5)
+
+# generates a 5 by 5 diagonal matrix, with non-zero elements from `Poisson(2)``
+randDiagonal(Poisson(2),5)
+```
+"""
 function randDiagonal(d::D, n::Int)  where D<:S
     Diagonal(rand(d,n))
 end
@@ -7,6 +25,18 @@ end
 randDiagonal(n::Int) =  randDiagonal(Normal(), n::Int)
 
 ###############################
+"""
+```julia 
+randTriangular(d::D, n::Int; Diag=d::D ,diag=true, upper = true) 
+
+randTriangular(n::Int;diag=true, upper = true)
+```
+- `d` : entry distribution
+- `n` : dimension
+- `Diag` : default `Diag = d`, diagonal entry distribution
+- `diag` : default `diag = true`, `true` includes diagonal, `false` with diagonal entries 0
+- `upper` : default `upper = true`, `true` gives upper triangular, false gives lower triangular
+"""
 function randTriangular(d::D, n::Int; Diag=d::D ,diag=true, upper = true)  where D<:S
     M = UpperTriangular(zeros(eltype(d),n,n)) 
     for i in 1:n, j in i+1:n
@@ -51,7 +81,7 @@ randMatrix(Poisson(2),2,norm = true)
 """
 function randMatrix(d::D, n::Int, m = n::Int ; norm = false::Bool)  where D<:S
  
-    M = reshape([rand(d) for i = 1:n*m],(n,m))
+    M =  rand(d,n,m)
 
     if norm
         M/=sqrt(min(n,m))
