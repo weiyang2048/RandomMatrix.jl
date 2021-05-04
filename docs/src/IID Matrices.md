@@ -1,18 +1,18 @@
 # Matrices with IID Entries
 
-## Diagonal Matrices
+# Diagonal Matrices
 
 ```@docs
 randDiagonal
 ```
 
-## TriangularMatrices
+# TriangularMatrices
 
 ```@docs
 randTriangular
 ```
 
-## Full Matrices
+# Full Matrices
 
 ```@docs
 randMatrix

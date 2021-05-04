@@ -1,8 +1,7 @@
-using Documenter, RandomMatrix, Plots, LinearAlgebra , Pkg
+using Documenter, RandomMatrix, Plots, LinearAlgebra  
 
-ENV["GRDIR"] = ""
-Pkg.build("GR")
 
+gr()
 
 const PAGES = Any["Home" =>"index.md",
       "Random Matrix Models" =>[
