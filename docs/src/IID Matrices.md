@@ -27,4 +27,4 @@ end
 
 gif(anim,raw"Circular Law.gif",fps=20)
 ```
-![](Circular Law.fig)
+![](Circular Law.gif)
