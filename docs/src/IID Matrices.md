@@ -14,7 +14,7 @@ randMatrix
 ```
 
 ```@eval
-using Plots
+using RandomMatrix, Plots
 
 anim = @animate for n = 1:10:1000
      

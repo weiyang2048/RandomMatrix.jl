@@ -4,7 +4,7 @@
 randDiagonal(d, n) 
 
 randDiagonal(n) 
-````
+```
 - `d` : entry distribution
 - `n` : dimension
 
@@ -14,7 +14,7 @@ randDiagonal(n)
 # generates a 5 by 5 diagonal matrix, with non-zero elements from `Normal(0,1)`
 randDiagonal(5)
 
-# generates a 5 by 5 diagonal matrix, with non-zero elements from `Poisson(2)``
+# generates a 5 by 5 diagonal matrix, with non-zero elements from `Poisson(2)`
 randDiagonal(Poisson(2),5)
 ```
 """
