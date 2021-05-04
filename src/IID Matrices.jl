@@ -24,7 +24,7 @@ end
 
 randDiagonal(n::Int) =  randDiagonal(Normal(), n::Int)
 
-###############################
+
 """
 ```julia 
 randTriangular(d::D, n::Int; Diag=d::D ,diag=true, upper = true) 

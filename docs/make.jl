@@ -1,4 +1,4 @@
-using Documenter, RandomMatrix, Plots, LinearAlgebra, Pkg
+using Documenter, RandomMatrix, Plots, LinearAlgebra , Pkg
 
 ENV["GRDIR"] = ""
 Pkg.build("GR")
@@ -18,4 +18,6 @@ makedocs(modules = [RandomMatrix],
       pages = PAGES
       )
 
-deploydocs(repo = "github.com/weiyang2048/RandomMatrix.jl.git",devbranch = "main")
+deploydocs(repo = "github.com/weiyang2048/RandomMatrix.jl.git",
+devbranch = "main",
+push_preview=true )
