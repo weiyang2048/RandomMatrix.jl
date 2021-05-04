@@ -1,4 +1,4 @@
-using Documenter, RandomMatrix, Plots, LinearAlgebra
+using Documenter, RandomMatrix, Plots, LinearAlgebra, Pkg
 
 ENV["GRDIR"] = ""
 Pkg.build("GR")
