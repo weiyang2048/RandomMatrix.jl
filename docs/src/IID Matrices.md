@@ -1,29 +1,31 @@
 # Matrices with IID Entries
 
-# Diagonal Matrices
+## Diagonal Matrices
 
 ```@docs
 randDiagonal
 ```
 
-# TriangularMatrices
+## TriangularMatrices
 
 ```@docs
 randTriangular
 ```
 
-# Full Matrices
+## Full Matrices
 
 ```@docs
 randMatrix
 ```
 
 
-
-```@eval 
-using RandomMatrix, LinearAlgebra
+```@setup index
 using Plots; gr()
 Plots.reset_defaults()
+```
+
+```@example index
+using RandomMatrix, LinearAlgebra
 
 @gif for n = 1:10:500
      

@@ -1,6 +1,6 @@
 using Documenter, RandomMatrix, Plots, LinearAlgebra  
 
-
+ENV["GKSwstype"] = "100"
 gr()
 
 const PAGES = Any["Home" =>"index.md",
