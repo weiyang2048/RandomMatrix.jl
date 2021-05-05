@@ -61,8 +61,10 @@ randMatrix(d::D, n::Int, m = n::Int; norm = false::Bool) where D<:S
 randMatrix(n::Int, m = n::Int; norm = false::Bool)
 ```
 - `d` : entry distribution
-- `n`,`m` : dimensions, if `m` is not provided, by default `m=n` 
-- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
+- `n`,`m` : default `m = n` , dimensions
+
+Keyword arguments:
+- `norm` : default `false`, if `norm` set to `true`, then the matrix will be normlaized with ``\\min{n,m}^(-1/2)``.  
 
 ```julia
 # Examples
@@ -77,14 +79,13 @@ randMatrix(1:10,3,2)
 # Need to import the `Distributions` package for `Poisson(2)`
 randMatrix(Poisson(2),2,norm = true)
 ``` 
-
 """
 function randMatrix(d::D, n::Int, m = n::Int ; norm = false::Bool)  where D<:S
  
     M =  rand(d,n,m)
 
-    if norm
-        M/=sqrt(min(n,m))
+    if norm   
+         M/=sqrt(min(n,m))  
     end
     
     return M

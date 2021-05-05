@@ -12,7 +12,7 @@ using Plots: heatmap, cgrad
 const S = Union{Tuple,AbstractArray,Distribution,DataType}
 
 export 
-    randMatrix, randDiagonal, randTriangular, 
+     randDiagonal, randTriangular, randMatrix,
      randHermitian, randSymmetric, GOE, GUE
 
 include("IID Matrices.jl")
