@@ -26,8 +26,7 @@ anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
         plot!(x->pdf(Semicircle(2),x),-2:0.01:2,lw=3,label="",c=[rand(colors) for _=-2:0.01:2])
         title!("Semicircle Law for Hermitian Matrices")
     
-    p4 = randEllipic(500,r=((N-2*n)/N)+0.0001,norm=true)|>eigvals|>x->scatter(x,ylims=(-2,2), xlims=(-2,2),ratio=1,label="ρ = $(round(((N-2*n)/N)+0.0001,digits=2))")
-   title!("Elliptical Law")
+    p4 = plot(rand(5))
   plot(p1,p2,p3,p4,size = (1000, 1000),axis=false)
 end 
 gif(anim, "testing1.gif", fps = 10)
