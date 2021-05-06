@@ -2,14 +2,14 @@
 
 
 ```@eval
-using Plots, RandomMatrix, LinearAlgebra, Distributions, Plots.PlotMeasures 
+using Plots, RandomMatrix, LinearAlgebra, Distributions
 gr()  
 Plots.reset_defaults() 
 N = 500
 M = randMatrix(N)
 H = randHermitian(N)
 U = randUnitary(N)
-l=@layout[c c; c c]
+l = @layout[c c; c c]
 colors = [:red,:green,:blue,:purple]
  
 anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
