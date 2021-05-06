@@ -3,23 +3,24 @@
 #################################################
 """
 ```julia
-randHermitian(d::D, n::Int; Diag = d::D, norm = false::Bool) where T<:S
+randHermitian(d, n; Diag, norm )
 
-randHermitian(n::Int; norm = false::Bool)
+randHermitian(n; norm)
 ```
 - `d` : entry distribution
 - `n`  : dimensions 
 - `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
 - `Diag` : the distribution for diagonal entries, by default `Diag=d`. 
     To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
-```julia
+
 # Examples
-
-# Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
+Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
+```julia
 randHermitian(2)
-
-# Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
-# *Need to import the `Distributions` package for `Poisson(2)`*
+```
+Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
+*Need to import the `Distributions` package for `Poisson(2)`*
+```julia
 randHermitian(Poisson(2),2)
 # or equivalently 
 randSymmetric(Poisson(2),2)
@@ -31,7 +32,7 @@ randHermitian(1:10,2)
 randHermitian([-1,pi],2)
 ``` 
 """
-function randHermitian(d::D, n::Int; Diag=d::D, norm = false::Bool)  where D<:S
+function randHermitian(d::D, n::Int; diag=d::D, norm = false::Bool)  where D<:S
     
     M = randTriangular(d,n,Diag=Diag)
 
@@ -44,7 +45,7 @@ end
 
 
 function randHermitian(n::Int; norm = false::Bool)
-    return randHermitian(ComplexNormal(), n, Diag=Normal(), norm = norm)
+    return randHermitian(ComplexNormal(), n, diag=Normal(), norm = norm)
 end
 
 
@@ -92,4 +93,4 @@ struct GUE <: ContinuousMatrixDistribution
     n::Int
 end
 
-rand(rng::AbstractRNG, M::GUE) = randHermitian(ComplexNormal(),M.n,Diag=Normal(),norm=true)
+rand(rng::AbstractRNG, M::GUE) = randHermitian(ComplexNormal(),M.n,diag=Normal(),norm=true)
