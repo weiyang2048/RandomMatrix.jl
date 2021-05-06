@@ -67,9 +67,9 @@ randSymmetric(n::Int; norm = false::Bool)
 randSymmetric(2)
 ``` 
 """
-function  randSymmetric(d::D, n::Int; Diag = d::D, norm = false::Bool)  where D<:S
+function  randSymmetric(d::D, n::Int; diag = d::D, norm = false::Bool)  where D<:S
 
-    M = randTriangular(d,n,Diag=Diag)
+    M = randTriangular(d,n,diag=diag)
 
     if norm
         M/=sqrt(n)
@@ -87,7 +87,7 @@ struct GOE <: ContinuousMatrixDistribution
     n::Int
 end
 
-rand(rng::AbstractRNG, M::GOE) = randSymmetric(Normal(),M.n,Diag=Normal(0,sqrt(2)),norm=true)
+rand(rng::AbstractRNG, M::GOE) = randSymmetric(Normal(),M.n,diag=Normal(0,sqrt(2)),norm=true)
 
 struct GUE <: ContinuousMatrixDistribution
     n::Int
