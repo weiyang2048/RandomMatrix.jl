@@ -31,8 +31,7 @@ using Plots
 end
 ```
 
-
-
+ 
 ```@example 
 using Plots
 q = @animate for i =1 :10

@@ -12,7 +12,7 @@ U = randUnitary(N)
 l = @layout[c c; c c]
 colors = [:red,:green,:blue,:purple]
  
-anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
+@gif for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
      
   p1 = M[1:n,1:n]/sqrt(n)|>eigvals|>x->scatter(x,ylims=(-1.25,1.25), xlims=(-1.25,1.25),ratio=1,label="n = $(n)")
         plot!([exp(θ*im) for θ=0:0.01:2pi],label="",lw=3,c=[rand(colors) for _=0:0.01:2pi])
@@ -29,6 +29,6 @@ anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
     p4 = plot(rand(5))
   plot(p1,p2,p3,p4,size = (1000, 1000),axis=false)
 end 
-gif(anim, "testing1.gif", fps = 10)
+
 ```
-![](testing1.gif)
+ 
