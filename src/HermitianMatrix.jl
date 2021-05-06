@@ -3,14 +3,14 @@
 #################################################
 """
 ```julia
-randHermitian(d, n; Diag, norm )
+randHermitian(d, n; diag, norm )
 
 randHermitian(n; norm)
 ```
 - `d` : entry distribution
 - `n`  : dimensions 
 - `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
-- `Diag` : the distribution for diagonal entries, by default `Diag=d`. 
+- `diag` : the distribution for diagonal entries, by default `Diag=d`. 
     To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
 
 # Examples
@@ -34,7 +34,7 @@ randHermitian([-1,pi],2)
 """
 function randHermitian(d::D, n::Int; diag=d::D, norm = false::Bool)  where D<:S
     
-    M = randTriangular(d,n,Diag=Diag)
+    M = randTriangular(d,n,diag=diag)
 
     if norm
         M/=sqrt(n)
