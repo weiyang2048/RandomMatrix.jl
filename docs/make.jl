@@ -5,8 +5,9 @@ gr()
 
 const PAGES = Any["Home" =>"index.md",
       "Random Matrix Models" =>[
-            "I.I.D. entries"=>"IID Matrices.md",
-            "Stochastic Matrices"=>"Stochastic.md"
+            "I.I.D. Matrices"=>"IID Matrices.md",
+            "Hermitian Matrices"=>"Hermitian.md",
+            "Stochastic Matrices"=>"Stochastic.md",
             "Under Construction1" =>"Others.md",
             "Under Construction2" =>"Gallery.md"
       ] 

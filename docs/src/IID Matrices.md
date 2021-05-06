@@ -19,7 +19,7 @@ randMatrix
 ```
 
 
-
+## Some Random Matrix Theory
 ```@example 
 using Plots, RandomMatrix, LinearAlgebra
 gr() # hide

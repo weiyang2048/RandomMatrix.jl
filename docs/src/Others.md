@@ -1,8 +1,4 @@
 ```@docs
-randHermitian
-
-randSymmetric
-
 randUnitary
 
 randOrthogonal
