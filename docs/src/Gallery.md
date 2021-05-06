@@ -1,3 +1,4 @@
+ 
 ```@example
 using Plots, RandomMatrix, LinearAlgebra, Distributions, Plots.PlotMeasures 
 gr()  # hide
@@ -21,3 +22,8 @@ colors = [:red,:green,:blue,:purple]
   p2 = H[1:n,1:n]/sqrt(n)|> eigvals|> x->histogram(x,norm=true, ylims=(0,1/pi+0.2), xlims=(-2.25,2.25),nbins = ceil(Int,sqrt(n)),label="n = $(n)")
         plot!(x->pdf(Semicircle(2),x),-2:0.01:2,lw=3,label="",c=[rand(colors) for _=-2:0.01:2])
         title!("Semicircle Law for Hermitian Matrices")
+            p4 = randEllipic(500,r=((N-2*n)/N)+0.0001,norm=true)|>eigvals|>x->scatter(x,ylims=(-2,2), xlims=(-2,2),ratio=1,label="ρ = $(round(((N-2*n)/N)+0.0001,digits=2))")
+   title!("Elliptical Law")
+  plot(p1,p2,p3,p4,size = (1000, 1000),axis=false)
+end 
+```
