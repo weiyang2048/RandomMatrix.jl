@@ -9,9 +9,9 @@ randHermitian(n; norm)
 ```
 - `d` : entry distribution
 - `n`  : dimensions 
-- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
-- `diag` : the distribution for diagonal entries, by default `Diag=d`. 
-    To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
+- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.  
+- `diag` : the distribution for diagonal entries, by default `diag=d`. 
+    To use a different distribution (say Binomial) for digonal elements, set `diag = Binomial(1,0.5)`
 
 # Examples
 Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
@@ -58,8 +58,8 @@ randSymmetric(n::Int; norm = false::Bool)
 - `d` : entry distribution
 - `n` : dimensions 
 - `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
-- `Diag` : the distribution for diagonal entries, by default `Diag=d`. 
-    To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
+- `Diag` : the distribution for diagonal entries, by default `diag=d`. 
+    To use a different distribution (say Binomial) for digonal elements, set `diag = Binomial(1,0.5)`
 ```julia
 # Examples
 

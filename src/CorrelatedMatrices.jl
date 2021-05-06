@@ -68,7 +68,7 @@ randEllipic(Poisson(10),500, r=0.1 , norm=true)
 """
 function randEllipic(d::D, n::Int; r = 0.5::Float64, Diag=d::D, norm = false::Bool) where  D<:S
     if r==1
-        return randHermitian(d,n,Diag=Diag,norm=norm)
+        return randHermitian(d,n,diag=diag,norm=norm)
     end
     # TODO: take care of the r=-1 case.
 
@@ -119,9 +119,10 @@ julia> randStochastic(3,type=2,norm=true)
  0.475834  1.04453   0.696473
 ```
 """
-function randStochastic(n::Int; type = 1 ::Int, norm = false::Bool)
+function randStochastic(n::Int; type = 3 ::Int, norm = false::Bool)
     if type == 3
-       M = randOrthogonal(n).^2
+       M = randUnitary(500)
+       M = M.*conj(M)*sqrt(n)
     else 
         M = rand(n,n)
         for i in 1:n
