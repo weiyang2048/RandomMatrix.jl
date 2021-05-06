@@ -27,3 +27,30 @@ colors = [:red,:green,:blue,:purple]
   plot(p1,p2,p3,p4,size = (1000, 1000),axis=false)
 end 
 ```
+
+
+
+ 
+```@example
+using Plots, RandomMatrix, LinearAlgebra, Distributions
+gr()  # hide
+Plots.reset_defaults() # hide
+N = 500
+M = randMatrix(N)
+U = randUnitary(N)
+l=@layout[c c]
+colors = [:red,:green,:blue,:purple]
+ 
+@gif for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
+     
+  p1 = M[1:n,1:n]/sqrt(n)|>eigvals|>x->scatter(x,ylims=(-1.25,1.25), xlims=(-1.25,1.25),ratio=1,label="n = $(n)")
+        plot!([exp(θ*im) for θ=0:0.01:2pi],label="",lw=3,c=[rand(colors) for _=0:0.01:2pi])
+        title!("Circular Law for IID Matrices")
+    p2 = U[1:N-n÷2,1:N-n÷2]|>eigvals|>x->scatter(x,ylims=(-1.25,1.25), xlims=(-1.25,1.25),ratio=1,label="ratio = $(round((N-n÷3)/N,digits=2))")
+        plot!([exp(θ*im) for θ=0:0.01:2pi],label="",lw=3,c=[rand(colors) for _=0:0.01:2pi])
+        plot!(sqrt((N-n÷2)/N)*[exp(θ*im) for θ=0:0.01:2pi],label="",lw=3,c=[rand(colors) for _=0:0.01:2pi],alpha=0.1)
+        title!("Circular Law for Truncated Unitary")
+
+  plot(p1,p2,size = (1000, 500),axis=false)
+end 
+```

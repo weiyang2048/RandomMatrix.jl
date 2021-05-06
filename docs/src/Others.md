@@ -26,10 +26,12 @@ MarchenkoPastur
 
 ```@example 
 using Plots
-@gif for i =1 :10
+q = @animate for i =1 :10
     plot(rand(10))
 end
+gif(q,"p.gif")
 ```
+
 
  
 ```@example 
@@ -39,4 +41,4 @@ q = @animate for i =1 :10
 end
 gif(q,"q.gif")
 ```
-![](q.gif)
+![](q.gif)![](p.gif)
