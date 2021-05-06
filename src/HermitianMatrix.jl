@@ -51,14 +51,14 @@ end
 
 """
 ```julia
-randSymmetric(d::D, n::Int; Diag = d::D,  norm = false::Bool) where T<:S
+randSymmetric(d, n; Diag, norm) 
 
-randSymmetric(n::Int; norm = false::Bool)
+randSymmetric(n; norm)
 ```
 - `d` : entry distribution
 - `n` : dimensions 
-- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
-- `Diag` : the distribution for diagonal entries, by default `diag=d`. 
+- `norm` : default  `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
+- `diag` : default `diag = d`, the distribution for diagonal entries. 
     To use a different distribution (say Binomial) for digonal elements, set `diag = Binomial(1,0.5)`
 ```julia
 # Examples
@@ -75,7 +75,7 @@ function  randSymmetric(d::D, n::Int; diag = d::D, norm = false::Bool)  where D<
         M/=sqrt(n)
     end
     
-    return Symmetric(convert(Matrix,M),M)
+    return Symmetric(convert(Matrix,M))
 end
 
 
@@ -83,12 +83,41 @@ function randSymmetric(n::Int; norm = false::Bool)
     return randSymmetric(Normal(), n, norm = norm)
 end
 
+"""
+```julia
+GOE <: ContinuousMatrixDistribution
+GOE(n)
+```
+
+- `n` : dimension
+
+# Examples
+
+Sample a 3 by 3 random matrix from GOE(5)
+```julia
+julia> rand(GOE(3))
+
+3×3 Symmetric{Float64, Matrix{Float64}}:
+  0.216246   0.148277  -0.71106
+  0.148277  -0.341516  -0.204024
+ -0.71106   -0.204024  -0.338064
+
+```
+"""
 struct GOE <: ContinuousMatrixDistribution
     n::Int
 end
 
 rand(rng::AbstractRNG, M::GOE) = randSymmetric(Normal(),M.n,diag=Normal(0,sqrt(2)),norm=true)
 
+"""
+```julia
+GUE <: ContinuousMatrixDistribution
+GUE(n)
+```
+
+- `n` : dimension
+"""
 struct GUE <: ContinuousMatrixDistribution
     n::Int
 end

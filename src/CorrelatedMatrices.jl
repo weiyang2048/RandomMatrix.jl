@@ -122,7 +122,7 @@ julia> randStochastic(3,type=2,norm=true)
 function randStochastic(n::Int; type = 3 ::Int, norm = false::Bool)
     if type == 3
        M = randUnitary(500)
-       M = M.*conj(M)*sqrt(n)
+       M = M.*conj(M)
     else 
         M = rand(n,n)
         for i in 1:n
