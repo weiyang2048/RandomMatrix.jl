@@ -32,4 +32,4 @@ anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
 end 
 gif(anim, "testing1.gif", fps = 10)
 ```
-![](testing1.png)
+![](testing1.gif)
