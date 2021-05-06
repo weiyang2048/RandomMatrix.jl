@@ -93,29 +93,47 @@ end
 
 """
 ```julia
-randStochastic(n::Int; type = 1 ::Int)
+randStochastic(n; type, norm)
 ```
 - `n`: dimension
-- `type` : default `type = 1`, `1` for row, `2` for column stochastic
+- `type` : default `type = 3`, `3` for doubly randStochastic, `1` for row, `2` for column stochastic 
+- `norm` : default `false`, if set to `true`, the matrix will be normalized by ``\\sqrt{n}`` (*not a typo*)
+# Examples 
 
+Generates a 3 by 3 random doubly stochastic  matrix
 ```julia 
-# Examples
+julia> randStochastic(3)
 
-# Generates a 1000 by 1000 row stochastic random matrix
-randStochastic(1000)
+3×3 Matrix{Float64}:
+ 0.132593  0.216041  0.651367
+ 0.484097  0.320777  0.195126
+ 0.261495  0.537825  0.20068
+```
+Generates a 3 by 3 normalized random column stochastic  matrix
+```julia
+julia> randStochastic(3,type=2,norm=true)
 
-# Generates a 1000 by 1000 column stochastic random matrix
-randStochastic(1000,type=2)
+3×3 Matrix{Float64}:
+ 0.583396  0.608739  0.732921
+ 0.672821  0.078786  0.302657
+ 0.475834  1.04453   0.696473
 ```
 """
-function randStochastic(n::Int; type = 1 ::Int)
-    M = rand(n,n)
-    for i in 1:n
-        M[i,:] /= sum(M[i,:])
+function randStochastic(n::Int; type = 1 ::Int, norm = false::Bool)
+    if type == 3
+       M = randOrthogonal(n).^2
+    else 
+        M = rand(n,n)
+        for i in 1:n
+            M[i,:] /= sum(M[i,:])
+        end
+        if type == 2
+            M = M'
+        end
     end
-
-    if type == 2
-        return M'
+    
+    if norm 
+        M*=sqrt(n)
     end
 
     return M

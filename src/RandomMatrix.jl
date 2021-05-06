@@ -34,6 +34,4 @@ include("Distributions.jl")
 include("Math.jl")
 
 include("Plots.jl")
-
-
 end # module
