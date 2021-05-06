@@ -1,3 +1,6 @@
+# <font color=red>**Under Construction**
+
+
 ```@example
 using Plots, RandomMatrix, LinearAlgebra, Distributions, Plots.PlotMeasures 
 gr()  # hide
@@ -32,3 +35,23 @@ end
 ```@eval
 1+1 # hide
 ```
+
+```@eval
+using Plots
+plot([1,2,3])
+```
+
+```@eval
+using Plots
+plot([1,2,3])
+savefig("testing1.png"); nothing # hide
+```
+![](testing1.png)
+
+
+```@eval
+using Plots
+plot([1,2,3])
+savefig("testing2.png"); nothing # hide
+```
+![](testing2.png)

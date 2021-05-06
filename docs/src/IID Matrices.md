@@ -24,16 +24,16 @@ randMatrix
 using Plots, RandomMatrix, LinearAlgebra
 gr() # hide
 Plots.reset_defaults() # hide
-
-M = randMatrix(500)
-@gif for n = 1:1:500
+N = 500
+M = randMatrix(N)
+colors = [:red,:green,:blue,:purple]
+@gif for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
      
-    M[1:n,1:n]/sqrt(n)|>
-        eigvals|>
-        x->scatter(x, ratio=1,
-            ylims=(-1.5,1.5), xlims=(-1.5,1.5),
-            label="n = $(n)", axis=false,
-            size = (500, 500))
-    title!("Circular Law")
+    M[1:n,1:n]/sqrt(n)|>eigvals|>x->scatter(x,ylims=(-1.25,1.25), xlims=(-1.25,1.25),ratio=1,label="n = $(n)")
+
+    p = plot!([exp(θ*im) for θ=0:0.01:2pi],label="",lw=3,c=[rand(colors) for _=0:0.01:2pi])
+        
+    title!("Circular Law for IID Matrices")
+
 end 
 ```
