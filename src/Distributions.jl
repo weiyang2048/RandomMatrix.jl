@@ -163,7 +163,9 @@ mean(d::Circular)=d.c
 
 """
 ```julia
-Elliptic(ρ=0.5,c=0,R=1)
+Elliptic <:ContinuousUnivariateDistribution
+
+Elliptic(ρ;c,R)
 ```
 - the uniform rv on an ellipse of width `2(1+ρ)R`, height `2(1-ρ)R` centered at `c`
 """
@@ -171,7 +173,7 @@ struct  Elliptic <:ContinuousUnivariateDistribution
     ρ::Float64
     c::ComplexF64  
     R::Float64 
-    function Elliptic(ρ=0.5,c=0,R=1) new(ρ,c,R) end
+    function Elliptic(ρ=0.5;c=0,R=1) new(ρ,c,R) end
 end
 
 Base.eltype(::Type{Elliptic}) = ComplexF64

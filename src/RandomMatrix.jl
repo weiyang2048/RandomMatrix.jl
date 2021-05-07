@@ -13,7 +13,8 @@ const S = Union{Tuple,AbstractArray,Distribution,DataType}
 
 export 
      randDiagonal, randTriangular, randMatrix,
-     randHermitian, randSymmetric, GOE, GUE
+     randHermitian, randSymmetric, GOE, GUE,
+     randStochastic
 
 include("IID Matrices.jl")
 

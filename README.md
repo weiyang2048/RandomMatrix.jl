@@ -1,6 +1,12 @@
-A package for Random Matrix Theory.
+A package for Random Matrix Theory.  The documentation can be found at ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***.
 
-Hoping to add-in enough functionalities and register in Aug 2021.
+
+The package currently is unregister, you can only add it by
+```julia
+using Pkg
+Pkg.add("https://github.com/weiyang2048/RandomMatrix.jl")
+```
+I hope to add in enough functionalities and register it in Aug 2021.
 If there is any functionality you want me to implement, please raise an issue.
 
 ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
@@ -12,13 +18,11 @@ If there is any functionality you want me to implement, please raise an issue.
 - [Examples](#examples)
   - [Random Matrix Theory](#random-matrix-theory)
     - [Random Matrix Models](#random-matrix-models)
-      - [Random IID Matrices](#random-iid-matrices)
-      - [Hermitian Matrices](#hermitian-matrices)
-        - [Hermitian](#hermitian)
-        - [Symmetric](#symmetric)
+      - [IID](#iid)
+    - [Hermitian](#hermitian)
       - [Elliptic Matrices](#elliptic-matrices)
       - [Structured](#structured)
-        - [Row or Column stochastic](#row-or-column-stochastic)
+        - [stochastic](#stochastic)
         - [Toeplitz Matrices](#toeplitz-matrices)
       - [Unitary Matrices](#unitary-matrices)
         - [Unitary](#unitary)
@@ -48,84 +52,10 @@ If there is any functionality you want me to implement, please raise an issue.
 
 ### Random Matrix Models
 
-#### Random IID Matrices
-```julia
-randMatrix(d::D, n::Int, m = n::Int  ; norm = false::Bool) where T<:Any
-
-randMatrix(n::Int, m = n :: Int; norm = false::Bool)
-```
-- `d` : entry distribution
-- `n` , `m` : dimensions, if `m` is not provided, by default `m=n` 
-- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
-
-```julia
-# Examples
-
-# Generates a 2 by 2 random  matrix with entries from the Standard  Gaussian.
-randMatrix(2)
-
-# Generates a 3 by 2 random  matrix with entries uniformly from {1,2,3,...,10}.
-randMatrix(1:10,3,2)
-
-# Generate a normalized random 2 by 2  Matrix with entries  `Poisson(2)` rvs. 
-# Need to import the `Distributions` package for `Poisson(2)`
-randMatrix(Poisson(2),2,norm = true)
-``` 
-#### Hermitian Matrices
-##### Hermitian
-```julia
-randHermitian(d::D, n::Int; Diag = d::D, norm = false::Bool, complex=true::Bool) where D<:Any
-
-randHermitian(n::Int; norm = false::Bool)
-```
-- `d` : entry distribution
-- `n`  : dimensions 
-- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normlaized with n^(-1/2).  
-- `Diag` : the distribution for diagonal entries, by default `Diag=d`. 
-    To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
-- `complex` : by default `complex = true`, we assume entries will be complex, if one knows that all entries will be real, set `complex=false`,
-    or equivalently use `randSymmetric`
-
-
-```julia
-# Examples
-
-# Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
-randHermitian(2)
-
-# Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
-# *Need to import the `Distributions` package for `Poisson(2)`*
-randHermitian(Poisson(2),2)
-# or equivalently 
-randSymmetric(Poisson(2),2)
-
-# Entries uniformly from {1,2,3,...,10}
-randHermitian(1:10,2)
-
-# Entries either -1 or pi with equal probability
-randHermitian([-1,pi],2)
-``` 
-
-##### Symmetric
-```julia
-randSymmetric(d::D, n::Int; Diag = d::D,  norm = false::Bool) where D<:Any
-
-randSymmetric(n::Int; norm = false::Bool)
-```
-- Essentially equivalent to `randHermitian` with `complex = false`
-- `d` : entry distribution
-- `n` : dimensions 
-- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
-- `Diag` : the distribution for diagonal entries, by default `Diag=d`. 
-    To use a different distribution (say Binomial) for digonal elements, set `Diag = Binomial(1,0.5)`
-
-
-```julia
-# Examples
-
-# Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
-randSymmetric(2)
-``` 
+#### IID
+see ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
+### Hermitian
+see ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
 #### Elliptic Matrices
 
 ```julia
@@ -154,22 +84,8 @@ using Distributions
 randEllipic(Poisson(10),500, r=0.1 , norm=true)
 ```
 #### Structured
-##### Row or Column stochastic
-```julia
-randStochastic(n::Int; type = 1 ::Int)
-```
-- `n`: dimension
-- `type` : default `type = 1`, `1` for row, `2` for column stochastic
-
-```julia 
-# Examples
-
-# Generates a 1000 by 1000 row stochastic random matrix
-randStochastic(1000)
-
-# Generates a 1000 by 1000 column stochastic random matrix
-randStochastic(1000,type=2)
-```
+##### stochastic
+see ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
 ##### Toeplitz Matrices
 ```julia
 randToeplitz(d::D, n::Int;  norm = false::Bool, hermitian=true::Bool, complex =false::Bool)  where D<:Any

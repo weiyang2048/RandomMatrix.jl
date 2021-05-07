@@ -9,22 +9,40 @@ randHermitian(n; norm)
 ```
 - `d` : entry distribution
 - `n`  : dimensions 
-- `norm` : default is set to `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.  
-- `diag` : the distribution for diagonal entries, by default `diag=d`. 
-    To use a different distribution (say Binomial) for digonal elements, set `diag = Binomial(1,0.5)`
+- `norm` : default `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.  
+- `diag` : default `diag = d`, diagonal entry distribution. 
+    To use a different distribution (say Circular(2)) for digonal elements, set `diag = Circular(2)`.  
+    The diagonal entries will always be forced to have imgainary part `0`.
 
 # Examples
-Generates a 2 by 2 random Hermitian matrix with entries from the Standard Complex Gaussian.
+Generates a 2 by 2 random Hermitian matrix with off-diagonal entries from the Standard Complex Gaussian, and Standard Normal on the diagonal.
 ```julia
-randHermitian(2)
+julia> randHermitian(2)
+
+2×2 LinearAlgebra.Hermitian{ComplexF64, Matrix{ComplexF64}}:
+ -0.385798+0.0im       0.789436-0.671441im
+  0.789436+0.671441im  -2.00856+0.0im
+```
+Generate a 3 by 3 Hermitian matrix, with off-diagonal entries `Circular(1)` and diagonal entries uniformly `-1` or `1`.
+```julia
+julia> randHermitian(Circular(1),3,diag = (-1,1))
+
+3×3 LinearAlgebra.Hermitian{ComplexF64, Matrix{ComplexF64}}:
+     -1.0+0.0im        0.785839+0.0137306im  1.61019-0.207893im
+ 0.785839-0.0137306im       1.0+0.0im        1.30573+0.723762im
+  1.61019+0.207893im    1.30573-0.723762im       1.0+0.0im
 ```
 Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
-*Need to import the `Distributions` package for `Poisson(2)`*
+This is also be done with `randSymmetric(Poisson(2),3)`
 ```julia
-randHermitian(Poisson(2),2)
-# or equivalently 
-randSymmetric(Poisson(2),2)
+julia> randHermitian(Poisson(2),3)
 
+3×3 LinearAlgebra.Hermitian{Int64, Matrix{Int64}}:
+ 0  0  6
+ 0  3  1
+ 6  1  4
+```
+```julia
 # Entries uniformly from {1,2,3,...,10}
 randHermitian(1:10,2)
 
@@ -57,14 +75,19 @@ randSymmetric(n; norm)
 ```
 - `d` : entry distribution
 - `n` : dimensions 
-- `norm` : default  `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
+- `norm` : default  `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.   
 - `diag` : default `diag = d`, the distribution for diagonal entries. 
     To use a different distribution (say Binomial) for digonal elements, set `diag = Binomial(1,0.5)`
-```julia
-# Examples
 
-# Generates a 2 by 2 random Symmetric matrix with entries from the Standard Gaussian.
-randSymmetric(2)
+# Examples
+Generates a 3 by 3 random Symmetric matrix with entries from the Standard Gaussian.
+```julia
+julia> randSymmetric(3)
+
+3×3 Symmetric{Float64, Matrix{Float64}}:
+ -0.230698  -1.72846     0.306362
+ -1.72846    0.0845915  -0.0116108
+  0.306362  -0.0116108  -0.559046
 ``` 
 """
 function  randSymmetric(d::D, n::Int; diag = d::D, norm = false::Bool)  where D<:S
@@ -93,7 +116,7 @@ GOE(n)
 
 # Examples
 
-Sample a 3 by 3 random matrix from GOE(5)
+Sample a 3 by 3 random matrix from GOE(3)
 ```julia
 julia> rand(GOE(3))
 

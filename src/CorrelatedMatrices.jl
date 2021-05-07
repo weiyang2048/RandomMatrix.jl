@@ -1,4 +1,4 @@
-export randEllipic,randStochastic
+export randEllipic
 
 """
 -  Look for a `phat`, such that when used in NORTA, it will return correlations approximately `ρ`

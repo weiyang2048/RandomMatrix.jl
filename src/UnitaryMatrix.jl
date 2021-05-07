@@ -93,7 +93,7 @@ randPermutation(100,fix=10)
 ```
 """
 function randPermutation(n::Int; fix = 0::Int) 
-    O = sample(1:n,n-fix,replace=false) # randly choosing flexible indices
+    O = sample(1:n,n-fix,replace=false) # randomly choosing flexible indices
     E = shuffle(O) 
     M = spzeros(Int8,n,n)
     for i in 1:n-fix
