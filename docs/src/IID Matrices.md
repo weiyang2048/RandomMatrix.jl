@@ -26,14 +26,14 @@ Let ``\left(X_{n}\right)_{n=1}^{\infty}`` be a sequence of ``n \times n`` matrix
 ```
 The circular law asserts that almost surely (i.e. with probability one), the sequence of measures ``\mu \frac{1}{\sqrt{n}} X_{n}`` converges in distribution to the uniform measure on the unit disk.
 
-```@example 
+```@eval 
 using Plots, RandomMatrix, LinearAlgebra
 gr() # hide
 Plots.reset_defaults() # hide
 N = 500
 M = randMatrix(N)
 colors = [:red,:green,:blue,:purple]
-@gif for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
+anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
      
     M[1:n,1:n]/sqrt(n)|>eigvals|>x->scatter(x,ylims=(-1.25,1.25), xlims=(-1.25,1.25),ratio=1,label="n = $(n)",size=(600,600))
 
@@ -42,4 +42,6 @@ colors = [:red,:green,:blue,:purple]
     title!("Circular Law for IID Matrices")
     
 end 
+gif(anim, "IID1.gif", fps = 10)
 ```
+![](IID1.gif)

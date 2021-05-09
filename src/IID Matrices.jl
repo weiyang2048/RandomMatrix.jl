@@ -5,14 +5,14 @@ randDiagonal(d, n)
 
 randDiagonal(n) 
 ```
-- `d` : default `Normal()`, entry distribution
+- `d` : default `Normal(0，1)`, entry distribution
 - `n` : dimension
 
 # Examples
 
 Generates a 3 by 3 diagonal matrix, with non-zero elements from `Normal(0,1)`
 ```julia
-julia> randDiagonal(3)
+randDiagonal(3)
 
 3×3 Diagonal{Float64, Vector{Float64}}:
  0.440359   ⋅         ⋅
@@ -22,7 +22,7 @@ julia> randDiagonal(3)
 
 Generates a 5 by 5 diagonal matrix, with non-zero elements from `Poisson(2)`
 ```julia
- julia> randDiagonal(Poisson(2),5)
+randDiagonal(Poisson(2),5)
 
 5×5 Diagonal{Int64, Vector{Int64}}:
  1  ⋅  ⋅  ⋅  ⋅
@@ -54,7 +54,7 @@ randTriangular(n;diag, upper)
 # Examples 
 Generate an upper triangular matrix with entries Standard Normal
 ```julia
-julia> randTriangular(3)
+randTriangular(3)
 
 3×3 UpperTriangular{Float64, Matrix{Float64}}:
  -0.572757  -0.459518   -1.60622
@@ -64,7 +64,7 @@ julia> randTriangular(3)
 
 Generate a 3 by 3 strictly lower triangular matrix, with nonzero entries uniform from ``\\{1,2,3\\}`` 
 ```julia
-julia> randTriangular(1:3,3,upper=false,Diag=false)
+randTriangular(1:3,3,upper=false,Diag=false)
 
 3×3 LowerTriangular{Int64, Transpose{Int64, Matrix{Int64}}}: 
  0  ⋅  ⋅
@@ -101,7 +101,7 @@ randMatrix(n::Int, m = n::Int; norm = false::Bool)
 # Examples
 Generates a 2 by 2 random  matrix with entries from the Standard  Gaussian.
 ```julia
-julia> randMatrix(2)
+randMatrix(2)
 
 2×2 Matrix{Float64}:
  1.74043  -1.30317
@@ -110,7 +110,7 @@ julia> randMatrix(2)
 
 Generates a 3 by 2 random  matrix with entries uniformly from {1,2,3,...,10}.
 ```julia
-julia> randMatrix(1:10,3,2)
+randMatrix(1:10,3,2)
 
 3×2 Matrix{Int64}:
   1  3
@@ -120,7 +120,7 @@ julia> randMatrix(1:10,3,2)
 Generate a normalized random 2 by 2  Matrix with entries  `Poisson(2)` rvs. 
 Need to import the `Distributions` package for `Poisson(2)`
 ```julia
-julia> randMatrix(Poisson(2),2,norm = true)
+randMatrix(Poisson(2),2,norm = true)
 
 2×2 Matrix{Float64}:
  1.41421   0.0

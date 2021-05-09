@@ -17,7 +17,7 @@ randHermitian(n; norm)
 # Examples
 Generates a 2 by 2 random Hermitian matrix with off-diagonal entries from the Standard Complex Gaussian, and Standard Normal on the diagonal.
 ```julia
-julia> randHermitian(2)
+randHermitian(2)
 
 2×2 LinearAlgebra.Hermitian{ComplexF64, Matrix{ComplexF64}}:
  -0.385798+0.0im       0.789436-0.671441im
@@ -25,7 +25,7 @@ julia> randHermitian(2)
 ```
 Generate a 3 by 3 Hermitian matrix, with off-diagonal entries `Circular(1)` and diagonal entries uniformly `-1` or `1`.
 ```julia
-julia> randHermitian(Circular(1),3,diag = (-1,1))
+randHermitian(Circular(1),3,diag = (-1,1))
 
 3×3 LinearAlgebra.Hermitian{ComplexF64, Matrix{ComplexF64}}:
      -1.0+0.0im        0.785839+0.0137306im  1.61019-0.207893im
@@ -35,19 +35,30 @@ julia> randHermitian(Circular(1),3,diag = (-1,1))
 Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
 This is also be done with `randSymmetric(Poisson(2),3)`
 ```julia
-julia> randHermitian(Poisson(2),3)
+randHermitian(Poisson(2),3)
 
 3×3 LinearAlgebra.Hermitian{Int64, Matrix{Int64}}:
  0  0  6
  0  3  1
  6  1  4
 ```
+Entries uniformly from ``\\{1,2,3,...,10\\}``
 ```julia
-# Entries uniformly from {1,2,3,...,10}
 randHermitian(1:10,2)
 
-# Entries either -1 or pi with equal probability
-randHermitian([-1,pi],2)
+2×2 Hermitian{Int64, Matrix{Int64}}:
+ 10  7
+  7  6
+```
+
+Entries either -1 or pi with equal probability
+```julia
+randHermitian([-1,pi],3)
+
+3×3 Hermitian{Float64, Matrix{Float64}}:
+  3.14159  -1.0      -1.0
+ -1.0      -1.0       3.14159
+ -1.0       3.14159   3.14159
 ``` 
 """
 function randHermitian(d::D, n::Int; diag=d::D, norm = false::Bool)  where D<:S
@@ -82,7 +93,7 @@ randSymmetric(n; norm)
 # Examples
 Generates a 3 by 3 random Symmetric matrix with entries from the Standard Gaussian.
 ```julia
-julia> randSymmetric(3)
+randSymmetric(3)
 
 3×3 Symmetric{Float64, Matrix{Float64}}:
  -0.230698  -1.72846     0.306362
@@ -116,9 +127,9 @@ GOE(n)
 
 # Examples
 
-Sample a 3 by 3 random matrix from GOE(3)
+Generate a 3 by 3 random matrix from GOE(3)
 ```julia
-julia> rand(GOE(3))
+rand(GOE(3))
 
 3×3 Symmetric{Float64, Matrix{Float64}}:
   0.216246   0.148277  -0.71106
@@ -140,6 +151,17 @@ GUE(n)
 ```
 
 - `n` : dimension
+# Examples
+
+Generate a 3 by 3 random matrix from GUE(3)
+```julia
+rand(GUE(3))
+
+3×3 Hermitian{ComplexF64, Matrix{ComplexF64}}:
+ -0.0127056+0.0im          -0.200015+0.00787052im  0.333224-0.157845im
+  -0.200015-0.00787052im  0.00753986+0.0im         -0.37598-0.202447im
+   0.333224+0.157845im      -0.37598+0.202447im    0.298683+0.0im
+```
 """
 struct GUE <: ContinuousMatrixDistribution
     n::Int

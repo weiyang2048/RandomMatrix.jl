@@ -8,6 +8,8 @@ const PAGES = Any["Home" =>"index.md",
             "I.I.D. Matrices"=>"IID Matrices.md",
             "Hermitian Matrices"=>"Hermitian.md",
             "Stochastic Matrices"=>"Stochastic.md",
+            "Patterned Matrices "=>"Patterned.md",
+            "Unitary Matrices"=>"Unitary.md"
       ],
       "Distributions"=>"Distributions.md",
       "Under Construction" =>[ 

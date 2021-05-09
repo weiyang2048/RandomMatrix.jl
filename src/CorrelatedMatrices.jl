@@ -102,7 +102,7 @@ randStochastic(n; type, norm)
 
 Generates a 3 by 3 random doubly stochastic  matrix
 ```julia 
-julia> randStochastic(3)
+randStochastic(3)
 
 3×3 Matrix{Float64}:
  0.132593  0.216041  0.651367
@@ -111,7 +111,7 @@ julia> randStochastic(3)
 ```
 Generates a 3 by 3 normalized random column stochastic  matrix
 ```julia
-julia> randStochastic(3,type=2,norm=true)
+randStochastic(3,type=2,norm=true)
 
 3×3 Matrix{Float64}:
  0.583396  0.608739  0.732921
