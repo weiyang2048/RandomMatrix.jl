@@ -19,7 +19,13 @@ randMatrix
 ```
 
 
-## Some Random Matrix Theory
+## RMT: Circular Law
+Let ``\left(X_{n}\right)_{n=1}^{\infty}`` be a sequence of ``n \times n`` matrix ensembles whose entries are i.i.d. copies of a complex random variable ``x`` with mean ``0`` and variance ``1``. Let ``\lambda_{1}, \ldots, \lambda_{n}, 1 \leq j \leq n`` denote the eigenvalues of ``\frac{1}{\sqrt{n}} X_{n}``. Define the empirical spectral measure of ``\frac{1}{\sqrt{n}} X_{n}`` as
+```math
+\mu_{\frac{1}{\sqrt{n}} X_{n}}(A)=n^{-1} \#\left\{j \leq n: \lambda_{j} \in A\right\}, \quad A \in \mathcal{B}(\mathbb{C})
+```
+The circular law asserts that almost surely (i.e. with probability one), the sequence of measures ``\mu \frac{1}{\sqrt{n}} X_{n}`` converges in distribution to the uniform measure on the unit disk.
+
 ```@example 
 using Plots, RandomMatrix, LinearAlgebra
 gr() # hide

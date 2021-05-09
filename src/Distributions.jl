@@ -5,19 +5,16 @@ export mean, var, pdf,rand
 
 """
 ```julia
-MarchenkoPastur(λ,σ)
-```
-- Marchenko-Pastur r.v. with  asymptotic ratio λ and scale parameter σ.
-- λ by default is 0.5
-- σ by default is 1, the value 1 for σ is typically used in Random Matrix Theory.
+MarchenkoPastur <:ContinuousUnivariateDistribution
 
-```julia
+MarchenkoPastur(λ,σ) 
 pdf(d::MarchenkoPastur,x::Real)  
 ```
+- `λ` : default `0.5`
+- `σ` : default `1`
 
-```julia
 # Examples 
-
+```julia
 # Generate a MP rv with ρ = 0.5, σ =1
 rand(MarchenkoPastur()) 
 
