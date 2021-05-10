@@ -4,7 +4,11 @@
 randStochastic
 ```
 ## RMT: Circular Law for Doubly Stochastic Random Matrices
-Let ``X`` be a matrix sampled uniformly from the set of doubly stochastic matrices of size ``n \times n``. The empirical spectral distribution of the normalized matrix ``\sqrt{n}(X-\mathbf{E} X)`` converges almost surely to the circular law. For reference, see the paper by Hoi H. Nguyen [Random doubly stochastic matrices: The circular law](https://arxiv.org/abs/1205.0843#:~:text=Let%20X%20be%20a%20matrix,surely%20to%20the%20circular%20law.)
+Let ``X`` be a matrix sampled uniformly from the set of doubly stochastic matrices of size ``n \times n``. The empirical spectral distribution of the normalized matrix ``\sqrt{n}(X-\mathbf{E} X)`` converges almost surely to the circular law. 
+
+For reference, see the paper by Hoi H. Nguyen [Random doubly stochastic matrices: The circular law](https://arxiv.org/abs/1205.0843#:~:text=Let%20X%20be%20a%20matrix,surely%20to%20the%20circular%20law.)
+
+In the animation below, we have not subtracted ``\mathbf{E} X``, for large `n`, ``\mathbf{E} X`` is negligible, since it is of order `1/n`.
 ```@eval 
 using Plots, RandomMatrix, LinearAlgebra
 gr() # hide

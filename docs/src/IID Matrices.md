@@ -24,7 +24,9 @@ Let ``\left(X_{n}\right)_{n=1}^{\infty}`` be a sequence of ``n \times n`` matrix
 ```math
 \mu_{\frac{1}{\sqrt{n}} X_{n}}(A)=n^{-1} \#\left\{j \leq n: \lambda_{j} \in A\right\}, \quad A \in \mathcal{B}(\mathbb{C})
 ```
-The circular law asserts that almost surely (i.e. with probability one), the sequence of measures ``\mu \frac{1}{\sqrt{n}} X_{n}`` converges in distribution to the uniform measure on the unit disk.  For reference, see for example the paper by Terence Tao and Van Vu: [RANDOM MATRICES: THE CIRCULAR LAW](https://arxiv.org/pdf/0708.2895.pdf)
+The circular law asserts that almost surely (i.e. with probability one), the sequence of measures ``\mu \frac{1}{\sqrt{n}} X_{n}`` converges in distribution to the uniform measure on the unit disk.  
+
+For reference, see for example the paper by Terence Tao and Van Vu: [RANDOM MATRICES: THE CIRCULAR LAW](https://arxiv.org/pdf/0708.2895.pdf)
 
 ```@eval 
 using Plots, RandomMatrix, LinearAlgebra
