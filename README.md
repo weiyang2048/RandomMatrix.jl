@@ -13,8 +13,7 @@ If there is any functionality you want me to implement, please raise an issue.
 > Examples will be slowly moving to the documentation page (still creating)  05/03/21
 > 
 > The following list will not be receiving any update   05/03/21
-> 
-> names not listed below:  randDiagonal, randTriangular, GOE, GUE   (05/03/21)
+
 - [Examples](#examples)
   - [Random Matrix Theory](#random-matrix-theory)
     - [Random Matrix Models](#random-matrix-models)
@@ -25,10 +24,6 @@ If there is any functionality you want me to implement, please raise an issue.
         - [stochastic](#stochastic)
         - [Toeplitz Matrices](#toeplitz-matrices)
       - [Unitary Matrices](#unitary-matrices)
-        - [Unitary](#unitary)
-        - [Orthogonal](#orthogonal)
-        - [Haar](#haar)
-        - [Permutation](#permutation)
     - [Transformations](#transformations)
       - [Resolvent](#resolvent)
       - [Quaternion Resolvent](#quaternion-resolvent)
@@ -87,78 +82,10 @@ randEllipic(Poisson(10),500, r=0.1 , norm=true)
 ##### stochastic
 see ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
 ##### Toeplitz Matrices
-```julia
-randToeplitz(d::D, n::Int;  norm = false::Bool, hermitian=true::Bool, complex =false::Bool)  where D<:Any
-```
-- The limiting spectral distribution of random Toeplitz matrices is still an open problem
-
+see ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
 #### Unitary Matrices 
-##### Unitary
-```julia
-randUnitary(n::Int)
-```
-- Generates a n by n random Unitary matrix
-- Equivalent to run `rand(Haar(2,n))`
-- For orthogonal matrices, use `randOrthogonal` or `rand(Haar(1,n))` instead
 
-```julia
-# Examples
-
-# Generate a 3 by 3 random Unitary matrix 
-randUnitary(3)
-# or
-rand(Haar(2,3)) 
-```
-##### Orthogonal
-```julia
-randOrthogonal(n::Int)
-```
-- Generates a n by n random Orthogonal matrix
-- Equivalent to run `rand(Haar(1,n))`
-- For unitary matrices, use `randUnitary` or `rand(Haar(2,n))` instead
- 
-```julia
-# Examples
-
-# Generates a 3 by 3 random Orthogonal matrix 
-randOrthogonal(3)
-# or
-rand(Haar(1,3))
-```
-##### Haar
-```julia
-Haar(beta,n)
-```
-- Uniform distribution on O(n) (`beta = 1`), U(n) (`beta = 2`)
-- `beta`: 1 for Orthogonal, 2 for Unitary
-- `n`: dimension
-
-```julia
-# Examples
-
-# Generate a 100 by 100 random Unitary Matrix uniformly from U(n)
-rand(Haar(2,100))
-
-
-# Generate a 100 by 100 random Orthogonal Matrix uniformly from O(n)
-rand(Haar(1,100))
-```
-##### Permutation
-```julia
-randPermutation(n; fix) 
-```
-- `n` : dimension
-- `fix` : a keyword argument, default is set to `fix = 0`. If `fix = x`, `randPermutation(n,x)` will have atleast `x` fixed points.
- 
-```julia
-# Examples 
-
-# Generates a random 5 by 5 permutation matrix
-randPermutation(5)
-
-# Generates  Generates a random 100 by 100 permutation matrix with atleast 10 fix points
-randPermutation(100,fix=10)
-```
+see ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
 
 ### Transformations
 #### Resolvent

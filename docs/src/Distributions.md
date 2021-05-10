@@ -4,3 +4,7 @@
 ```docs
 MarchenkoPastur
 ```
+## Circular Law
+```@docs
+Circular
+```

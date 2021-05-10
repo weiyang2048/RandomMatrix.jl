@@ -1,5 +1,3 @@
-export randUnitary, randOrthogonal , Haar, randPermutation
-
 """
 ```julia
 randUnitary(n::Int)

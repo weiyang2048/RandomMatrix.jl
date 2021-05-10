@@ -1,11 +1,11 @@
-export randToeplitz, randHankel
 
 """
 ```julia
 randToeplitz(d, n;  norm, hermitian)  where D<:S
 ```
-- 
-- The limiting spectral distribution of random Toeplitz matrices is still an open problem
+- `d` : entry distribution
+- `n` : dimension
+- `norm` : 
 """
 function  randToeplitz(d::D, n::Int;  norm = false::Bool, hermitian=true::Bool)  where D<:S
     if hermitian

@@ -4,7 +4,7 @@
 using Plots, RandomMatrix, LinearAlgebra, Distributions
 gr()  
 Plots.reset_defaults() 
-N = 500
+N = 600
 M = randMatrix(N)
 U = randUnitary(N)
 l=@layout[c c; c c]

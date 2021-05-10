@@ -24,7 +24,7 @@ Let ``\left(X_{n}\right)_{n=1}^{\infty}`` be a sequence of ``n \times n`` matrix
 ```math
 \mu_{\frac{1}{\sqrt{n}} X_{n}}(A)=n^{-1} \#\left\{j \leq n: \lambda_{j} \in A\right\}, \quad A \in \mathcal{B}(\mathbb{C})
 ```
-The circular law asserts that almost surely (i.e. with probability one), the sequence of measures ``\mu \frac{1}{\sqrt{n}} X_{n}`` converges in distribution to the uniform measure on the unit disk.
+The circular law asserts that almost surely (i.e. with probability one), the sequence of measures ``\mu \frac{1}{\sqrt{n}} X_{n}`` converges in distribution to the uniform measure on the unit disk.  For reference, see for example the paper by Terence Tao and Van Vu: [RANDOM MATRICES: THE CIRCULAR LAW](https://arxiv.org/pdf/0708.2895.pdf)
 
 ```@eval 
 using Plots, RandomMatrix, LinearAlgebra
@@ -42,6 +42,6 @@ anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
     title!("Circular Law for IID Matrices")
     
 end 
-gif(anim, "IID1.gif", fps = 10)
+gif(anim, "IID1.gif", fps = 10); nothing
 ```
 ![](IID1.gif)
