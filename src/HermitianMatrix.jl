@@ -122,16 +122,17 @@ end
 """
 ```julia
 GOE <: ContinuousMatrixDistribution
-GOE(n)
-
-rand(M::GOE, norm::bool) 
-- `norm` : default `false`,  if `norm` set to `true`, then the matrix will be normlaized with ``\\operatorname{min}(n,m)^{-1/2}``.  
+GOE(n) 
 ```
-
 - `n` : dimension
 - The **Gaussian Orthogonal Ensemble** (`GOE`) is an ensemble of random ``n \\times n`` Symmetric matrices 
     ``M_{n}`` in which the upper-triangular entries are iid with distribution ``N(0,1)_{\\mathbf{R}}``, 
     and the diagonal entries are iid with distribution ``N(0,2)_{\\mathbf{R}}``, and independent of the upper-triangular ones
+
+```julia
+rand(M::GOE, norm::bool)
+```
+ -  `norm` : default `false`,  if `norm` set to `true`, then the matrix will be normlaized with ``\\operatorname{min}(n,m)^{-1/2}``.  
 
 # Examples
 
@@ -165,15 +166,17 @@ rand( M::GOE; norm = false::Bool) = randSymmetric(Normal(),M.n,diag=Normal(0,sqr
 ```julia
 GUE <: ContinuousMatrixDistribution
 GUE(n)
-
-rand(M::GUE, norm::bool) 
-- `norm` : default `false`,  if `norm` set to `true`, then the matrix will be normlaized with ``\\operatorname{min}(n,m)^{-1/2}``.  
 ```
-
 - `n` : dimension
 - The **Gaussian Unitary Ensemble** (`GUE`) is an ensemble of random ``n \\times n`` Hermitian matrices 
     ``M_{n}`` in which the upper-triangular entries are iid with distribution ``N(0,1)_{\\mathbf{C}}``, 
     and the diagonal entries are iid with distribution ``N(0,1)_{\\mathbf{R}}``, and independent of the upper-triangular ones
+
+```julia
+rand(M::GUE, norm::bool) 
+```
+- `norm` : default `false`,  if `norm` set to `true`, then the matrix will be normlaized with ``\\operatorname{min}(n,m)^{-1/2}``.  
+
 # Examples
 
 Generate a 3 by 3 random matrix from GUE(3)
