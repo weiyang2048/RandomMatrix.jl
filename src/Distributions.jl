@@ -1,7 +1,10 @@
-export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur
-        
+export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur,
+        stieltjes
         # re-export    
 export mean, var, pdf,rand
+
+stieltjes(d::Semicircle) = z->(-z+sqrt(z^2-d.r^2))/2
+
 
 """
 ```julia
