@@ -121,7 +121,7 @@ randStochastic(3,type=2,norm=true)
 """
 function randStochastic(n::Int; type = 3 ::Int, norm = false::Bool)
     if type == 3
-       M = randUnitary(500)
+       M = randUnitary(n)
        M = M.*conj(M)
     else 
         M = rand(n,n)
