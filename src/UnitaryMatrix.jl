@@ -3,16 +3,19 @@
 randUnitary(n::Int)
 ```
 - Generates a n by n random Unitary matrix
-- Equivalent to run `rand(Haar(2,n))`
+- Equivalent to  `rand(Haar(2,n))`, see [`Haar`](@ref)
 - For orthogonal matrices, use `randOrthogonal` or `rand(Haar(1,n))` instead
 
-```julia
 # Examples
 
-# Generate a 3 by 3 random Unitary matrix 
+Generate a 3 by 3 random Unitary matrix 
+```julia
 randUnitary(3)
-# or
-rand(Haar(2,3)) 
+
+3×3 Matrix{ComplexF64}:
+ -0.149398+0.0572715im  -0.0935861+0.629201im  -0.257255-0.709625im
+  0.337035-0.342606im     -0.36366+0.599236im  -0.100838+0.517231im
+  -0.17097+0.845103im   -0.0767105+0.313259im   0.247081+0.3025im
 ```
 """
 function randUnitary(n::Int)
@@ -26,17 +29,20 @@ end
 ```julia
 randOrthogonal(n::Int)
 ```
-- Generates a n by n random Orthogonal matrix
-- Equivalent to run `rand(Haar(1,n))`
+- Generates a `n` by `n` random Orthogonal matrix
+- Equivalent to `rand(Haar(1,n))`, see [`Haar`](@ref)
 - For unitary matrices, use `randUnitary` or `rand(Haar(2,n))` instead
  
-```julia
 # Examples
 
-# Generates a 3 by 3 random Orthogonal matrix 
+Generates a 3 by 3 random Orthogonal matrix 
+```julia
 randOrthogonal(3)
-# or
-rand(Haar(1,3))
+
+3×3 Matrix{Float64}:
+ -0.875553  0.112448   0.469853
+ -0.147915  0.863441  -0.482277
+  0.459921  0.491757   0.739356
 ```
 """
 function randOrthogonal(n::Int)

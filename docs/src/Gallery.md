@@ -21,7 +21,7 @@ anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
         plot!(sqrt((N-n÷2)/N)*[exp(θ*im) for θ=0:0.01:2pi],label="",lw=3,c=[rand(colors) for _=0:0.01:2pi],alpha=0.1)
         title!("Circular Law for Truncated Unitary")
 
-    p3 = randStochastic(n,norm=true)|>eigvals|>x->scatter(x,ratio=1,xlims=(-1.5,1.5),title="Circular Law for Stochastic Matrices",size=(600,600),label = "n = $(n)")
+    p3 = randStochastic(n,norm=true)|>eigvals|>x->scatter(x,ratio=1,xlims=(-1.25,1.25),title="Circular Law for Doubly Stochastic Matrices",size=(600,600),label = "n = $(n)")
 
     plot!([exp(θ*im) for θ=0:0.01:2pi],label="",lw=3,c=[rand(colors) for _=0:0.01:2pi])
     

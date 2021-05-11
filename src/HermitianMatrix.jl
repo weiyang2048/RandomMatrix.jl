@@ -7,6 +7,7 @@ randHermitian(d, n; diag, norm )
 
 randHermitian(n; norm)
 ```
+- See also [`GUE`](@ref)
 - `d` : entry distribution
 - `n`  : dimensions 
 - `norm` : default `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.  
@@ -84,6 +85,7 @@ randSymmetric(d, n; Diag, norm)
 
 randSymmetric(n; norm)
 ```
+- See also [`GOE`](@ref)
 - `d` : entry distribution
 - `n` : dimensions 
 - `norm` : default  `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.   

@@ -4,20 +4,13 @@
 ```@docs
 randHermitian
 ```
-## GUE
-```@docs
-GUE
-```
+
 
 ## Symmetric
 ```@docs
 randSymmetric
 ```
 
-## GOE
-```@docs
-GOE
-```
 
 
 ## RMT: Semicircle Law

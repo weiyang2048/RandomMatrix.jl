@@ -10,9 +10,5 @@ randOrthogonal
 
 
 ```@docs
-Haar
-```
-
-```@docs
 randPermutation
 ```

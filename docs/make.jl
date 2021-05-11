@@ -11,7 +11,10 @@ const PAGES = Any["Home" =>"index.md",
             "Patterned Matrices "=>"Patterned.md",
             "Unitary Matrices"=>"Unitary.md"
       ],
-      "Distributions"=>"Distributions.md",
+      "Distributions"=>[
+            "Scarlar-Valued Distributions"=> "ScalarValued.md",
+            "Matrix-Valued Distributions"=>"MatrixValued.md"   
+            ],
       "Under Construction" =>[ 
             "Under Construction1" =>"Others.md",
               "Under Construction2" =>"Gallery.md"

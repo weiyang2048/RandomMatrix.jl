@@ -10,7 +10,7 @@ I hope to add in enough functionalities and register it in Aug 2021.
 If there is any functionality you want me to implement, please raise an issue.
 
 ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
-> Examples will be slowly moving to the documentation page (still creating)  05/03/21
+> Examples will be slowly moving to the documentation page  05/03/21
 > 
 > The following list will not be receiving any update   05/03/21
 
@@ -144,17 +144,7 @@ rand(Gaussian(), 10)
 rand(Gaussian(2,1+1im,2))
 ```
 ### Circular Law
-```julia
-Circular(c=0,R=1)
-```
-- The uniform distribution on the complex disk with center `c` and radius `R`
-***
-
-```julia
-rand(Circular(1,10),200)
-```
-> Generates 200 uniform r.v.s on the complex disk of center 1 radius 10.
-
+see ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
 ### Elliptical Law
 
 ```julia
@@ -163,32 +153,7 @@ Elliptic(ρ=0.5,c=0,R=1)
 - the uniform rv on an ellipse of width `2(1+ρ)R`, height `2(1-ρ)R` centered at `c`
 
 ### Marchenko-Pastur Law
-```julia
-MarchenkoPastur(λ,σ)
-```
-- Marchenko-Pastur r.v. with  asymptotic ratio λ and scale parameter σ.
-- λ by default is 0.5
-- σ by default is 1, the value 1 for σ is typically used in Random Matrix Theory.
-
-```julia
-pdf(d::MarchenkoPastur,x::Real)  
-```
-
-```julia
-# Examples 
-
-# Generate a MP rv with ρ = 0.5, σ =1
-rand(MarchenkoPastur()) 
-
-# Generate a 100 by 100 matrix with entries i.i.d MP rvs with ρ=0.2
-rand(MarchenkoPastur(0.2),100,100)
-
-# Generate 100 MP rvs with ρ=0.1 and σ=2
-rand(MarchenkoPastur(0.1,2),100)
-
-# Compute the desity for the MP distribution with λ=1.6 at the point 0
-pdf(MarchenkoPastur(1.6),0)
-```
+see ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***
 
 ## Randomized Linear Algebra
 ### Sampling Matrix
