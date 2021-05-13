@@ -8,3 +8,5 @@ using Test
 
 @test isreal(randHermitian(3)|>eigvals)
 @test randHermitian(ComplexNormal(im,2),3,diag=Elliptic(0.1,c=im,R=9)) !==nothing
+
+@test pdf(MarchenkoPastur(rand()),0) == 0
