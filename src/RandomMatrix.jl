@@ -28,6 +28,8 @@ include("UnitaryMatrix.jl")
 
 include("CorrelatedMatrices.jl")
 
+include("AdjacencyMatrices.jl")
+
 include("SamplingMatrix.jl")
 
 include("Transformations.jl")

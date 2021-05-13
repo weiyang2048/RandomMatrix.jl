@@ -1,5 +1,5 @@
 # Stochastic Matrices
-## randStochastic
+## Stochastic Matrices
 ```@docs
 randStochastic
 ```

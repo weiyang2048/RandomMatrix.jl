@@ -26,7 +26,7 @@ function randSampling(A::Matrix,B=I::Matrix; k=0::Int)
         print("k was <= $(0) or not provided, it is now set to $(k) by default")
     end
     
-    n, m = size(A)
+    m = size(A)[2]
     if size(B)[1] != m
         return "The matrices can not be multiplied "
     else

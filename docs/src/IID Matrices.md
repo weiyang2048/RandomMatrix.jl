@@ -6,7 +6,7 @@
 randDiagonal
 ```
 
-## TriangularMatrices
+## Triangular Matrices
 
 ```@docs
 randTriangular

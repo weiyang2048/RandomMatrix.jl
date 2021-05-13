@@ -1,6 +1,4 @@
 ```@docs
-randEllipic
-
 resolvent
 
 ComplexNormal

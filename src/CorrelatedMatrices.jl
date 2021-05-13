@@ -17,7 +17,7 @@ struct preNORTA
         L , H = minmax(sign(ρ),0) # Lower bound, Higher bound
         ϵ = min(0.01,(1-abs(ρ))/10)
         while true
-            N = [rand(MvNormal([1 ρhat;ρhat 1])) for i=1:10000]
+            N = [rand(MvNormal([1 ρhat;ρhat 1])) for _=1:10000]
             X = []
             Y = []
 
@@ -109,6 +109,17 @@ randStochastic(3)
  0.484097  0.320777  0.195126
  0.261495  0.537825  0.20068
 ```
+
+Generates a 3 by 3 normalized random row stochastic  matrix
+```julia
+randStochastic(3,type = 1)
+
+3×3 Matrix{Float64}:
+ 0.220849   0.146942  0.632209
+ 0.188052   0.26294   0.549008
+ 0.0170714  0.524574  0.458355
+```
+
 Generates a 3 by 3 normalized random column stochastic  matrix
 ```julia
 randStochastic(3,type=2,norm=true)

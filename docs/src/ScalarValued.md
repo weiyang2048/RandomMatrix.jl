@@ -1,10 +1,13 @@
 # Distributions
 
 ## Marchenko-Pastur 
-```docs
+
+```@docs
 MarchenkoPastur
 ```
+
 ## Circular Law
+
 ```@docs
 Circular
 ```
