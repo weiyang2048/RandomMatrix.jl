@@ -18,13 +18,9 @@ export
      randToeplitz, randHankel,
      randUnitary, randOrthogonal , Haar, randPermutation
 
-include("IID Matrices.jl")
-
-include("HermitianMatrix.jl")
+include("MatrixModels.jl")
 
 include("StructuredMatrices.jl")
-
-include("UnitaryMatrix.jl")
 
 include("CorrelatedMatrices.jl")
 
@@ -33,6 +29,8 @@ include("AdjacencyMatrices.jl")
 include("SamplingMatrix.jl")
 
 include("Transformations.jl")
+
+include("Spacing.jl")
 
 include("Distributions.jl")
 
