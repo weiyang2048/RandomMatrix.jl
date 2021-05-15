@@ -48,7 +48,7 @@ randEllipic(n; r, norm)
 - `d` : default `Normal()`, entry distribution
 - `n`  : dimensions 
 - `r` : default `0.5`, the correlation of ``H_{ij},H_{ji}`` pairs
-- `norm` : default `false`, if `norm` set to `true`, then the matrix will be normalized with n^(-1/2).  
+- `norm` : default `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.  
 - `diag` : default `diag=d`, the distribution for diagonal entries.
 
 # Examples
@@ -68,7 +68,7 @@ randEllipic(500)
   0.852339    1.04593    -0.119082      1.43634    0.114493
 ```
 
-Generate a normalized random elliptic matrix, with entries `Poisson(10)` ``\\rho(H_{ij},H_{ji})=0.1`` 
+Generate a normalized random elliptic matrix, with entries `Poisson(10)` and ``\\rho(H_{ij},H_{ji})=0.1`` 
 ```julia
 using Distributions
 randEllipic(Poisson(10),500, r=0.1 , norm=true)

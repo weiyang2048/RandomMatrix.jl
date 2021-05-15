@@ -106,7 +106,8 @@ struct ComplexNormal<:ContinuousUnivariateDistribution
     μ::ComplexF64
     σ::Float64
     function ComplexNormal(μ=0,σ=1) 
-        σ >=0  ? new(μ,σ) : error("σ must be non-negative") 
+        @assert( σ >=0 , "σ must be non-negative")
+        new(μ,σ) 
     end
 end
 

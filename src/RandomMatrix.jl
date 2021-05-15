@@ -4,7 +4,8 @@ using StatsBase: sample, Weights
 import Distributions: mean, var, rand
 using Distributions
 using Random
-using LinearAlgebra 
+using LinearAlgebra
+import Polynomials.fit as polyfit 
 using SparseArrays: spzeros
 using Plots: heatmap, cgrad
 
@@ -21,8 +22,6 @@ export
 include("MatrixModels.jl")
 
 include("StructuredMatrices.jl")
-
-include("CorrelatedMatrices.jl")
 
 include("AdjacencyMatrices.jl")
 
