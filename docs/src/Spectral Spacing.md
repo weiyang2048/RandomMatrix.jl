@@ -6,5 +6,5 @@ wignersurmise
 ```
 
 ```@docs
-unfold
+unfoldedSpacings
 ```

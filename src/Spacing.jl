@@ -1,4 +1,4 @@
-export wignersurmise, unfold
+export wignersurmise, unfoldedSpacings
 
 function wignersurmise(x::Real; beta = 1 :: Int)  
     if beta == 1
@@ -8,18 +8,19 @@ function wignersurmise(x::Real; beta = 1 :: Int)
     end
 end
 
-function unfold(E::Array,deg=3::Int;type=:nothing ::Symbol)
-    f(x) = begin
-        if sym == :GOE
-            return wignersurmise(x)
-        elseif sym == :GUE
-            return wignersurmise(x,beta=2)
-        else
-            return polyfit(E[1:end-1],diff(E),deg)(x)
+function unfoldedSpacings(E::Array,deg=3::Int; goe = false::Bool)
+    if goe
+        f(e) = begin
+            temp = 4-e^2
+            if temp>=0
+                length(E)* ( 1/2 + e/(pi*4)*sqrt(temp)+1/pi*atan(e/sqrt(temp)) )  
+            end      
         end
+        return diff(filter(x->x!==nothing,f.(E)))
     end
-
-    D = f.(E[1:end-1])
+    p(x) =polyfit(E[1:end-1],diff(E),deg)(x)
+        
+    D = p.(E[1:end-1])
     diff(E)./D 
 end
 
