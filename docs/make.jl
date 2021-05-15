@@ -6,8 +6,7 @@ gr()
 const PAGES = Any["Home" =>"index.md",
       "Random Matrix Models" =>[
             "I.I.D. Matrices"=>"IID Matrices.md",
-            "Hermitian Matrices"=>"Hermitian.md",
-            "Elliptic Matrices"=>"Elliptic.md",
+            "Hermitian and Elliptic Matrices"=>"Hermitian and Elliptic.md",
             "Unitary Matrices"=>"Unitary.md",
             "Stochastic Matrices"=>"Stochastic.md",
             "Patterned Matrices "=>"Patterned.md",
@@ -16,6 +15,10 @@ const PAGES = Any["Home" =>"index.md",
             "Scarlar-Valued Distributions"=> "ScalarValued.md",
             "Matrix-Valued Distributions"=>"MatrixValued.md"   
             ],
+      "Matrix and Spectral Functions"=>[
+            "Spectral Spacing"=>"Spectral Spacing.md"
+            ],
+
       "Under Construction" =>[ 
             "Under Construction1" =>"Others.md",
               "Under Construction2" =>"Gallery.md"

@@ -1,9 +1,19 @@
 ```@docs
-resolvent
+Resolvent
+
+qresolvent
+
+Elliptic
 
 ComplexNormal
 
 Gaussian
 
 ±
+
+preNORTA
+
+normview
+
+randSampling
 ```
