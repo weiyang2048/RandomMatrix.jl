@@ -48,7 +48,6 @@ randOrthogonal(3)
 function randOrthogonal(n::Int)
     A = randn(n,n)
     Q,R = qr(A)
-    Q,R = convert(Matrix,Q),convert(Matrix,R)
     Q = Q*Diagonal(sign.(diag(R)))
     return Q
 end

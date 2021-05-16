@@ -6,5 +6,9 @@ wignersurmise
 ```
 
 ```@docs
+unfoldedeigvals
+```
+
+```@docs
 unfoldedSpacings
 ```

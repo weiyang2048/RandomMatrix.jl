@@ -15,7 +15,7 @@ const PAGES = Any["Home" =>"index.md",
             "Scarlar-Valued Distributions"=> "ScalarValued.md",
             "Matrix-Valued Distributions"=>"MatrixValued.md"   
             ],
-      "Matrix and Spectral Functions"=>[
+      "Matrix and Spectral Transformations"=>[
             "Spectral Spacing"=>"Spectral Spacing.md"
             ],
 

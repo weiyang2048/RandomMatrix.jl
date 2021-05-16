@@ -11,10 +11,11 @@ Resolvent(A::Matrix)
 
 # Examples
 
-Get the resolvent **function** of a normalized GOE(500)
+Get the resolvent **function** of a normalized GOE(500).
+
 And evaluate the resolvent at `0`
 ```julia
-R = Resolvent(rand(GOE(500),norm = true)) # this a generic function
+R = Resolvent(rand(GOE(500),norm = true)) # this a function
 
 R(0)
 
