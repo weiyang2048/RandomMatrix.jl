@@ -7,13 +7,13 @@ randHermitian(d, n; diag, norm )
 
 randHermitian(n; norm)
 ```
-- See also [`GUE`](@ref)
 - `d` : entry distribution
 - `n`  : dimensions 
 - `norm` : default `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.  
 - `diag` : default `diag = d`, diagonal entry distribution. 
     To use a different distribution (say Circular(2)) for digonal elements, set `diag = Circular(2)`.  
     The diagonal entries will always be forced to have imgainary part `0`.
+- See also [`GUE`](@ref)
 
 # Examples
 Generates a 2 by 2 random Hermitian matrix with off-diagonal entries from the Standard Complex Gaussian, and Standard Normal on the diagonal.
@@ -85,12 +85,12 @@ randSymmetric(d, n; Diag, norm)
 
 randSymmetric(n; norm)
 ```
-- See also [`GOE`](@ref)
 - `d` : entry distribution
 - `n` : dimensions 
 - `norm` : default  `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.   
 - `diag` : default `diag = d`, the distribution for diagonal entries. 
     To use a different distribution (say Binomial) for digonal elements, set `diag = Binomial(1,0.5)`
+- See also [`GOE`](@ref)
 
 # Examples
 Generates a 3 by 3 random Symmetric matrix with entries from the Standard Gaussian.

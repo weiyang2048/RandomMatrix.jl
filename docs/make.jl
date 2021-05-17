@@ -6,7 +6,7 @@ gr()
 const PAGES = Any["Home" =>"index.md",
       "Random Matrix Models" =>[
             "I.I.D. Matrices"=>"IID Matrices.md",
-            "Hermitian and Elliptic Matrices"=>"Hermitian and Elliptic.md",
+            "Correlated Matrices"=>"Correlated Matrices.md",
             "Unitary Matrices"=>"Unitary.md",
             "Stochastic Matrices"=>"Stochastic.md",
             "Patterned Matrices "=>"Patterned.md",

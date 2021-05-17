@@ -14,3 +14,12 @@ GOE
 ```@docs
 Haar
 ```
+## COE
+```@docs
+COE
+```
+
+## CUE
+```@docs
+CUE
+```
