@@ -3,8 +3,9 @@
 randUnitary(n::Int)
 ```
 - Generates a n by n random Unitary matrix
-- Equivalent to  `rand(Haar(2,n))`, see [`Haar`](@ref)
+- Equivalent to  `rand(Haar(2,n))`, see [`Haar`](@ref) and [`CUE`](@ref)
 - For orthogonal matrices, use `randOrthogonal` or `rand(Haar(1,n))` instead
+- The algorithm is disccused in [How to Generate Random Matrices from the Classical Compact Groups](http://www.ams.org/notices/200705/fea-mezzadri-web.pdf)
 
 # Examples
 
@@ -30,9 +31,10 @@ end
 randOrthogonal(n::Int)
 ```
 - Generates a `n` by `n` random Orthogonal matrix
-- Equivalent to `rand(Haar(1,n))`, see [`Haar`](@ref)
+- Equivalent to `rand(Haar(1,n))`, see [`Haar`](@ref) and [`COE`](@ref)
 - For unitary matrices, use `randUnitary` or `rand(Haar(2,n))` instead
- 
+- The algorithm is disccused in [How to Generate Random Matrices from the Classical Compact Groups](http://www.ams.org/notices/200705/fea-mezzadri-web.pdf)
+
 # Examples
 
 Generates a 3 by 3 random Orthogonal matrix 
@@ -78,6 +80,26 @@ end
 Base.size(d::Haar) = d.n
 rand(d::Haar) = d.beta == 1 ? randOrthogonal(d.n) : randUnitary(d.n)
 
+######################################################
+"""
+```julia
+COE
+```
+- `n` : Dimension 
+- Equivalent to [`Haar`](@ref)(1,n)
+"""
+const COE = n -> Haar(1,n)
+
+"""
+```julia
+CUE
+```
+- `n` : Dimension 
+- Equivalent to [`Haar`](@ref)(2,n)
+"""
+const CUE = n -> Haar(2,n)
+
+###################################################
 """
 ```julia
 randPermutation(n; fix) 

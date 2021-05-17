@@ -17,7 +17,7 @@ export
      randHermitian, randSymmetric, GOE, GUE,
      randStochastic,
      randToeplitz, randHankel,
-     randUnitary, randOrthogonal , Haar, randPermutation
+     randUnitary, randOrthogonal , Haar, COE, CUE, randPermutation
 
 include("MatrixModels.jl")
 
