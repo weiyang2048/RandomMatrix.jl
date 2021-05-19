@@ -36,7 +36,7 @@ function wignersurmise(s::Real; beta = 1 :: Int)
     if beta == 1
         return (pi/2) * s * exp(-pi * s^2 / 4)
     elseif beta == 2
-        return (3/pi)^2 * s^2 * exp(- 4 * s^2 / pi)
+        return 32*(s/pi)^2 * exp(- 4 * s^2 / pi)
     end
 end
 
