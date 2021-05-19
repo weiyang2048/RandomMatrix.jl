@@ -27,7 +27,7 @@ colors = [:red,:green,:blue,:purple]
 anim = @animate for n = (1:2:50...,51:20:N...,N:-20:51...,50:-2:1...)
     M = randHermitian(Normal(0,1), n,norm=true) 
     histogram(eigvals(M), normed=true, nbins=100,ratio = 7, label="n=$n")
-    plot!(x->1/2pi*sqrt(4-x^2), -2:0.001:2, linewidth = 5, label="Semicircle",c=[rand(colors) for _=-2:0.01:2])
+    plot!(x->1/2pi*sqrt(4-x^2), -2:0.001:2, linewidth = 5, label="Semicircle",c=[rand(colors) for _=-2:0.001:2])
     xlims!(-2.5,2.5)
     ylims!(0,0.5)
     title!("Semicircular Law for Random Hermitian Matrices")
