@@ -29,7 +29,7 @@ Evaluate Wigner surmise for GUE at `2`
 ```julia
 wignersurmise(2,beta=2)
 
-0.02239541536704175
+0.07962814352725955
 ```
 """
 function wignersurmise(s::Real; beta = 1 :: Int)  
@@ -45,7 +45,7 @@ end
 unfoldedeigvals(E; deg, goe)
 ```
 - `E` : The array of eigenvalues
-- `deg` : default `10`z
+- `deg` : default `10`
 - `goe` : default `false`
 """
 function unfoldedeigvals(E::Array; deg=10::Int, goe = false::Bool)

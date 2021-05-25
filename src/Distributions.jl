@@ -191,7 +191,11 @@ struct  Elliptic <:ContinuousUnivariateDistribution
     ρ::Float64
     c::ComplexF64  
     R::Float64 
-    function Elliptic(ρ=0.5;c=0,R=1) new(ρ,c,R) end
+   
+    function Elliptic(ρ=0.5;c=0,R=1) 
+        @assert(abs(ρ)<1, "ρ must be less than 1 in absolute value")
+        new(ρ,c,R) 
+    end
 end
 
 Base.eltype(::Type{Elliptic}) = ComplexF64
@@ -200,7 +204,7 @@ function rand(rng::AbstractRNG, d::Elliptic)
     while true 
         x_1 = rand(rng,Uniform(-(1+d.ρ),(1+d.ρ)))
         x_2 = rand(rng,Uniform(-(1-d.ρ),(1-d.ρ)))
-        if x_1^2/(1+d.ρ)+x_2^2/(1-d.ρ)^2<=1
+        if x_1^2/(1+d.ρ)^2+x_2^2/(1-d.ρ)^2<=1
             return x_1*d.R+x_2*d.R*im + d.c
         end
     end

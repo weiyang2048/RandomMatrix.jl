@@ -11,3 +11,7 @@ MarchenkoPastur
 ```@docs
 Circular
 ```
+## Elliptic Law
+```@docs
+Elliptic
+```

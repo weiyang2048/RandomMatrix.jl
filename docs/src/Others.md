@@ -3,7 +3,6 @@ Resolvent
 
 qresolvent
 
-Elliptic
 
 ComplexNormal
 

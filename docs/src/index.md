@@ -1,13 +1,15 @@
 # RandomMatrix.jl Documentation
 
-A package for Random Matrix Theory.
+A package for Random Matrix Theory, and a project for me to learn [Julia](https://julialang.org/).  
 
-The package currently is unregistered, you can only add it by
+The documentation for the package can be found at ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***.
+
+***
+The package currently is unregister, to use the package, you can add it by
 ```julia
 using Pkg
 Pkg.add("https://github.com/weiyang2048/RandomMatrix.jl")
 ```
-I hope to add in enough functionalities and register it in Aug 2021.
-If there is any functionality you want me to implement, please raise an issue.
+
 
  ![](testing1.gif)
