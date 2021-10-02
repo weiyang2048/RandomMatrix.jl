@@ -48,7 +48,7 @@ end
 ```julia
 qresolvent(A)
 ```
-returns the quaternion resolvent ***function*** of A.
+returns the quaternion resolvent **function** of A.
 """
 function qresolvent(A::AbstractMatrix)
     return function f(z::Number,η::Number)
