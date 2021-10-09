@@ -1,4 +1,4 @@
-A package for Random Matrix Theory, and a project for me to learn [Julia](https://julialang.org/).  
+A package for Random Matrix Theory, providing functionalities to sample from matrix-valued distributions and more.
 
 The documentation for the package can be found at ***[Documemtation🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)***.
 
