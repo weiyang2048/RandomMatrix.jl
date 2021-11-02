@@ -2,7 +2,13 @@ name = "RandomMatrix"
 uuid = "0af1cf96-9b30-454e-9d9e-87908f700846"
 authors = ["weiyang2048 <weiyang2048@gmail.com>"]
 version = "0.2.0"
-
+[compat]
+julia = "1.6"
+Distributions = "0.25.23"
+Documenter = "0.27.10"
+Plots = "1.23.3"
+Polynomials = "2.0.17"
+StatsBase = "0.33.12
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
