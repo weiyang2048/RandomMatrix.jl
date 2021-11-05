@@ -4,10 +4,10 @@ A package for Random Matrix Theory, and a project for me to learn [Julia](https:
 
 
 ***
-The package currently is unregister, to use the package, you can add it by
+The package is registered, to use the package, you can add it by
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/weiyang2048/RandomMatrix.jl")
+Pkg.add("RandomMatrix")
 ```
 
 
