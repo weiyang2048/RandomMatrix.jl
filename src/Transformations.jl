@@ -1,4 +1,4 @@
-export Resolvent, qresolvent
+export Resolvent, qResolvent
 
 abstract type MatrixTransformations end
 
@@ -46,13 +46,19 @@ end
 
 """
 ```julia
-qresolvent(A)
+qResolvent(A)
 ```
 returns the quaternion resolvent **function** of A.
 """
-function qresolvent(A::AbstractMatrix)
+function qResolvent(A::AbstractMatrix)
     return function f(z::Number,η::Number)
     ([UniformScaling(-η) A-UniformScaling(z) 
     A'-UniformScaling(z') UniformScaling(-η)])^(-1)
 end
 end
+
+"""
+(This is a old typo)
+See ['qResolvent'](#qResolvent) for more details.
+"""
+const  qresolvent = qResolvent

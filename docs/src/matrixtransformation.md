@@ -3,4 +3,7 @@
 ## Resolvent
 ```@docs
 Resolvent
+
+qResolvent
 ```
+

@@ -1,4 +1,4 @@
-export randElliptic
+export randElliptic, randEllipic
 
 """
 -  Look for a `phat`, such that when used in NORTA, it will return correlations approximately `ρ`
@@ -107,9 +107,15 @@ function randElliptic(d::D, n::Int; r = 0.5::Float64, diag=d::D, norm = false::B
     return M
 end
 
+"""
+(This is a old typo)
+See [`randElliptic`](#randElliptic) for more details.
+"""
 function randElliptic(n::Int; r=0.5::Float64, norm = false::Bool)
     return randElliptic(Normal(),n, r=r, norm=norm)
 end
+
+const  randEllipic = randElliptic
 
 """
 ```julia

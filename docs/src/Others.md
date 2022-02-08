@@ -1,8 +1,4 @@
 ```@docs
-
-qresolvent
-
-
 ComplexNormal
 
 Gaussian
