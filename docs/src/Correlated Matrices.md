@@ -14,7 +14,7 @@ randSymmetric
 
 ## Elliptic Matrices
 ```@docs
-randEllipic
+randElliptic
 ```
 
 ## RMT: Semicircle Law
@@ -50,7 +50,7 @@ colors = [:red,:green,:blue,:purple]
  
 anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
     
-randEllipic(500,r=((N-2*n)/N)+0.0001,norm=true)|>eigvals|>x->scatter(x,ylims=(-2,2), xlims=(-2,2),ratio=1,label="ρ = $(round(((N-2*n)/N)+0.0001,digits=2))")
+randElliptic(500,r=((N-2*n)/N)+0.0001,norm=true)|>eigvals|>x->scatter(x,ylims=(-2,2), xlims=(-2,2),ratio=1,label="ρ = $(round(((N-2*n)/N)+0.0001,digits=2))")
 
 title!("Elliptical Law")
 

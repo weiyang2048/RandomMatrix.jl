@@ -25,7 +25,7 @@ anim = @animate for n = (1:50...,51:10:N...,N:-10:51...,50:1...)
 
     plot!([exp(θ*im) for θ=0:0.01:2pi],label="",lw=3,c=[rand(colors) for _=0:0.01:2pi])
     
-    p4 = randEllipic(500,r=((N-2*n)/N)+0.0001,norm=true)|>eigvals|>x->scatter(x,ylims=(-2,2), xlims=(-2,2),ratio=1,label="ρ = $(round(((N-2*n)/N)+0.0001,digits=2))")
+    p4 = randElliptic(500,r=((N-2*n)/N)+0.0001,norm=true)|>eigvals|>x->scatter(x,ylims=(-2,2), xlims=(-2,2),ratio=1,label="ρ = $(round(((N-2*n)/N)+0.0001,digits=2))")
    title!("Elliptical Law")
   plot(p1,p2,p3,p4,size = (1000, 1000),axis=false)
 end 

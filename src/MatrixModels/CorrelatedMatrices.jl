@@ -1,4 +1,4 @@
-export randEllipic
+export randElliptic
 
 """
 -  Look for a `phat`, such that when used in NORTA, it will return correlations approximately `ρ`
@@ -41,9 +41,9 @@ struct preNORTA
 end 
 """
 ```julia
-randEllipic(d, n; r , diag, norm) 
+randElliptic(d, n; r , diag, norm) 
 
-randEllipic(n; r, norm)
+randElliptic(n; r, norm)
 ```
 - `d` : default `Normal()`, entry distribution
 - `n`  : dimensions 
@@ -54,7 +54,7 @@ randEllipic(n; r, norm)
 # Examples
 Generate a random elliptic matrix, with entries from ``\\mathscr{N}(0,1)`` and ``\\rho(H_{ij},H_{ji})=0.5`` 
 ```julia
-randEllipic(500)
+randElliptic(500)
 
 500×500 Matrix{Float64}:
   2.03417    -0.424289    1.28267   …  -0.114754  -1.96059
@@ -71,7 +71,7 @@ randEllipic(500)
 Generate a normalized random elliptic matrix, with entries `Poisson(10)` and ``\\rho(H_{ij},H_{ji})=0.1`` 
 ```julia
 using Distributions
-randEllipic(Poisson(10),500, r=0.1 , norm=true)
+randElliptic(Poisson(10),500, r=0.1 , norm=true)
 
 500×500 Matrix{Float64}:
   0.268328    -0.0413153  -0.0175096   …   0.0190835   0.0201304       
@@ -86,7 +86,7 @@ randEllipic(Poisson(10),500, r=0.1 , norm=true)
 
 ```
 """
-function randEllipic(d::D, n::Int; r = 0.5::Float64, diag=d::D, norm = false::Bool) where  D<:S
+function randElliptic(d::D, n::Int; r = 0.5::Float64, diag=d::D, norm = false::Bool) where  D<:S
     if r==1
         return randHermitian(d,n,diag=diag,norm=norm)
     end
@@ -107,8 +107,8 @@ function randEllipic(d::D, n::Int; r = 0.5::Float64, diag=d::D, norm = false::Bo
     return M
 end
 
-function randEllipic(n::Int; r=0.5::Float64, norm = false::Bool)
-    return randEllipic(Normal(),n, r=r, norm=norm)
+function randElliptic(n::Int; r=0.5::Float64, norm = false::Bool)
+    return randElliptic(Normal(),n, r=r, norm=norm)
 end
 
 """
