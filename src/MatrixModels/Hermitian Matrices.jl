@@ -34,7 +34,7 @@ randHermitian(Circular(1),3,diag = (-1,1))
  1.39468+0.295073im  1.53369-0.296583im     -1.0+0.0im
 ```
 Generate a random 2 by 2 Symmetric Matrix with entries  `Poisson(2)` rvs. 
-This is also be done with `randSymmetric(Poisson(2),3)`
+This can also be done with `randSymmetric(Poisson(2),3)`
 ```julia
 randHermitian(Poisson(2),3)
 

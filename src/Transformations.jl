@@ -15,7 +15,7 @@ Get the resolvent **function** of a normalized GOE(500).
 
 And evaluate the resolvent at `0`
 ```julia
-R = Resolvent(rand(GOE(500),norm = true)) # this a function
+R = Resolvent(rand(GOE(500),norm = true)) # This is a function
 
 R(0)
 
