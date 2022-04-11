@@ -1,4 +1,4 @@
-export wignersurmise,unfoldedeigvals ,unfoldedSpacings
+export wignersurmise, unfoldedeigvals, unfoldedSpacings
 
 """
 ```julia
@@ -32,11 +32,11 @@ wignersurmise(2,beta=2)
 0.07962814352725955
 ```
 """
-function wignersurmise(s::Real; beta = 1 :: Int)  
+function wignersurmise(s::Real; beta=1::Int)
     if beta == 1
-        return (pi/2) * s * exp(-pi * s^2 / 4)
+        return (pi / 2) * s * exp(-pi * s^2 / 4)
     elseif beta == 2
-        return 32*(s/pi)^2 * exp(- 4 * s^2 / pi)
+        return 32 * (s / pi)^2 * exp(-4 * s^2 / pi)
     end
 end
 
@@ -48,14 +48,32 @@ unfoldedeigvals(E; deg, goe)
 - `deg` : default `10`
 - `goe` : default `false`
 """
-function unfoldedeigvals(E::Array; deg=10::Int, goe = false::Bool)
+function unfoldedeigvals(E::Array; deg=10::Int, goe=false::Bool)
+    sort!(E)
     if goe
-        return length(E)*cdf(Semicircle(2),E)
+        return length(E) * cdf(Semicircle(2), E)
     end
-    
-    return polyfit(E,(x->sum(E.<x)).(E),deg).(E)
+
+    return polyfit(E, (x -> sum(E .< x)).(E), deg).(E)
 
 end
-function unfoldedSpacings(E::Array;deg=10::Int, goe = false::Bool)
-    return diff(unfoldedeigvals(E,deg=deg,goe=goe))
+
+
+"""
+```julia
+unfoldedSpacings(E; deg, goe)
+```
+- `E` : The array of eigenvalues
+- `deg` : default `10`
+- `goe` : default `false`
+```
+"""
+function unfoldedSpacings(E::Array; deg=10::Int, goe=false::Bool)
+    return diff(unfoldedeigvals(E, deg=deg, goe=goe))
+end
+
+
+function numberVariance()
+
+
 end
