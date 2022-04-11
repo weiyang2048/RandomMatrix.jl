@@ -1,7 +1,6 @@
-
 temp.jl
 temp.png
 temp.svg
 docs/build/
-*desktop.ini
-docs/desktop.ini
+*/desktop.ini
+**/desktop.ini

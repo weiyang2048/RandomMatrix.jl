@@ -1,23 +1,23 @@
 module RandomMatrix
 
-using StatsBase: sample, Weights 
+using StatsBase: sample, Weights
 import Distributions: mean, var, rand
 using Distributions
 using Random
 using LinearAlgebra
-import Polynomials.fit as polyfit 
+import Polynomials.fit as polyfit
 using SparseArrays: spzeros
-using Plots: heatmap, cgrad
+using Plots: heatmap, cgrad, @layout, histogram!, grid, plot, plot!
 
 
 const S = Union{Tuple,AbstractArray,Distribution,DataType}
 
-export 
+export
      randDiagonal, randTriangular, randMatrix,
      randHermitian, randSymmetric, GOE, GUE,
      randStochastic,
      randToeplitz, randHankel,
-     randUnitary, randOrthogonal , Haar, COE, CUE, randPermutation
+     randUnitary, randOrthogonal, Haar, COE, CUE, randPermutation
 
 include("MatrixModels.jl")
 
