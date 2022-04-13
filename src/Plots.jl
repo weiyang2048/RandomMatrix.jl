@@ -24,18 +24,25 @@ function poissonPMF(k)
 end
 
 function plotEigStats(M::AbstractMatrix)
-
+    n = size(M)[1]
     E = eigvals(M)
     S = unfoldedSpacings(E, deg=10)
     begin
-        layout = @layout [grid(1, 2)]
-        plot(layout=layout)
-        histogram!(E, subplot=2, title="Eigenvalues", legend=false, normed=true)
-        histogram!(S, subplot=1, nbins=100, title="Unfolded Spacings", normed=true, label="histogram")
-        plot!(0:0.1:2, wignersurmise.(0:0.1:2), subplot=1, label="Wigner Surmise")
-        plot!(0:0.1:3, poissonPMF.(0:0.1:2), subplot=1, label="Exponential(1)")
+        layout = @layout [grid(1, 3)]
+        plot(layout=layout, size=(1800, 600))
+        histogram!(E, subplot=2, nbins=Int(floor(sqrt(n))), title="Eigenvalues", legend=false, normed=true,
+            opacity=0.5, color=:tomato)
+        histogram!(S, subplot=1, nbins=100, title="Unfolded Spacings", normed=true, label="histogram",
+            opacity=0.5, color=:royalblue)
+        plot!(0:0.1:3, wignersurmise.(0:0.1:3), subplot=1, label="Wigner Surmise",
+            lw=5)
+        plot!(0:0.1:3, poissonPMF.(0:0.1:3), subplot=1, label="Exponential(1)",
+            lw=5, color=:seagreen)
+
+        numVar = [numberVariance(E, l) for l in 0:0.01:10]
+        plot!(0:0.01:10, subplot=3, numVar, title="Number Variance", legend=false,
+            lw=5, color=:forestgreen)
     end
 end
-
 
 

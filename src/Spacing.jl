@@ -1,4 +1,4 @@
-export wignersurmise, unfoldedeigvals, unfoldedSpacings
+export wignersurmise, unfoldedeigvals, unfoldedSpacings, numberVariance
 
 """
 ```julia
@@ -73,7 +73,23 @@ function unfoldedSpacings(E::Array; deg=10::Int, goe=false::Bool)
 end
 
 
-function numberVariance()
+function numberVariance(E::Array, l::Float64)
+    n = length(E)
+    E = unfoldedeigvals(E)
+    stat = 0
+    for (i, e) in enumerate(E)
+        n_e_l = 0
+        temp1, temp2 = i - 1, i + 1
+        while temp1 >= 1 && E[temp1] >= e - l / 2
+            temp1 -= 1
+            n_e_l += 1
+        end
+        while temp2 <= n && E[temp2] <= e + l / 2
+            temp2 += 1
+            n_e_l += 1
+        end
+        stat += (n_e_l - l)^2
+    end
 
-
+    return stat / n
 end
