@@ -1,6 +1,8 @@
 temp.jl
 temp.png
 temp.svg
+Manifest.toml
 docs/build/
+*.cov
 */desktop.ini
 **/desktop.ini

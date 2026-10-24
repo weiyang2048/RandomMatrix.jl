@@ -3,7 +3,7 @@ export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur,
 # re-export    
 export mean, var, pdf, rand
 
-stieltjes(d::Semicircle) = z -> (-z + sqrt(z^2 - d.r^2)) / 2
+stieltjes(d::Semicircle) = z -> (-z + sqrt(complex(z^2 - d.r^2))) / 2
 
 
 """
@@ -219,3 +219,14 @@ function rand(rng::AbstractRNG, d::Elliptic)
 end
 
 mean(d::Elliptic) = d.c
+
+# Distributions ships a generic `_rand!` only for real-valued univariate
+# distributions. The complex-valued distributions defined in this file
+# (ComplexNormal, Circular, Elliptic) need their own so that array sampling
+# such as `rand(d, n)` — used by `randDiagonal` — works.
+function Distributions._rand!(rng::AbstractRNG, d::Union{ComplexNormal,Circular,Elliptic}, A::AbstractArray)
+    for i in eachindex(A)
+        A[i] = rand(rng, d)
+    end
+    return A
+end

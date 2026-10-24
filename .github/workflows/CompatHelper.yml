@@ -1,0 +1,22 @@
+name: CompatHelper
+on:
+  schedule:
+    - cron: 0 0 * * *
+  workflow_dispatch:
+jobs:
+  CompatHelper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pkg.generate("CompatHelper")
+        run: |
+          using Pkg
+          Pkg.add("CompatHelper")
+        shell: julia --color=yes {0}
+      - name: CompatHelper.main()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMPATHELPER_PRIV: ${{ secrets.DOCUMENTER_KEY }}
+        run: |
+          using CompatHelper
+          CompatHelper.main(; subdirs = ["", "docs"])
+        shell: julia --color=yes {0}

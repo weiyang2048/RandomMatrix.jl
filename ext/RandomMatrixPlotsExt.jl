@@ -1,15 +1,20 @@
-export normview, plotEigStats
+module RandomMatrixPlotsExt
+
+using RandomMatrix
+using RandomMatrix: unfoldedSpacings, wignersurmise, numberVariance
+using Plots: heatmap, cgrad, @layout, histogram!, grid, plot, plot!
+using LinearAlgebra: eigvals, norm
 
 """
 ```julia
 # Example
 
-# The resolvent of a random Hermitian matrix is approximately diagonal, 
+# The resolvent of a random Hermitian matrix is approximately diagonal,
 # see Section 3 in https://arxiv.org/pdf/1903.10060.pdf
- normview(resolvent(randHermitian(1000,norm=true))(0.5+0.1im))
+ normview(Resolvent(randHermitian(1000,norm=true))(0.5+0.1im))
 ```
 """
-function normview(M::AbstractMatrix)
+function RandomMatrix.normview(M::AbstractMatrix)
     M = norm.(M)
     heatmap(M,
         yflip=true,
@@ -19,11 +24,9 @@ function normview(M::AbstractMatrix)
     )
 end
 
-function poissonPMF(k)
-    return exp(-k)
-end
+poissonPMF(k) = exp(-k)
 
-function plotEigStats(M::AbstractMatrix)
+function RandomMatrix.plotEigStats(M::AbstractMatrix)
     n = size(M)[1]
     E = eigvals(M)
     S = unfoldedSpacings(E, deg=10)
@@ -45,4 +48,4 @@ function plotEigStats(M::AbstractMatrix)
     end
 end
 
-
+end # module
