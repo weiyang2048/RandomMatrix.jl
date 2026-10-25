@@ -5,5 +5,6 @@
 Resolvent
 
 qResolvent
-```
 
+qresolvent
+```

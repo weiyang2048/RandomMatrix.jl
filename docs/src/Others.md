@@ -5,7 +5,7 @@ Gaussian
 
 ±
 
-preNORTA
+RandomMatrix.preNORTA
 
 normview
 

@@ -28,6 +28,8 @@ const PAGES = Any["Home" =>"index.md",
 ]
 
 makedocs(modules = [RandomMatrix],
+      repo = Documenter.Remotes.GitHub("weiyang2048", "RandomMatrix.jl"),
+      linkcheck = false,
       sitename="RandomMatrix.jl",
       authors = "Wei Yang",
       pages = PAGES
