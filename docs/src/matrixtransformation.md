@@ -6,5 +6,5 @@ Resolvent
 
 qResolvent
 
-qresolvent
+RandomMatrix.qresolvent
 ```

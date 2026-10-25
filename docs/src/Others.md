@@ -9,5 +9,7 @@ RandomMatrix.preNORTA
 
 normview
 
+plotEigStats
+
 randSampling
 ```
