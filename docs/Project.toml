@@ -3,10 +3,6 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-RandomMatrix = "0af1cf96-9b30-454e-9d9e-87908f700846"
-
-[sources]
-RandomMatrix = {path = "/home/hatch/workspace/RandomMatrix.jl"}
 
 [compat]
 Distributions = "0.25"
