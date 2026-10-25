@@ -135,6 +135,32 @@ using Statistics: mean, std
     ev = eigvals(S)
     @test fitMarchenkoPastur(ev, γ) ≈ 1.0 atol = 0.06
     @test fitMarchenkoPastur(ev, γ; method=:median) ≈ 1.0 atol = 0.06
+    # MP median across regimes: for gamma > 1 the law has an atom at 0 of
+    # mass 1 - 1/gamma, so the median is 0 for gamma >= 2 and lies inside
+    # the continuous part for 1 < gamma < 2. Check against an independent
+    # midpoint-rule CDF of the density (plus the atom).
+    function mp_cdf(γ, x)
+        a, _ = RandomMatrix._mp_edges(γ, 1.0)
+        atom = γ > 1 ? 1 - 1 / γ : 0.0
+        x <= a && return atom
+        d = MarchenkoPastur(γ, 1.0)
+        npts = 100_000
+        h = (x - a) / npts
+        return atom + h * sum(pdf(d, a + (i - 0.5) * h) for i in 1:npts)
+    end
+    for γm in (0.25, 0.5, 1.0, 1.5)
+        @test mp_cdf(γm, RandomMatrix._mp_median(γm)) ≈ 0.5 atol = 2e-3
+    end
+    @test RandomMatrix._mp_median(2.0) == 0.0
+    @test RandomMatrix._mp_median(3.0) == 0.0
+    # Median matching at gamma = 1 (previously sigma^2 = Inf) and in (1, 2).
+    X1 = randn(500, 500) / sqrt(500)
+    ev1 = eigvals(Symmetric(X1 * X1'))
+    @test fitMarchenkoPastur(ev1, 1.0; method=:median) ≈ 1.0 atol = 0.08
+    X2 = randn(600, 400) / sqrt(400)
+    ev2 = eigvals(Symmetric(X2 * X2'))
+    @test fitMarchenkoPastur(ev2, 1.5; method=:median) ≈ 1.0 atol = 0.08
+    @test_throws ArgumentError fitMarchenkoPastur(ev2, 2.5; method=:median)
     cl = clipEigenvalues(ev, γ)
     @test sum(cl) ≈ sum(ev) atol = 1e-8
     ξ = rieEigenvalues(ev, γ)

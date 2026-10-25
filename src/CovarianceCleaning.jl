@@ -14,22 +14,42 @@ export fitMarchenkoPastur, clipEigenvalues, rieEigenvalues,
 
 _mp_edges(γ::Real, σ2::Real) = (σ2 * (1 - sqrt(γ))^2, σ2 * (1 + sqrt(γ))^2)
 
-# Median of the Marcenko-Pastur law with sigma^2 = 1, by quadrature of the
-# density on its support.
+# Median of the Marcenko-Pastur law with sigma^2 = 1.
+#
+# For gamma > 1 the law has an atom at 0 of mass 1 - 1/gamma plus a
+# continuous part of mass 1/gamma on [(1-sqrt(gamma))^2, (1+sqrt(gamma))^2]
+# (the density in Distributions.jl integrates to min(1, 1/gamma)). The
+# median is therefore 0 once the atom alone reaches mass 1/2 (gamma >= 2);
+# for 1 < gamma < 2 it is the point of the continuous part where the
+# accumulated mass reaches 1/2 - (1 - 1/gamma), and for gamma <= 1 it is
+# the ordinary median of the continuous part. The quadrature runs in the
+# Chebyshev variable x = mid - half*cos(theta), which removes the
+# square-root edge singularities of the density (and the x^(-1/2)
+# singularity at 0 when gamma = 1), so a midpoint rule on a uniform
+# theta grid is accurate over the whole range.
 function _mp_median(γ::Real)
+    atom = γ > 1 ? 1 - 1 / γ : 0.0
+    atom >= 0.5 && return 0.0
     a, b = _mp_edges(γ, 1.0)
-    γ >= 1 && return a  # atom at 0 of mass 1 - 1/gamma makes the median 0-ish;
-    # for gamma >= 1 the lower edge is 0 and the median is found by the same
-    # quadrature below on [0, b].
-    lo = γ >= 1 ? 0.0 : a
+    mid, half = (a + b) / 2, (b - a) / 2
+    d = MarchenkoPastur(γ, 1.0)
+    target = 0.5 - atom
     n = 4096
-    xs = range(lo, b; length=n + 1)
-    h = (b - lo) / n
-    dens = [MarchenkoPastur(γ, 1.0) |> d -> pdf(d, x) for x in xs]
-    cdf = cumsum(dens) .* h
-    cdf ./= cdf[end]
-    i = searchsortedfirst(cdf, 0.5)
-    return xs[clamp(i, 1, n + 1)]
+    Δθ = π / n
+    cum = 0.0
+    for i in 1:n
+        θ = (i - 0.5) * Δθ
+        x = mid - half * cos(θ)
+        w = pdf(d, x) * half * sin(θ) * Δθ
+        if cum + w >= target
+            frac = w > 0 ? (target - cum) / w : 0.0
+            xlo = mid - half * cos((i - 1) * Δθ)
+            xhi = mid - half * cos(i * Δθ)
+            return xlo + frac * (xhi - xlo)
+        end
+        cum += w
+    end
+    return b
 end
 
 """
@@ -44,6 +64,9 @@ Methods:
   to a fixed point - eigenvalues above the fitted upper edge are treated as
   signal and excluded from the noise estimate.
 - `:median`: match medians, `sigma^2 = median(evals) / median(MP_gamma,1)`.
+  Requires `gamma < 2`: for `gamma >= 2` the Marcenko-Pastur median is 0
+  (the atom at 0 has mass `1 - 1/gamma >= 1/2`), so median matching is
+  degenerate and an `ArgumentError` is thrown; use `:trim` there.
 """
 function fitMarchenkoPastur(evals::AbstractVector{<:Real}, γ::Real; method::Symbol=:trim)
     λ = collect(float.(evals))
@@ -59,7 +82,12 @@ function fitMarchenkoPastur(evals::AbstractVector{<:Real}, γ::Real; method::Sym
         end
         return σ2
     elseif method === :median
-        return median(λ) / _mp_median(γ)
+        m = _mp_median(γ)
+        m > 0 || throw(ArgumentError(
+            "method=:median is degenerate for gamma >= 2: the " *
+            "Marcenko-Pastur median is 0 (atom at 0 of mass " *
+            "1 - 1/gamma >= 1/2); use method=:trim"))
+        return median(λ) / m
     else
         throw(ArgumentError("method must be :trim or :median"))
     end
