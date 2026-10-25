@@ -19,6 +19,12 @@ const PAGES = Any["Home" =>"index.md",
             "Spectral Spacing"=>"Spectral Spacing.md",
             "Matrix Transformations"=>"matrixtransformation.md"
             ],
+      "Spikes, Cleaning and Free Probability"=>[
+            "Spiked Covariance and BBP"=>"SpikedCovariance.md",
+            "Covariance Cleaning"=>"CovarianceCleaning.md",
+            "Tracy-Widom Distributions"=>"TracyWidom.md",
+            "Free Probability"=>"FreeProbability.md"
+            ],
 
       "Under Construction" =>[ 
             "Under Construction1" =>"Others.md",

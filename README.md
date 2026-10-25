@@ -5,6 +5,8 @@
 
 A package for Random Matrix Theory, providing functionalities to sample from matrix-valued distributions and more.
 
+Since v0.4.0 it also covers the spiked covariance model and the BBP phase transition (`spikeLocation`, `spikeOverlap`, `estimateSpike`), Marčenko–Pastur covariance cleaning (`cleanCovariance` with the rotationally invariant estimator and eigenvalue clipping), the Tracy–Widom distributions (`TracyWidom`), and numerical free probability (`freeAdd`, `freeMul`, `rTransform`, `sTransform`).
+
 The documentation for the package can be found at **[Documentation 🔗](https://weiyang2048.github.io/RandomMatrix.jl/dev/)**.
 
 ***

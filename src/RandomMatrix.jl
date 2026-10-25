@@ -52,6 +52,14 @@ include("SamplingMatrix.jl")
 
 include("Transformations.jl")
 
+include("SpikedCovariance.jl")
+
+include("CovarianceCleaning.jl")
+
+include("TracyWidom.jl")
+
+include("FreeProbability.jl")
+
 include("Spacing.jl")
 
 include("Distributions.jl")
