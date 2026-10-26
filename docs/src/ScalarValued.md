@@ -15,3 +15,8 @@ Circular
 ```@docs
 Elliptic
 ```
+
+## Stieltjes Transform of the Semicircle Law
+```@docs
+stieltjes
+```

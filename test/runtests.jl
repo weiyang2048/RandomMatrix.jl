@@ -3,6 +3,7 @@ using Distributions: Normal, Semicircle
 using LinearAlgebra
 using Random
 using Test
+using Aqua
 
 Random.seed!(20261024)
 
@@ -246,4 +247,12 @@ end
     at = freeMul(freePoissonLaw(3.0; npoints=401), freePoissonLaw(0.5; npoints=401); npoints=401)
     @test length(freeAtoms(at)) == 1 && freeAtoms(at)[1][1] == 0.0 && freeAtoms(at)[1][2] ≈ 2 / 3
     @test_throws ArgumentError freeMul(semicircleLaw(1.0), freePoissonLaw(0.5))
+end
+
+@testset "Aqua quality checks" begin
+    # Ambiguities, unbound type parameters, undefined exports, stale and
+    # compat-bounded dependencies, type piracy, persistent tasks, and a
+    # docstring for every exported name. Aqua is a test-only dependency
+    # (see [extras]/[targets] in Project.toml), never a runtime dep.
+    Aqua.test_all(RandomMatrix)
 end

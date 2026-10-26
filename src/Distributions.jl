@@ -3,6 +3,21 @@ export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur,
 # re-export    
 export mean, var, pdf, rand
 
+"""
+    stieltjes(d::Semicircle)
+
+Return the Stieltjes transform of the semicircle law `d` as a function of
+one argument `z`:
+
+```math
+m(z) = \\frac{-z + \\sqrt{z^2 - r^2}}{2}, \\qquad r = d.r .
+```
+
+# Examples
+```julia
+stieltjes(Semicircle(2))(0)  # == im
+```
+"""
 stieltjes(d::Semicircle) = z -> (-z + sqrt(complex(z^2 - d.r^2))) / 2
 
 
@@ -224,9 +239,20 @@ mean(d::Elliptic) = d.c
 # distributions. The complex-valued distributions defined in this file
 # (ComplexNormal, Circular, Elliptic) need their own so that array sampling
 # such as `rand(d, n)` — used by `randDiagonal` — works.
-function Distributions._rand!(rng::AbstractRNG, d::Union{ComplexNormal,Circular,Elliptic}, A::AbstractArray)
+function _fill_rand!(rng::AbstractRNG, d::Union{ComplexNormal,Circular,Elliptic}, A::AbstractArray)
     for i in eachindex(A)
         A[i] = rand(rng, d)
     end
     return A
 end
+
+Distributions._rand!(rng::AbstractRNG, d::Union{ComplexNormal,Circular,Elliptic}, A::AbstractArray) =
+    _fill_rand!(rng, d, A)
+
+# Disambiguation: Distributions also defines `_rand!` for a univariate
+# sampleable with `A::AbstractArray{<:Real}`; the method above is ambiguous
+# with it for these distributions, so the intersection case gets its own
+# (more specific) method. Filling a real array with complex samples throws
+# on assignment, exactly as the generic Distributions method would.
+Distributions._rand!(rng::AbstractRNG, d::Union{ComplexNormal,Circular,Elliptic}, A::AbstractArray{<:Real}) =
+    _fill_rand!(rng, d, A)

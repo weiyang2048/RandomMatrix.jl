@@ -12,4 +12,6 @@ normview
 plotEigStats
 
 randSampling
+
+randErdosRenyi
 ```

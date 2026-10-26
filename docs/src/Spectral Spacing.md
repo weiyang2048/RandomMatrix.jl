@@ -12,3 +12,7 @@ unfoldedeigvals
 ```@docs
 unfoldedSpacings
 ```
+
+```@docs
+numberVariance
+```

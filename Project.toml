@@ -1,7 +1,7 @@
 name = "RandomMatrix"
 uuid = "0af1cf96-9b30-454e-9d9e-87908f700846"
 authors = ["weiyang2048 <weiyang2048@gmail.com>"]
-version = "0.4.1"
+version = "0.4.2"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -19,6 +19,7 @@ Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 RandomMatrixPlotsExt = "Plots"
 
 [compat]
+Aqua = "0.8"
 Distributions = "0.25"
 LinearAlgebra = "1"
 Plots = "1"
@@ -27,10 +28,12 @@ Random = "1"
 SparseArrays = "1"
 Statistics = "1"
 StatsBase = "0.33, 0.34"
+Test = "1"
 julia = "1.10"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Aqua", "Test"]

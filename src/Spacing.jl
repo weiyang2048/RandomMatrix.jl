@@ -73,6 +73,23 @@ function unfoldedSpacings(E::Array; deg=10::Int, goe=false::Bool)
 end
 
 
+"""
+    numberVariance(E, l::Float64)
+
+Number variance of the spectrum `E` at unfolded interval length `l`.
+`E` is first unfolded (see [`unfoldedeigvals`](@ref)); for each unfolded
+eigenvalue ``e`` let ``n_e(l)`` be the number of *other* unfolded
+eigenvalues within distance ``l/2`` of ``e``. The return value is the
+spectral average of ``(n_e(l) - l)^2`` — the empirical analogue of
+``\\Sigma^2(l) = \\langle (n(l) - \\langle n(l)\\rangle)^2 \\rangle``,
+which grows only logarithmically in ``l`` for rigid (random-matrix)
+spectra and linearly for uncorrelated (Poisson) spectra.
+
+# Examples
+```julia
+numberVariance(sort(randn(50)), 2.0)
+```
+"""
 function numberVariance(E::Array, l::Float64)
     n = length(E)
     E = unfoldedeigvals(E)
