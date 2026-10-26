@@ -6,3 +6,4 @@ docs/build/
 *.cov
 */desktop.ini
 **/desktop.ini
+*.orig
