@@ -249,6 +249,28 @@ end
     @test_throws ArgumentError freeMul(semicircleLaw(1.0), freePoissonLaw(0.5))
 end
 
+@testset "RIE finite-size bias (characterized)" begin
+    # Seeded characterization of the bias documented in rieEigenvalues:
+    # at the default broadening eta = p^(-1/2) the mean cleaned eigenvalue
+    # under the null is biased up by ~ c(gamma) p^(-1/2) (c(0.5) ~ 1.3,
+    # so ~ 1.09 at p = 200, gamma = 0.5); eta = p^(-2/3) cuts the bias
+    # roughly threefold. Bands sit several standard errors around the
+    # measured values, tight enough to catch a prescription change.
+    Random.seed!(20261027)
+    p, n = 200, 400
+    γ = p / n
+    X = randn(p, n) / sqrt(n)
+    ev = eigvals(Symmetric(X * X'))
+    ξd = rieEigenvalues(ev, γ)
+    @test 1.04 < mean(ξd) < 1.15
+    ξ23 = rieEigenvalues(ev, γ; η=p^(-2 / 3))
+    @test abs(mean(ξ23) - 1) < abs(mean(ξd) - 1) - 0.02
+    @test abs(mean(ξ23) - 1) < 0.07
+    # The ASCII spelling `eta` is an alias for the Greek keyword `η`.
+    @test rieEigenvalues(ev, γ; eta=0.05) == rieEigenvalues(ev, γ; η=0.05)
+    @test rieEigenvalues(ev, γ; eta=p^(-2 / 3)) == ξ23
+end
+
 @testset "Aqua quality checks" begin
     # Ambiguities, unbound type parameters, undefined exports, stale and
     # compat-bounded dependencies, type piracy, persistent tasks, and a
