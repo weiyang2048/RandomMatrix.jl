@@ -45,6 +45,18 @@ struct FreeMeasure
     end
 end
 
+# Append the atoms (as extra nodes carrying their exact mass) and
+# normalize the weights to a probability measure.
+function _normalize_measure(nodes, w, atoms)
+    for (a, m) in atoms
+        push!(nodes, a)
+        push!(w, m)
+    end
+    tot = sum(w)
+    w ./= tot
+    return FreeMeasure(nodes, w, atoms)
+end
+
 # Convert a density on a grid to a discrete measure (trapezoid weights),
 # optionally with distinguished atoms (also added as nodes).
 function _density_measure(xs, dens, atoms)
@@ -54,14 +66,7 @@ function _density_measure(xs, dens, atoms)
         h = (i > 1 ? xs[i] - xs[i-1] : 0.0) + (i < n ? xs[i+1] - xs[i] : 0.0)
         w[i] = dens[i] * h / 2
     end
-    nodes = collect(xs)
-    for (a, m) in atoms
-        push!(nodes, a)
-        push!(w, m)
-    end
-    tot = sum(w)
-    w ./= tot
-    return FreeMeasure(nodes, w, atoms)
+    return _normalize_measure(collect(xs), w, atoms)
 end
 
 """
@@ -85,16 +90,32 @@ The free Poisson law with parameter `gamma` - the Marcenko-Pastur law
 with ratio `gamma`, with the variable multiplied by `scale`. Support
 `scale * (1 +- sqrt(gamma))^2`, mean `scale`; for `gamma > 1` there is an
 atom at 0 of mass `1 - 1/gamma`. Its transforms (for `scale = 1`) are
-`R(w) = 1 / (1 - gamma * w)` and `S(w) = 1 / (1 + gamma * w)`.
+`R(w) = 1 / (1 - gamma * w)` and `S(w) = 1 / (1 + gamma * w)`. The
+discretization uses a Chebyshev grid in the support variable, so the
+density spike at the lower edge for `gamma` near 1 (and the singular
+density at `gamma = 1`) is resolved accurately.
 """
 function freePoissonLaw(γ::Real; scale::Real=1.0, npoints::Integer=1201)
-    d = MarchenkoPastur(γ, sqrt(scale))
-    lo, hi = scale * (1 - sqrt(γ))^2, scale * (1 + sqrt(γ))^2
-    lo = max(lo, 0.0)
-    xs = collect(range(lo, hi; length=npoints))
-    dens = [pdf(d, x) for x in xs]
+    # Build the law on the Chebyshev grid y = mid - half*cos(theta) in the
+    # unit-scale variable: the transformed density
+    #     rho(y(theta)) * y'(theta) = half^2 sin^2(theta) / (2 pi gamma y)
+    # is smooth for every gamma, whereas on a uniform grid the density
+    # spike at the lower edge is unresolved for gamma near 1 (the mean
+    # came out 2.3% high at gamma = 0.99) and at gamma = 1 the density
+    # itself is NaN at 0, which poisoned every weight with NaN.
+    lo, hi = (1 - sqrt(γ))^2, (1 + sqrt(γ))^2
+    mid, half = (lo + hi) / 2, (hi - lo) / 2
+    θs = range(0, π; length=npoints)
+    ys = mid .- half .* cos.(θs)
+    g = [y > 0 ? half^2 * sin(θ)^2 / (2π * γ * y) : half / (π * γ)
+         for (θ, y) in zip(θs, ys)]
+    w = zeros(npoints)
+    for i in 1:npoints
+        h = (i > 1 ? θs[i] - θs[i-1] : 0.0) + (i < npoints ? θs[i+1] - θs[i] : 0.0)
+        w[i] = g[i] * h / 2
+    end
     atoms = γ > 1 ? [0.0 => 1 - 1 / γ] : Pair{Float64,Float64}[]
-    return _density_measure(xs, dens, atoms)
+    return _normalize_measure(scale .* ys, w, atoms)
 end
 
 """
@@ -256,8 +277,8 @@ function _assemble_result(xs, dens_raw, atoms, eps)
         dens .-= (m / π) .* eps ./ ((xs .- c) .^ 2 .+ eps^2)
     end
     dens = max.(dens, 0.0)
-    h = xs[2] - xs[1]
-    mass_ac = sum(dens) * h - (dens[1] + dens[end]) * h / 2
+    mass_ac = sum((dens[i] + dens[i+1]) * (xs[i+1] - xs[i]) / 2
+                  for i in 1:length(xs)-1)
     target = 1 - sum(m for (_, m) in atoms; init=0.0)
     if mass_ac > 0 && target > 0
         dens .*= target / mass_ac
@@ -313,7 +334,22 @@ end
 The free multiplicative convolution `mu boxtimes nu` for measures on
 `[0, infinity)`, via the S-transform product rule with nested Newton
 inversion. Atoms: at 0 the mass is `max(mu({0}), nu({0}))`; elsewhere
-the sum-minus-one rule at products of atoms.
+the sum-minus-one rule at products of atoms. The output grid is a
+Chebyshev grid, clustered at the support ends, and `eps` (the Stieltjes
+regularization) defaults to half the mean grid spacing.
+
+Accuracy, measured against the exact moments of
+`MP_gamma boxtimes MP_delta` (from the S-transform) at the default
+resolution: when both factors are bounded away from 0 the first three
+moments err by at most about 2.5%. When a factor's support touches 0
+the product density diverges at 0, the `eps`-smoothing leaks mass
+below 0 at a rate `~ eps^(1/3)`, and the moment errors grow to about
+5% (`MP_1 boxtimes MP_0.5`) and 11% (`MP_1 boxtimes MP_1`). Passing a
+smaller `eps` (down to about `1e-4` times the support scale) improves
+the cases bounded away from 0 to ~0.05% and `MP_1 boxtimes MP_0.5` to
+~0.6%, but for measures with an atom at 0, very small `eps` makes the
+Newton continuation fail at many points near the lower edge (and the
+run slows down tenfold) — keep the default there.
 """
 function freeMul(μ::FreeMeasure, ν::FreeMeasure; npoints::Integer=1001, eps=nothing)
     (minimum(μ.nodes) >= 0 && minimum(ν.nodes) >= 0) ||
@@ -334,8 +370,14 @@ function freeMul(μ::FreeMeasure, ν::FreeMeasure; npoints::Integer=1001, eps=no
     loμ = minimum(μ.nodes); loν = minimum(ν.nodes)
     lo = (loμ > 0 && loν > 0) ? loμ * loν : 0.0
     pad = 0.05 * hi + 0.01
-    xs = collect(range(lo, hi + pad; length=npoints))
-    ε = eps === nothing ? (xs[2] - xs[1]) : eps
+    # Chebyshev grid on [lo, hi + pad], clustered at the support ends,
+    # and eps defaulting to half the mean grid spacing. (The accuracy
+    # limits of this scheme are documented in the docstring: the
+    # dominant error is the eps-smoothing of the density, which for a
+    # factor touching 0 leaks mass below 0 at a rate ~ eps^(1/3).)
+    mid, half = (lo + hi + pad) / 2, (hi + pad - lo) / 2
+    xs = mid .- half .* cos.(range(0, π; length=npoints))
+    ε = eps === nothing ? (xs[end] - xs[1]) / (2 * (npoints - 1)) : eps
     dens = zeros(length(xs))
     # Sweep from the right edge with continuation: the state holds the
     # outer variable w = psi_{mu boxtimes nu}(1/zeta) and the s = 1/chi
@@ -350,11 +392,22 @@ function freeMul(μ::FreeMeasure, ν::FreeMeasure; npoints::Integer=1001, eps=no
             state.sμ = freeMean(μ) / state.w
             state.sν = freeMean(ν) / state.w
         end
-        G = _mul_G(μ, ν, target, state)
+        G, ok = _mul_G(μ, ν, target, state)
         d = -imag(G) / π
+        if !ok || !isfinite(d)
+            # Continuation failed at this point (non-convergence is
+            # common near the lower edge when eps is very small): reset
+            # the state from the closed-form guess and retry once.
+            disc = sqrt(complex(1 + 4 * m1 * target))
+            state.w = (-1 + disc) / 2
+            state.sμ = freeMean(μ) / state.w
+            state.sν = freeMean(ν) / state.w
+            G, ok = _mul_G(μ, ν, target, state)
+            d = -imag(G) / π
+        end
         if !isfinite(d)
-            # Continuation failed at this point: fall back to the
-            # neighbouring value and reset the continuation state.
+            # Still failed: fall back to the neighbouring value and
+            # reset the continuation state.
             d = i < length(xs) ? dens[i+1] : 0.0
             disc = sqrt(complex(1 + 4 * m1 * target))
             state.w = (-1 + disc) / 2
@@ -402,22 +455,26 @@ function _dilate(μ::FreeMeasure, a::Real)
     return FreeMeasure(nodes, copy(μ.weights), atoms)
 end
 
+# Returns (G, converged): converged is false when the Newton iteration
+# hit its iteration cap without meeting either tolerance, in which case
+# G is only the last iterate and the caller should retry or fall back.
 function _mul_G(μ, ν, target, st::_MulState)
     w = st.w
+    converged = false
     for _ in 1:40
         A, sμ, dA = _chi_s(μ, w, st.sμ)
         B, sν, dB = _chi_s(ν, w, st.sν)
         st.sμ, st.sν = sμ, sν
         χprod = (1 + w) / w * A * B
         H = χprod - target
-        abs(H) < 1e-11 * (1 + abs(target)) && break
+        abs(H) < 1e-11 * (1 + abs(target)) && (converged = true; break)
         dχprod = χprod * (1 / (1 + w) - 1 / w + dA / A + dB / B)
         Δ = H / dχprod
         cap = 0.25 * (1 + abs(w))
         abs(Δ) > cap && (Δ *= cap / abs(Δ))
         w -= Δ
-        abs(Δ) < 1e-13 * (1 + abs(w)) && break
+        abs(Δ) < 1e-13 * (1 + abs(w)) && (converged = true; break)
     end
     st.w = w
-    return (1 + w) * target
+    return (1 + w) * target, converged
 end

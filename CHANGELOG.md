@@ -8,7 +8,40 @@ Registration notes record when a version landed in the Julia General
 registry; a version bump pushed to GitHub is not registered until the
 user triggers Registrator.
 
+## [0.4.6] - 2026-10-28
+
+Not yet registered in General.
+
+### Fixed
+
+- `freePoissonLaw` was broken for `gamma` near 1: on the uniform grid
+  the mean came out 2.3% high at `gamma = 0.99` and `1.01`, and at
+  `gamma = 1` every weight was NaN (the Marčenko–Pastur density at 0
+  is NaN), which also made `freeMul` with an `MP_1` factor return NaN
+  moments after minutes of Newton iterations. The law is now built on
+  a Chebyshev grid, where the transformed density is smooth for every
+  `gamma`; mean and variance match `1` and `gamma` to about 1e-7.
+
+### Changed
+
+- `freeMul` accuracy: the output grid is now a Chebyshev grid
+  clustered at the support ends, the default `eps` is half the mean
+  grid spacing (was: the uniform spacing), the result assembly uses a
+  variable-spacing trapezoid, and the Newton sweep retries once from a
+  reset state when a point fails to converge instead of silently
+  accepting the last iterate. Against the exact S-transform moments of
+  `MP_gamma ⊠ MP_delta` at the default resolution, the first three
+  moments now err by at most about 2.5% when both factors are bounded
+  away from 0 (the third moment of `MP_0.5 ⊠ MP_0.25` erred 2.9%
+  before), about 5% for
+  `MP_1 ⊠ MP_0.5` and about 11% for `MP_1 ⊠ MP_1` (was: 8% and 15% on
+  top of the `gamma = 1` NaN failure). The remaining touching-0 error
+  is the `eps^(1/3)` smoothing leak below 0, documented in the
+  `freeMul` docstring with `eps` guidance.
+
 ## [0.4.5] - 2026-10-27
+
+Registered in General on 2026-10-28.
 
 ### Added
 

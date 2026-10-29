@@ -220,6 +220,18 @@ end
     fp = freePoissonLaw(0.5)
     @test freeMean(fp) ≈ 1.0 atol = 0.01
     @test freeVar(fp) ≈ 0.5 atol = 0.02
+    # The Chebyshev discretization resolves the lower-edge density
+    # spike for gamma near 1 (uniform grid: mean 2.3% high at 0.99,
+    # all-NaN weights at gamma = 1, where pdf(MarchenkoPastur(1), 0)
+    # is NaN).
+    for g in (0.99, 1.0, 1.01, 2.0)
+        fpg = freePoissonLaw(g)
+        @test all(isfinite, fpg.weights)
+        @test freeMean(fpg) ≈ 1.0 atol = 2e-3
+        @test freeVar(fpg) ≈ g atol = 2e-3
+    end
+    @test freeMean(freePoissonLaw(1.0; scale=2.0)) ≈ 2.0 atol = 4e-3
+    @test freeVar(freePoissonLaw(1.0; scale=2.0)) ≈ 4.0 atol = 8e-3
     @test rTransform(fp, 0.1) ≈ 1 / (1 - 0.05) atol = 1e-3
     @test sTransform(fp, 0.3) ≈ 1 / (1 + 0.5 * 0.3) atol = 1e-3
     # Semicircle boxplus semicircle: variances add.
@@ -247,6 +259,30 @@ end
     at = freeMul(freePoissonLaw(3.0; npoints=401), freePoissonLaw(0.5; npoints=401); npoints=401)
     @test length(freeAtoms(at)) == 1 && freeAtoms(at)[1][1] == 0.0 && freeAtoms(at)[1][2] ≈ 2 / 3
     @test_throws ArgumentError freeMul(semicircleLaw(1.0), freePoissonLaw(0.5))
+end
+
+@testset "Free multiplicative convolution (exact moment anchors)" begin
+    # Exact moments of MP_g boxtimes MP_d from the S-transform
+    # (series reversion of chi(w) = w / ((1+w)(1+g w)(1+d w))):
+    # m1 = 1, m2 = 1 + g + d, m3 as tabulated. Tolerances are about
+    # 3x the errors measured at the default resolution (2026-10-28):
+    # (0.5, 0.25) errs 0.5/0.9/1.5%, (1, 0.5) errs 5.4/6.0/7.4% — the
+    # latter is the eps^(1/3) boundary-leak regime documented in
+    # freeMul's docstring.
+    mom(μ, k) = sum(w * x^k for (x, w) in zip(μ.nodes, μ.weights))
+    a1 = freeMul(freePoissonLaw(0.5), freePoissonLaw(0.25))
+    @test mom(a1, 1) ≈ 1.0 atol = 0.02
+    @test mom(a1, 2) ≈ 1.75 atol = 0.05
+    @test mom(a1, 3) ≈ 3.9375 atol = 0.18
+    a2 = freeMul(freePoissonLaw(1.0), freePoissonLaw(0.5))
+    @test mom(a2, 1) ≈ 1.0 atol = 0.1
+    @test mom(a2, 2) ≈ 2.5 atol = 0.25
+    @test mom(a2, 3) ≈ 8.25 atol = 0.85
+    # MP_1 boxtimes MP_1 (the x^(-2/3) singularity case): regression
+    # guard — finite weights and a mean in the documented band.
+    a3 = freeMul(freePoissonLaw(1.0), freePoissonLaw(1.0))
+    @test all(isfinite, a3.weights)
+    @test mom(a3, 1) ≈ 1.0 atol = 0.15
 end
 
 @testset "RIE finite-size bias (characterized)" begin
