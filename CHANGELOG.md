@@ -8,6 +8,22 @@ Registration notes record when a version landed in the Julia General
 registry; a version bump pushed to GitHub is not registered until the
 user triggers Registrator.
 
+## [0.5.1] - 2026-10-30
+
+Not yet registered in General.
+
+### Added
+
+- Constant-correlation target for the Ledoit–Wolf linear shrinkage
+  estimator: `ledoitWolf(X; target = :constant_correlation)` and
+  `ledoitWolfShrinkage(X; target = :constant_correlation)` implement
+  Ledoit & Wolf (2003), shrinking toward the matrix that keeps the
+  sample variances and sets every correlation to the average sample
+  correlation, with the shrinkage intensity given by the papers'
+  asymptotic formula for this target (including the covariance of
+  the sample covariance with the random target). The default
+  `target = :identity` is unchanged.
+
 ## [0.5.0] - 2026-10-30
 
 Not yet registered in General.

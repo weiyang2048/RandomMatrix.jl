@@ -16,8 +16,10 @@
 # Data-based tools: the linear shrinkage estimators of Ledoit & Wolf
 # (2004) and of Chen, Wiesel, Eldar & Hero (2010; OAS), which take the
 # data matrix itself and shrink the sample covariance linearly toward a
-# scaled identity. They are the linear counterparts of the RIE above
-# (whose shrinkage is nonlinear, eigenvalue by eigenvalue); the
+# scaled identity, plus Ledoit & Wolf's (2003) constant-correlation
+# target for the same estimator. They are the linear counterparts of
+# the RIE above (whose shrinkage is nonlinear, eigenvalue by
+# eigenvalue); the
 # Ledoit-Wolf (2004) estimator here is unrelated to the Ledoit-Wolf
 # (2020) nonlinear shrinkage the RIE coincides with.
 
@@ -225,16 +227,21 @@ cleanCorrelation(C::AbstractMatrix{<:Real}, n::Integer; method::Symbol=:rie) =
     cleanCovariance(C, n; method)
 
 # ---------------------------------------------------------------------------
-# Linear shrinkage toward a scaled identity, from the data matrix.
+# Linear shrinkage from the data matrix.
 #
-# Both estimators below share the form
+# The estimators below share the form
 #
-#     Sigma_hat = (1 - rho) * S + rho * m * I,   m = tr(S) / p,
+#     Sigma_hat = (1 - rho) * S + rho * F,
 #
-# with S the sample covariance (1/n divisor) of the centered data; they
-# differ only in the estimated intensity rho. The shrinkage preserves
+# with S the sample covariance (1/n divisor) of the centered data and F
+# a structured target: the scaled identity m * I, m = tr(S) / p, for
+# Ledoit-Wolf (2004) and OAS (which differ only in the estimated
+# intensity rho), or the constant-correlation matrix of Ledoit & Wolf
+# (2003) for `ledoitWolf(X; target = :constant_correlation)`. Every
+# target here has the same trace and diagonal as S in the identity and
+# target even shares S's whole diagonal), so the shrinkage preserves
 # tr(S) exactly, and Sigma_hat is positive definite whenever rho > 0
-# and m > 0, even for p > n where S is singular.
+# and the target is, even for p > n where S is singular.
 
 # Validate the data matrix X (p x n: variables in rows, observations in
 # columns) and return a row-centered Float64 copy together with (p, n).
@@ -294,45 +301,129 @@ function _oas(X::AbstractMatrix{<:Real})
     return S, m, ρ
 end
 
-"""
-    ledoitWolf(X)
-
-Ledoit-Wolf (2004) linear shrinkage estimate of the covariance matrix
-from the data matrix `X` (`p x n`: variables in rows, observations in
-columns; the data are centered internally):
-
-    Sigma_hat = (1 - rho) * S + rho * m * I,   m = tr(S) / p,
-
-where `S` is the sample covariance (`1/n` divisor) and `rho` is the
-asymptotically optimal shrinkage intensity estimated from the data
-([`ledoitWolfShrinkage`](@ref)). Shrinking toward the scaled identity
-trades a little bias for a large variance reduction; the estimate
-preserves the trace of `S` exactly and is positive definite whenever
-`rho > 0`, even for `p > n`. Unlike [`cleanCovariance`](@ref), which
-works from a covariance matrix and shrinks its eigenvalues
-nonlinearly, this estimator needs the data themselves, because the
-intensity estimate involves fourth moments of the observations.
-
-Note this is the 2004 *linear* shrinkage estimator, not the Ledoit-Wolf
-(2020) analytic *nonlinear* shrinkage whose shrinkage function
-[`rieEigenvalues`](@ref) implements.
-
-Reference: Ledoit & Wolf, "A well-conditioned estimator for
-large-dimensional covariance matrices", Journal of Multivariate
-Analysis 88 (2004), 365-411.
-"""
-function ledoitWolf(X::AbstractMatrix{<:Real})
-    S, m, ρ = _ledoitWolf(X)
-    return _shrunkToIdentity(S, m, ρ)
+# Ledoit-Wolf (2003) shrinkage toward the constant-correlation target:
+# sample covariance, target F, intensity rho. The target keeps the
+# sample variances on the diagonal and sets every off-diagonal entry
+# to rbar * sqrt(s_ii * s_jj), with rbar the average sample
+# correlation. The intensity is the papers' asymptotic formula
+# rho = clamp((pihat - rhohat) / (gamma * n), 0, 1) derived for this
+# target (see the ledoitWolfShrinkage docstring).
+function _ledoitWolfCC(X::AbstractMatrix{<:Real})
+    Xc, p, n = _centeredData(X)
+    S = (Xc * Xc') / n
+    v = diag(S) # sample variances s_ii
+    sd = sqrt.(v)
+    # Average sample correlation over the i < j pairs. Pairs touching
+    # a zero-variance variable contribute 0 to the average; their
+    # target entries vanish anyway because sd_i * sd_j = 0. (The
+    # papers assume s_ii > 0 throughout.)
+    rbar = 0.0
+    if p > 1
+        acc = 0.0
+        for j in 1:p, i in 1:p
+            if i != j && v[i] > 0 && v[j] > 0
+                acc += S[i, j] / (sd[i] * sd[j])
+            end
+        end
+        rbar = acc / (p * (p - 1))
+    end
+    F = rbar .* (sd * sd')
+    for i in 1:p
+        F[i, i] = v[i]
+    end
+    # pihat = sum_ij (1/n) sum_k (x_ik x_jk - s_ij)^2
+    #       = (1/n) sum_k ||x_k||^4 - ||S||_F^2, in closed form as in
+    # _ledoitWolf (the cross terms use sum_k x_k' S x_k = n ||S||_F^2).
+    colnorm2 = vec(sum(abs2, Xc; dims=1)) # ||x_k||^2 per observation
+    pihat = sum(abs2, colnorm2) / n - sum(abs2, S)
+    # With A[i, k] = x_ik^2 - s_ii: pihat_ii = (1/n) sum_k A[i, k]^2,
+    # and theta_{ii,ij} = (1/n) sum_k A[i, k] x_ik x_jk (the -s_ij
+    # part of the second factor drops out because sum_k A[i, k] = 0),
+    # so Theta = ((A .* Xc) * Xc') / n has entries theta_{ii,ij}, and
+    # theta_{jj,ij} = Theta[j, i].
+    A = Xc .^ 2
+    for i in 1:p
+        A[i, :] .-= v[i]
+    end
+    Theta = ((A .* Xc) * Xc') ./ n
+    rhohat = sum(vec(sum(abs2, A; dims=2))) / n # sum_i pihat_ii
+    for j in 1:p, i in 1:p
+        if i != j && v[i] > 0 && v[j] > 0
+            rhohat += (rbar / 2) * (sqrt(v[j] / v[i]) * Theta[i, j]
+                                    + sqrt(v[i] / v[j]) * Theta[j, i])
+        end
+    end
+    gamma = sum(abs2, F .- S) # ||F - S||_F^2
+    # gamma == 0 iff S already equals its constant-correlation target
+    # (always so for p == 1, and for constant data, where S = F = 0):
+    # every intensity gives the same estimator, and 1 is the limit of
+    # rho from non-degenerate data, as in _ledoitWolf.
+    ρ = gamma > 0 ? clamp((pihat - rhohat) / gamma / n, 0.0, 1.0) : 1.0
+    return S, F, ρ
 end
 
 """
-    ledoitWolfShrinkage(X)
+    ledoitWolf(X; target = :identity)
 
-The Ledoit-Wolf (2004) shrinkage intensity `rho in [0, 1]` used by
-[`ledoitWolf`](@ref), for the data matrix `X` (`p x n`, centered
-internally). With `S` the sample covariance, `m = tr(S)/p` and the
-centered observations `x_k`,
+Ledoit-Wolf linear shrinkage estimate of the covariance matrix from
+the data matrix `X` (`p x n`: variables in rows, observations in
+columns; the data are centered internally):
+
+    Sigma_hat = (1 - rho) * S + rho * F,
+
+where `S` is the sample covariance (`1/n` divisor), `F` is the
+shrinkage target selected by `target`, and `rho` is the
+asymptotically optimal shrinkage intensity estimated from the data
+([`ledoitWolfShrinkage`](@ref)). Two targets are available:
+
+- `target = :identity` (the default; Ledoit & Wolf 2004): the scaled
+  identity `F = m * I` with `m = tr(S) / p`.
+- `target = :constant_correlation` (Ledoit & Wolf 2003): the
+  constant-correlation matrix, which keeps the sample variances on
+  the diagonal and sets every off-diagonal entry to
+  `rbar * sqrt(s_ii * s_jj)`, where `rbar` is the average of the
+  sample correlations. The estimate then preserves the diagonal of
+  `S` (hence its trace) exactly.
+
+Shrinking toward a structured target trades a little bias for a
+large variance reduction; the estimate is positive definite whenever
+`rho > 0` and the target is, even for `p > n`. Unlike
+[`cleanCovariance`](@ref), which works from a covariance matrix and
+shrinks its eigenvalues nonlinearly, this estimator needs the data
+themselves, because the intensity estimate involves fourth moments
+of the observations.
+
+Note this is the *linear* shrinkage estimator, not the Ledoit-Wolf
+(2020) analytic *nonlinear* shrinkage whose shrinkage function
+[`rieEigenvalues`](@ref) implements.
+
+References: Ledoit & Wolf, "Improved estimation of the covariance
+matrix of stock returns with an application to portfolio selection",
+Journal of Empirical Finance 10 (2003), 603-621; Ledoit & Wolf,
+"A well-conditioned estimator for large-dimensional covariance
+matrices", Journal of Multivariate Analysis 88 (2004), 365-411.
+"""
+function ledoitWolf(X::AbstractMatrix{<:Real}; target::Symbol=:identity)
+    if target === :identity
+        S, m, ρ = _ledoitWolf(X)
+        return _shrunkToIdentity(S, m, ρ)
+    elseif target === :constant_correlation
+        S, F, ρ = _ledoitWolfCC(X)
+        return Symmetric((1 - ρ) .* S .+ ρ .* F)
+    end
+    throw(ArgumentError("unknown shrinkage target $(repr(target)); " *
+                        "expected :identity or :constant_correlation"))
+end
+
+"""
+    ledoitWolfShrinkage(X; target = :identity)
+
+The Ledoit-Wolf shrinkage intensity `rho in [0, 1]` used by
+[`ledoitWolf`](@ref) with the same `target`, for the data matrix `X`
+(`p x n`, centered internally).
+
+For `target = :identity`, with `S` the sample covariance,
+`m = tr(S)/p` and the centered observations `x_k`,
 
     rho = min(bbar^2, d^2) / d^2,
     d^2    = ||S - mI||_F^2 / p,
@@ -345,8 +436,48 @@ exactly a multiple of the identity, every intensity yields the same
 estimator and `rho = 1` (the limit from non-degenerate data) is
 returned by convention; scikit-learn returns 0 in that corner, with the
 same shrunk matrix.
+
+For `target = :constant_correlation`, the intensity is the formula
+Ledoit & Wolf (2003) derive for that target. With `F` the
+constant-correlation target, `rbar` the average sample correlation,
+and the entrywise asymptotic variances and covariances
+
+    pi_ij      = (1/n) * sum_k (x_ik x_jk - s_ij)^2,
+    theta_ii,ij = (1/n) * sum_k (x_ik^2 - s_ii) (x_ik x_jk - s_ij),
+
+the estimator is
+
+    rho = clamp( (pi - rhohat) / (gamma * n), 0, 1 ),
+    pi    = sum_ij pi_ij,
+    rhohat = sum_i pi_ii + sum_{i != j} (rbar / 2) *
+             ( sqrt(s_jj / s_ii) * theta_ii,ij
+               + sqrt(s_ii / s_jj) * theta_jj,ij ),
+    gamma = ||S - F||_F^2.
+
+Here `pi` sums the asymptotic variances of the entries of `S`,
+`rhohat` sums their asymptotic covariances with the entries of the
+(random) target `F` — the diagonal contributes `pi_ii` because
+`f_ii = s_ii`, and each off-diagonal covariance follows from the
+delta method applied to `f_ij = rbar * sqrt(s_ii s_jj)` — and
+`gamma` measures the target's misspecification. Unlike the identity
+formula this is not scikit-learn's estimator (which only implements
+the identity target); the values are cross-checked against an
+independent implementation of the papers' formulas. Pairs touching
+a zero-variance variable contribute 0 to `rbar` and to the `rhohat`
+double sum (their `theta` terms vanish identically). If `gamma = 0`
+— `S` already equals its constant-correlation target, always the
+case for `p = 1` — every intensity gives the same estimator and
+`rho = 1` by the same limit convention as above.
 """
-ledoitWolfShrinkage(X::AbstractMatrix{<:Real}) = _ledoitWolf(X)[3]
+function ledoitWolfShrinkage(X::AbstractMatrix{<:Real}; target::Symbol=:identity)
+    if target === :identity
+        return _ledoitWolf(X)[3]
+    elseif target === :constant_correlation
+        return _ledoitWolfCC(X)[3]
+    end
+    throw(ArgumentError("unknown shrinkage target $(repr(target)); " *
+                        "expected :identity or :constant_correlation"))
+end
 
 """
     oas(X)

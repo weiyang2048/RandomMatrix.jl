@@ -271,6 +271,66 @@ end
     @test loss(Matrix(ledoitWolf(X2))) < loss(S2)
     @test loss(Matrix(oas(X2))) < loss(S2)
 
+    # Ledoit-Wolf (2003) constant-correlation target. Reference
+    # intensities and matrices from an independent implementation of
+    # the papers' formulas (the pi / rho / gamma sums written out
+    # entrywise), separate from the package code; scikit-learn has
+    # no constant-correlation variant to compare against.
+    @test ledoitWolfShrinkage(XA; target=:constant_correlation) ≈ 0.2614421011797 atol = 1e-10
+    @test ledoitWolfShrinkage(XB; target=:constant_correlation) ≈ 0.2489178887215023 atol = 1e-10
+    @test ledoitWolfShrinkage(XC; target=:constant_correlation) ≈ 0.40189467737310935 atol = 1e-10
+    Σcc_A = [1.1922222222222223 -0.411847911115839 -0.385771629132592 0.6464581529422336;
+        -0.411847911115839 0.8625 -0.3791272100991172 -0.4641360306085983;
+        -0.385771629132592 -0.3791272100991172 0.9388888888888888 -0.275389129435672;
+        0.6464581529422336 -0.4641360306085983 -0.275389129435672 1.0288888888888889]
+    Σcc_B = [1.14 -0.7334061130731484 0.1757046021364959;
+        -0.7334061130731484 1.46 -0.8216702000857754;
+        0.1757046021364959 -0.8216702000857754 1.26]
+    @test Matrix(ledoitWolf(XA; target=:constant_correlation)) ≈ Σcc_A atol = 1e-10
+    @test Matrix(ledoitWolf(XB; target=:constant_correlation)) ≈ Σcc_B atol = 1e-10
+    # The default target is the identity target, unchanged.
+    @test ledoitWolf(XA) == ledoitWolf(XA; target=:identity)
+    @test ledoitWolfShrinkage(XA) == ledoitWolfShrinkage(XA; target=:identity)
+
+    # Structural properties on seeded random data with varied scales,
+    # including p > n: Symmetric PD output, intensity in [0, 1], the
+    # estimator equals (1 - rho) S + rho F with F rebuilt from S, and
+    # the diagonal of S is preserved (the target shares it).
+    rngcc = MersenneTwister(20261031)
+    for (p, n) in ((40, 120), (120, 40), (30, 30))
+        X = randn(rngcc, p, n) .* (0.5 .+ rand(rngcc, p))
+        Xc = X .- mean(X; dims=2)
+        S = (Xc * Xc') / n
+        v = diag(S)
+        sd = sqrt.(v)
+        R = S ./ (sd * sd')
+        rbar = (sum(R) - p) / (p * (p - 1))
+        F = rbar .* (sd * sd')
+        for i in 1:p
+            F[i, i] = v[i]
+        end
+        Σ̂ = ledoitWolf(X; target=:constant_correlation)
+        ρ = ledoitWolfShrinkage(X; target=:constant_correlation)
+        @test Σ̂ isa Symmetric
+        @test 0 <= ρ <= 1
+        @test eigmin(Σ̂) > 0 # rho > 0 here, so PD even for p > n
+        @test Matrix(Σ̂) ≈ (1 - ρ) .* S .+ ρ .* F atol = 1e-10
+        @test diag(Σ̂) ≈ v atol = 1e-12
+    end
+
+    # Equicorrelated population (correlation 0.5, varied scales): the
+    # target family contains the population, so the estimate beats
+    # the sample covariance in Frobenius loss (same protocol as the
+    # identity-population check above).
+    p, n = 60, 300
+    d = collect(range(0.5, 2.0; length=p))
+    Σeq = Diagonal(d) * (fill(0.5, p, p) + Diagonal(fill(0.5, p))) * Diagonal(d)
+    Xeq = cholesky(Σeq).L * randn(rng, p, n)
+    Xeqc = Xeq .- mean(Xeq; dims=2)
+    Seq = (Xeqc * Xeqc') / n
+    @test sum(abs2, Matrix(ledoitWolf(Xeq; target=:constant_correlation)) - Σeq) <
+        sum(abs2, Seq - Σeq)
+
     # Degenerate and invalid inputs.
     X0 = fill(2.5, 4, 7) # constant data: S = 0, the target itself
     @test Matrix(ledoitWolf(X0)) == zeros(4, 4)
@@ -283,6 +343,19 @@ end
     @test_throws ArgumentError ledoitWolfShrinkage(zeros(0, 4)) # no variables
     @test_throws ArgumentError ledoitWolf([1.0 NaN; 2.0 3.0; 4.0 5.0])
     @test_throws ArgumentError oasShrinkage([1.0 Inf; 2.0 3.0; 4.0 5.0])
+
+    # Degenerate and invalid inputs for the constant-correlation
+    # target specifically.
+    @test Matrix(ledoitWolf(X0; target=:constant_correlation)) == zeros(4, 4)
+    @test ledoitWolfShrinkage(X0; target=:constant_correlation) == 1.0 # gamma = 0 convention
+    @test Matrix(ledoitWolf(reshape(1.0:5.0, 1, 5); target=:constant_correlation)) ==
+        fill(2.0, 1, 1) # p = 1: S = F, the estimate is S itself
+    @test ledoitWolfShrinkage(reshape(1.0:5.0, 1, 5); target=:constant_correlation) == 1.0
+    @test ledoitWolf([1 2 4; 3 5 4]; target=:constant_correlation) isa Symmetric{Float64}
+    @test_throws ArgumentError ledoitWolf(XA; target=:bogus) # unknown target
+    @test_throws ArgumentError ledoitWolfShrinkage(XA; target=:bogus)
+    @test_throws ArgumentError ledoitWolf(XA[:, 1:1]; target=:constant_correlation) # n = 1
+    @test_throws ArgumentError ledoitWolf(fill(NaN, 3, 4); target=:constant_correlation)
 end
 
 @testset "Tracy-Widom" begin
