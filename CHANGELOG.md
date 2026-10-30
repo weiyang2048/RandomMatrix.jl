@@ -8,6 +8,22 @@ Registration notes record when a version landed in the Julia General
 registry; a version bump pushed to GitHub is not registered until the
 user triggers Registrator.
 
+## [0.4.7] - 2026-10-29
+
+Not yet registered in General.
+
+### Added
+
+- Worked `@example` blocks in the four v0.4.0 documentation pages
+  (Spiked Covariance / BBP, Covariance Cleaning, Tracy–Widom, Free
+  Probability): seeded, executable examples whose outputs are checked
+  against the theory on every docs build — BBP threshold, location and
+  overlap with a simulated outlier; Marčenko–Pastur noise fit, clipping
+  and RIE shrinkage on spiked data; Tracy–Widom moments, cdf and
+  Johnstone scaling; and free Poisson / free convolution moments
+  against their exact values. The examples deliberately avoid Plots:
+  the Plots/GIF pages already dominate the docs build time.
+
 ## [0.4.6] - 2026-10-28
 
 Not yet registered in General.

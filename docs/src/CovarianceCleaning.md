@@ -49,3 +49,36 @@ rieEigenvalues
 cleanCovariance
 cleanCorrelation
 ```
+
+## Worked example
+
+Cleaning a spiked sample covariance (``p = 100``, ``n = 400``, one
+population spike at ``\ell = 4``): the noise fit recovers
+``\sigma^2 \approx 1``, clipping collapses the 99 bulk eigenvalues to a
+single value while keeping the outlier, and the RIE shrinks the outlier
+back toward the population spike.
+
+```@example cleaning
+using RandomMatrix, Random, LinearAlgebra, Statistics
+Random.seed!(20261030)
+p, n = 100, 400
+gamma = p / n
+S = randSpikedCovariance(p, n, [4.0])
+ev = eigvals(S)
+(fit = round(fitMarchenkoPastur(ev, gamma), digits = 3),
+ raw_top = round(ev[end], digits = 3))
+```
+
+```@example cleaning
+clipped = clipEigenvalues(ev, gamma)
+(n_distinct = length(unique(clipped)), top = round(maximum(clipped), digits = 3))
+```
+
+```@example cleaning
+rie = rieEigenvalues(ev, gamma)
+(top = round(maximum(rie), digits = 3), mean = round(mean(rie), digits = 3))
+```
+
+The RIE mean above 1 is the finite-size broadening bias quantified in
+the previous section (about ``1.09`` expected at ``\gamma = 0.5``;
+here ``\gamma = 0.25`` and the spike also contributes).

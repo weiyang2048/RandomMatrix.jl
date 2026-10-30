@@ -29,6 +29,35 @@ about `1e-4` times the support scale — improves the atom-free cases
 substantially, but is not recommended for measures with an atom at 0,
 where the Newton continuation fails near the lower edge.
 
+## Worked example
+
+The free Poisson (Marčenko–Pastur) law has mean ``1`` and variance
+``\gamma``, reproduced here to the accuracy quoted above; the free
+multiplicative convolution of two such laws has exact mean
+``1 \cdot 1 = 1`` and exact second moment ``1 + \gamma + \delta``
+(S-transform), hence variance ``\gamma + \delta = 0.5`` for
+``\gamma = \delta = 0.25`` — the numerical convolution lands within
+about 1% of both, as expected for factors bounded away from 0.
+
+```@example freeprob
+using RandomMatrix
+fp = freePoissonLaw(0.5)
+(mean = round(freeMean(fp), digits = 6), var = round(freeVar(fp), digits = 6))
+```
+
+```@example freeprob
+prod = freeMul(freePoissonLaw(0.25), freePoissonLaw(0.25))
+(mean = round(freeMean(prod), digits = 3), var = round(freeVar(prod), digits = 3))
+```
+
+Free additive convolution of two semicircles of variance 1 is a
+semicircle of variance 2 (the R-transforms add):
+
+```@example freeprob
+ss = freeAdd(semicircleLaw(1.0), semicircleLaw(1.0))
+(mean = round(freeMean(ss), digits = 3), var = round(freeVar(ss), digits = 3))
+```
+
 ```@docs
 FreeMeasure
 semicircleLaw
