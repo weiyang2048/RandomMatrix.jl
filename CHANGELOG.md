@@ -8,6 +8,30 @@ Registration notes record when a version landed in the Julia General
 registry; a version bump pushed to GitHub is not registered until the
 user triggers Registrator.
 
+## [0.5.0] - 2026-10-30
+
+Not yet registered in General.
+
+### Added
+
+- Ledoit–Wolf (2004) linear shrinkage from the data matrix:
+  `ledoitWolf(X)` returns the shrunk covariance
+  `(1 - rho) * S + rho * m * I` as a `Symmetric` matrix and
+  `ledoitWolfShrinkage(X)` the estimated intensity `rho in [0, 1]`
+  (`X` is `p x n`, variables in rows, centered internally). These are
+  the package's first data-based covariance estimators — the existing
+  cleaners work from a spectrum — and the intensity needs the data
+  themselves because it involves fourth moments of the observations.
+  Intensities agree with scikit-learn's `ledoit_wolf` to 1e-15 on
+  fixed test datasets.
+- OAS (oracle approximating shrinkage; Chen, Wiesel, Eldar & Hero
+  2010): `oas(X)` and `oasShrinkage(X)`, same form and data layout.
+  The intensity implements the paper's Eq. (23) *with* the `2/p`
+  terms; scikit-learn's `oas` omits them, which changes `rho` by
+  several percent at small `p`.
+- Worked example for the linear shrinkage estimators on the Covariance
+  Cleaning documentation page.
+
 ## [0.4.7] - 2026-10-29
 
 Not yet registered in General.

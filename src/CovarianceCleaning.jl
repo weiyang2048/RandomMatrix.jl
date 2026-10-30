@@ -1,20 +1,29 @@
-# Marcenko-Pastur based cleaning of empirical covariance matrices.
+# Cleaning of empirical covariance matrices.
 #
-# Three tools: estimate the noise level sigma^2 by fitting the
-# Marcenko-Pastur law to the bulk of an empirical spectrum; eigenvalue
-# clipping (Laloux, Cizeau, Bouchaud & Potters 1999); and the rotationally
-# invariant estimator (RIE) of Bun, Bouchaud & Potters (2017), whose
-# shrinkage function coincides with Ledoit-Wolf (2020) analytic nonlinear
-# shrinkage (the two differ only in how the sample Stieltjes transform is
-# estimated; here the empirical Stieltjes transform with Lorentzian
-# broadening eta = p^(-1/2), following Bun et al.). That broadening
-# leaves a finite-size bias of order p^(-1/2) in the mean cleaned
-# eigenvalue at moderate p (about +0.09 at p = 200, gamma = 0.5); see
-# the rieEigenvalues docstring for measured values and the bias/loss
-# trade-off in eta.
+# Spectrum-based tools (Marcenko-Pastur): estimate the noise level
+# sigma^2 by fitting the Marcenko-Pastur law to the bulk of an empirical
+# spectrum; eigenvalue clipping (Laloux, Cizeau, Bouchaud & Potters
+# 1999); and the rotationally invariant estimator (RIE) of Bun,
+# Bouchaud & Potters (2017), whose shrinkage function coincides with
+# Ledoit-Wolf (2020) analytic nonlinear shrinkage (the two differ only
+# in how the sample Stieltjes transform is estimated; here the empirical
+# Stieltjes transform with Lorentzian broadening eta = p^(-1/2),
+# following Bun et al.). That broadening leaves a finite-size bias of
+# order p^(-1/2) in the mean cleaned eigenvalue at moderate p (about
+# +0.09 at p = 200, gamma = 0.5); see the rieEigenvalues docstring for
+# measured values and the bias/loss trade-off in eta.
+#
+# Data-based tools: the linear shrinkage estimators of Ledoit & Wolf
+# (2004) and of Chen, Wiesel, Eldar & Hero (2010; OAS), which take the
+# data matrix itself and shrink the sample covariance linearly toward a
+# scaled identity. They are the linear counterparts of the RIE above
+# (whose shrinkage is nonlinear, eigenvalue by eigenvalue); the
+# Ledoit-Wolf (2004) estimator here is unrelated to the Ledoit-Wolf
+# (2020) nonlinear shrinkage the RIE coincides with.
 
 export fitMarchenkoPastur, clipEigenvalues, rieEigenvalues,
-    cleanCovariance, cleanCorrelation
+    cleanCovariance, cleanCorrelation,
+    ledoitWolf, ledoitWolfShrinkage, oas, oasShrinkage
 
 _mp_edges(γ::Real, σ2::Real) = (σ2 * (1 - sqrt(γ))^2, σ2 * (1 + sqrt(γ))^2)
 
@@ -214,3 +223,174 @@ applications.
 """
 cleanCorrelation(C::AbstractMatrix{<:Real}, n::Integer; method::Symbol=:rie) =
     cleanCovariance(C, n; method)
+
+# ---------------------------------------------------------------------------
+# Linear shrinkage toward a scaled identity, from the data matrix.
+#
+# Both estimators below share the form
+#
+#     Sigma_hat = (1 - rho) * S + rho * m * I,   m = tr(S) / p,
+#
+# with S the sample covariance (1/n divisor) of the centered data; they
+# differ only in the estimated intensity rho. The shrinkage preserves
+# tr(S) exactly, and Sigma_hat is positive definite whenever rho > 0
+# and m > 0, even for p > n where S is singular.
+
+# Validate the data matrix X (p x n: variables in rows, observations in
+# columns) and return a row-centered Float64 copy together with (p, n).
+function _centeredData(X::AbstractMatrix{<:Real})
+    p, n = size(X)
+    p >= 1 || throw(ArgumentError("data matrix X has no rows (variables)"))
+    n >= 2 || throw(ArgumentError(
+        "need at least 2 observations (columns of X) for a covariance estimate, got n = $n"))
+    all(isfinite, X) || throw(ArgumentError("data matrix X contains NaN or Inf entries"))
+    Xf = Float64.(X)
+    Xf .-= vec(sum(Xf; dims=2)) ./ n
+    return Xf, p, n
+end
+
+# Assemble (1 - rho) * S + rho * m * I as a Symmetric matrix.
+function _shrunkToIdentity(S::Matrix{Float64}, m::Float64, ρ::Float64)
+    A = (1 - ρ) .* S
+    for i in diagind(A)
+        A[i] += ρ * m
+    end
+    return Symmetric(A)
+end
+
+# Sample covariance (1/n divisor), scale m = tr(S)/p, intensity rho.
+function _ledoitWolf(X::AbstractMatrix{<:Real})
+    Xc, p, n = _centeredData(X)
+    S = (Xc * Xc') / n
+    m = tr(S) / p
+    s2 = sum(abs2, S) # ||S||_F^2
+    d2 = (s2 - p * m^2) / p # ||S - mI||_F^2 / p
+    ρ = if d2 > 0
+        # bbar^2 = (1/(n^2 p)) sum_k ||x_k x_k' - S||_F^2, with the cross
+        # terms summed in closed form: sum_k x_k' S x_k = n * ||S||_F^2.
+        colnorm2 = vec(sum(abs2, Xc; dims=1)) # ||x_k||^2 per observation
+        bbar2 = (sum(abs2, colnorm2) / n - s2) / (n * p)
+        clamp(min(bbar2, d2) / d2, 0.0, 1.0)
+    else
+        # S is exactly mI: every intensity gives the same estimator, and
+        # 1 is the limit of rho from non-degenerate data.
+        1.0
+    end
+    return S, m, ρ
+end
+
+# Sample covariance (1/n divisor), scale m = tr(S)/p, intensity rho.
+function _oas(X::AbstractMatrix{<:Real})
+    Xc, p, n = _centeredData(X)
+    S = (Xc * Xc') / n
+    t = tr(S)
+    m = t / p
+    s2 = sum(abs2, S) # tr(S^2)
+    num = (1 - 2 / p) * s2 + t^2
+    den = (n + 1 - 2 / p) * (s2 - t^2 / p)
+    # den == 0 iff S is exactly a multiple of the identity; as there,
+    # rho = 1 is the continuous limit (and the estimator is S either way).
+    ρ = den > 0 ? clamp(num / den, 0.0, 1.0) : 1.0
+    return S, m, ρ
+end
+
+"""
+    ledoitWolf(X)
+
+Ledoit-Wolf (2004) linear shrinkage estimate of the covariance matrix
+from the data matrix `X` (`p x n`: variables in rows, observations in
+columns; the data are centered internally):
+
+    Sigma_hat = (1 - rho) * S + rho * m * I,   m = tr(S) / p,
+
+where `S` is the sample covariance (`1/n` divisor) and `rho` is the
+asymptotically optimal shrinkage intensity estimated from the data
+([`ledoitWolfShrinkage`](@ref)). Shrinking toward the scaled identity
+trades a little bias for a large variance reduction; the estimate
+preserves the trace of `S` exactly and is positive definite whenever
+`rho > 0`, even for `p > n`. Unlike [`cleanCovariance`](@ref), which
+works from a covariance matrix and shrinks its eigenvalues
+nonlinearly, this estimator needs the data themselves, because the
+intensity estimate involves fourth moments of the observations.
+
+Note this is the 2004 *linear* shrinkage estimator, not the Ledoit-Wolf
+(2020) analytic *nonlinear* shrinkage whose shrinkage function
+[`rieEigenvalues`](@ref) implements.
+
+Reference: Ledoit & Wolf, "A well-conditioned estimator for
+large-dimensional covariance matrices", Journal of Multivariate
+Analysis 88 (2004), 365-411.
+"""
+function ledoitWolf(X::AbstractMatrix{<:Real})
+    S, m, ρ = _ledoitWolf(X)
+    return _shrunkToIdentity(S, m, ρ)
+end
+
+"""
+    ledoitWolfShrinkage(X)
+
+The Ledoit-Wolf (2004) shrinkage intensity `rho in [0, 1]` used by
+[`ledoitWolf`](@ref), for the data matrix `X` (`p x n`, centered
+internally). With `S` the sample covariance, `m = tr(S)/p` and the
+centered observations `x_k`,
+
+    rho = min(bbar^2, d^2) / d^2,
+    d^2    = ||S - mI||_F^2 / p,
+    bbar^2 = ( (1/n) * sum_k ||x_k||^4 - ||S||_F^2 ) / (n * p),
+
+where `bbar^2` is `(1/(n^2 p)) * sum_k ||x_k x_k' - S||_F^2` with the
+cross terms summed in closed form. The values agree with scikit-learn's
+`ledoit_wolf` (cross-checked to 1e-15 on fixed datasets). If `S` is
+exactly a multiple of the identity, every intensity yields the same
+estimator and `rho = 1` (the limit from non-degenerate data) is
+returned by convention; scikit-learn returns 0 in that corner, with the
+same shrunk matrix.
+"""
+ledoitWolfShrinkage(X::AbstractMatrix{<:Real}) = _ledoitWolf(X)[3]
+
+"""
+    oas(X)
+
+Oracle approximating shrinkage (OAS) estimate of the covariance matrix
+from the data matrix `X` (`p x n`: variables in rows, observations in
+columns; the data are centered internally):
+
+    Sigma_hat = (1 - rho) * S + rho * m * I,   m = tr(S) / p,
+
+with `S` the sample covariance (`1/n` divisor) and `rho` the OAS
+intensity ([`oasShrinkage`](@ref)). OAS refines the Ledoit-Wolf linear
+shrinkage under Gaussian assumptions by approximating the oracle
+(MMSE-optimal) intensity with the population traces replaced by
+iterated estimates; in small samples it typically shrinks noticeably
+more than [`ledoitWolf`](@ref). Like it, the estimate preserves the
+trace of `S` exactly and is positive definite whenever `rho > 0`, even
+for `p > n`.
+
+Reference: Chen, Wiesel, Eldar & Hero, "Shrinkage algorithms for MMSE
+covariance estimation", IEEE Transactions on Signal Processing 58(10)
+(2010), 5016-5029.
+"""
+function oas(X::AbstractMatrix{<:Real})
+    S, m, ρ = _oas(X)
+    return _shrunkToIdentity(S, m, ρ)
+end
+
+"""
+    oasShrinkage(X)
+
+The oracle approximating shrinkage (OAS) intensity `rho in [0, 1]` used
+by [`oas`](@ref), for the data matrix `X` (`p x n`, centered
+internally). With `S` the sample covariance (`1/n` divisor),
+
+    rho = ( (1 - 2/p) * tr(S^2) + tr(S)^2 ) /
+          ( (n + 1 - 2/p) * (tr(S^2) - tr(S)^2 / p) ),
+
+clipped to `[0, 1]` — Eq. (23) of Chen, Wiesel, Eldar & Hero (2010),
+with the `2/p` terms retained. (scikit-learn's `oas` omits those terms,
+as its documentation notes; at small `p` that changes `rho` by several
+percent, e.g. 0.88 instead of 0.79 on a `p = 4, n = 6` test dataset.)
+If `S` is exactly a multiple of the identity the denominator vanishes;
+every intensity then gives the same estimator and `rho = 1`, the
+continuous limit, is returned.
+"""
+oasShrinkage(X::AbstractMatrix{<:Real}) = _oas(X)[3]

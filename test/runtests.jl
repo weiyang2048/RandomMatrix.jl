@@ -187,6 +187,104 @@ using Statistics: mean, std
     @test_throws ArgumentError cleanCovariance(Matrix(S2), div(n, 2) - 1; method=:rie)
 end
 
+@testset "Linear shrinkage (Ledoit-Wolf / OAS)" begin
+    # Exact anchors on fixed data matrices (rows = variables, columns =
+    # observations), computed independently in Python: a direct numpy
+    # implementation of Ledoit & Wolf (2004) agreed with scikit-learn
+    # 1.9.1's ledoit_wolf to <= 3e-16 on all three datasets (intensities
+    # and matrices). The OAS anchors follow Chen et al. (2010) Eq. (23)
+    # WITH the 2/p terms; scikit-learn's oas omits them (its docstring
+    # says so) and gives 0.8792 / 1.0 / 0.9578 on datasets A / B / C
+    # instead of the values below.
+    XA = [1.2 -0.4 0.7 2.1 -1.3 0.3;
+          0.5 1.8 -0.9 0.2 1.1 -0.6;
+          -1.0 0.3 1.4 -0.2 0.8 1.9;
+          0.9 -1.5 0.1 1.6 -0.7 0.4]
+    @test ledoitWolfShrinkage(XA) ≈ 0.4106843530339546 atol = 1e-10
+    @test oasShrinkage(XA) ≈ 0.7906303094510234 atol = 1e-10
+    @test Matrix(ledoitWolf(XA)) ≈ [1.1155896627359558 -0.2799249323088716 -0.2570071015935254 0.5690169969038816;
+                                    -0.2799249323088716 0.9212791980279846 -0.25929888466505996 -0.3251057985762684;
+                                    -0.2570071015935254 -0.25929888466505996 0.9662963655045576 -0.17253852552839222;
+                                    0.5690169969038816 -0.3251057985762684 -0.17253852552839222 1.0193347737315017] atol = 1e-10
+    @test Matrix(oas(XA)) ≈ [1.0446928026739652 -0.09945060301076389 -0.0913084483783037 0.20215806787451182;
+                             -0.09945060301076389 0.9756589630401777 -0.09212266384154968 -0.11550227928618544;
+                             -0.0913084483783037 -0.09212266384154968 0.9916524810682246 -0.06129879273295037;
+                             0.20215806787451182 -0.11550227928618544 -0.06129879273295037 1.0104957532176324] atol = 1e-10
+    XB = [2.0 0.5 -1.0 1.5 0.0;
+          -0.5 1.0 0.5 -1.5 2.0;
+          1.0 -2.0 0.5 0.5 -1.0]
+    @test ledoitWolfShrinkage(XB) ≈ 0.3850459032766104 atol = 1e-10
+    @test oasShrinkage(XB) ≈ 0.9567736142588255 atol = 1e-10
+    @test Matrix(ledoitWolf(XB)) ≈ [1.1964733991472363 -0.5104119002804134 0.22753301578765417;
+                                    -0.5104119002804134 1.393258710098721 -0.5780568509199863;
+                                    0.22753301578765417 -0.5780568509199863 1.270267890754043] atol = 1e-10
+    XC = [0.3 1.1 -0.8 0.6;
+          -1.2 0.4 0.9 -0.1;
+          1.5 -0.6 0.2 1.0;
+          0.7 0.7 -1.4 0.5;
+          -0.9 1.3 0.8 -1.1] # p = 5 > n = 4: S is singular.
+    @test ledoitWolfShrinkage(XC) ≈ 0.4696509105739964 atol = 1e-10
+    @test oasShrinkage(XC) ≈ 0.8991967509906638 atol = 1e-10
+
+    # Structural properties on seeded random data, including p > n:
+    # Symmetric PSD outputs, intensities in [0, 1], exact trace
+    # preservation, and consistency of the estimator with its intensity.
+    rng = MersenneTwister(20261030)
+    for (p, n) in ((40, 120), (120, 40), (30, 30))
+        X = randn(rng, p, n)
+        Xc = X .- mean(X; dims=2)
+        S = (Xc * Xc') / n
+        m = tr(S) / p
+        for (est, int) in ((ledoitWolf, ledoitWolfShrinkage), (oas, oasShrinkage))
+            Σ̂ = est(X)
+            ρ = int(X)
+            @test Σ̂ isa Symmetric
+            @test 0 <= ρ <= 1
+            @test eigmin(Σ̂) > 0 # rho > 0 here, so the estimate is PD even for p > n
+            @test tr(Σ̂) ≈ tr(S) atol = 1e-8
+            @test Matrix(Σ̂) ≈ (1 - ρ) * S + ρ * m * I atol = 1e-10
+        end
+    end
+
+    # Identity population (Sigma = I): the target IS the population
+    # covariance, so both intensities are near 1 and the Frobenius loss
+    # against I collapses relative to the sample covariance.
+    p, n = 100, 100
+    X = randn(rng, p, n)
+    Xc = X .- mean(X; dims=2)
+    S = (Xc * Xc') / n
+    @test ledoitWolfShrinkage(X) > 0.9
+    @test oasShrinkage(X) > 0.9
+    @test sum(abs2, Matrix(ledoitWolf(X)) - I) < 0.01 * sum(abs2, S - I)
+    @test sum(abs2, Matrix(oas(X)) - I) < 0.01 * sum(abs2, S - I)
+
+    # Spread diagonal population: both estimators beat the sample
+    # covariance in Frobenius loss, with moderate intensities.
+    d = vcat([8.0, 4.0, 2.0], range(0.4, 1.6; length=47))
+    Σ = Diagonal(d)
+    X2 = Diagonal(sqrt.(d)) * randn(rng, length(d), 200)
+    X2c = X2 .- mean(X2; dims=2)
+    S2 = (X2c * X2c') / 200
+    loss(M) = sum(abs2, M - Σ)
+    @test 0.1 < ledoitWolfShrinkage(X2) < 0.4 # 0.200 at this seed
+    @test 0.1 < oasShrinkage(X2) < 0.4 # 0.196 at this seed
+    @test loss(Matrix(ledoitWolf(X2))) < loss(S2)
+    @test loss(Matrix(oas(X2))) < loss(S2)
+
+    # Degenerate and invalid inputs.
+    X0 = fill(2.5, 4, 7) # constant data: S = 0, the target itself
+    @test Matrix(ledoitWolf(X0)) == zeros(4, 4)
+    @test Matrix(oas(X0)) == zeros(4, 4)
+    @test ledoitWolfShrinkage(X0) == 1.0 # degenerate convention (see docstring)
+    @test oasShrinkage(X0) == 1.0
+    @test ledoitWolf([1 2 3; 4 5 6; 7 8 10]) isa Symmetric{Float64} # integer input
+    @test_throws ArgumentError ledoitWolf(randn(rng, 5, 1)) # n = 1
+    @test_throws ArgumentError oas(reshape([1.0], 1, 1))
+    @test_throws ArgumentError ledoitWolfShrinkage(zeros(0, 4)) # no variables
+    @test_throws ArgumentError ledoitWolf([1.0 NaN; 2.0 3.0; 4.0 5.0])
+    @test_throws ArgumentError oasShrinkage([1.0 Inf; 2.0 3.0; 4.0 5.0])
+end
+
 @testset "Tracy-Widom" begin
     using Distributions: cdf, pdf, quantile
     @test mean(TracyWidom(1)) ≈ -1.2065335745820
