@@ -19,7 +19,7 @@
 # For general beta > 0 no closed-form cdf exists; `rand` then uses the
 # Dumitriu-Edelman tridiagonal model, and cdf/pdf/quantile throw.
 
-export TracyWidom, twScaling
+export TracyWidom, twScaling, twTest
 
 const _TW_MEAN = Dict(1 => -1.2065335745820, 2 => -1.771086807411, 4 => -2.306884893241)
 const _TW_VAR = Dict(1 => 1.607781034581, 2 => 0.8131947928329, 4 => 0.5177237207726)
@@ -234,4 +234,40 @@ function twScaling(n::Integer, p::Integer)
     μ = (a + b)^2 / n
     σ = (a + b) * (1 / a + 1 / b)^(1 / 3) / n
     return (μ, σ)
+end
+
+"""
+    twTest(lambda, n, p; beta=1)
+
+Johnstone's Tracy-Widom test of the largest sample eigenvalue: is the
+largest eigenvalue `lambda` of the normalized sample covariance
+`(1/n) X'X` of an `n x p` Gaussian data matrix consistent with the null
+of identity population covariance (pure noise), or is it a signal
+outlier?
+
+Returns a NamedTuple `(statistic, pvalue)` with the scaled statistic
+
+    statistic = (lambda - mu) / sigma,     (mu, sigma) = twScaling(n, p)
+
+and the upper-tail p-value `pvalue = 1 - F_beta(statistic)` under
+[`TracyWidom`](@ref): a small p-value is evidence that `lambda` sits
+above the noise bulk. `beta = 1` (default) is for real data, `beta = 2`
+for complex data; Johnstone's scaling covers these two cases.
+
+The null has noise variance 1; for data with noise variance `sigma2`,
+apply the test to `lambda / sigma2`.
+
+Reference: Johnstone, "On the distribution of the largest eigenvalue
+in principal components analysis", Ann. Statist. 29(2), 2001,
+DOI 10.1214/aos/1009210544.
+"""
+function twTest(λ::Real, n::Integer, p::Integer; beta::Real=1)
+    (beta == 1 || beta == 2) || throw(ArgumentError(
+        "beta must be 1 (real data) or 2 (complex data)"))
+    n >= 2 || throw(ArgumentError("twTest requires n >= 2 observations"))
+    p >= 1 || throw(ArgumentError("twTest requires p >= 1 variables"))
+    isfinite(λ) || throw(ArgumentError("lambda must be finite"))
+    μ, σ = twScaling(n, p)
+    z = (float(λ) - μ) / σ
+    return (statistic=z, pvalue=1 - cdf(TracyWidom(beta), z))
 end

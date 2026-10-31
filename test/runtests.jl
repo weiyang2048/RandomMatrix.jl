@@ -381,6 +381,45 @@ end
     μ, σ = twScaling(400, 200)
     @test μ ≈ (sqrt(399) + sqrt(200))^2 / 400
     @test σ > 0
+    # Johnstone's Tracy-Widom test for the largest eigenvalue:
+    # deterministic anchors from the TW quantiles.
+    μt, σt = twScaling(400, 100)
+    r = twTest(μt + σt * quantile(TracyWidom(1), 0.95), 400, 100)
+    @test keys(r) == (:statistic, :pvalue)
+    @test r.statistic ≈ quantile(TracyWidom(1), 0.95)
+    @test r.pvalue ≈ 0.05 atol = 2e-3
+    @test twTest(μt, 400, 100).pvalue ≈ 1 - cdf(TracyWidom(1), 0.0)
+    r2 = twTest(μt + σt * quantile(TracyWidom(2), 0.95), 400, 100; beta=2)
+    @test r2.statistic ≈ quantile(TracyWidom(2), 0.95)
+    @test r2.pvalue ≈ 0.05 atol = 2e-3
+    # The p-value decreases as lambda grows and stays in [0, 1].
+    ps = [twTest(λ, 400, 100).pvalue for λ in (2.1, 2.246, 2.3, 2.5)]
+    @test issorted(ps; rev=true) && all(p -> 0 <= p <= 1, ps)
+    @test_throws ArgumentError twTest(2.3, 400, 100; beta=4)
+    @test_throws ArgumentError twTest(2.3, 400, 100; beta=3)
+    @test_throws ArgumentError twTest(2.3, 1, 100)
+    @test_throws ArgumentError twTest(2.3, 400, 0)
+    @test_throws ArgumentError twTest(NaN, 400, 100)
+    @test_throws ArgumentError twTest(Inf, 400, 100)
+    # Simulation calibration under the null (identity population
+    # covariance): the scaled statistic follows TW_1 / TW_2 and the
+    # test rejects at about the nominal rate — slightly conservatively
+    # at these sizes (a 400-trial calibration at (400, 100) gave mean
+    # statistic -1.24 against the TW_1 mean -1.207, rejection 0.033 at
+    # the 5% level, mean p-value 0.504).
+    rngtw = MersenneTwister(20261101)
+    zs = map(1:250) do _
+        X = randn(rngtw, 400, 100)
+        twTest(eigmax(Symmetric(X' * X) ./ 400), 400, 100).statistic
+    end
+    @test -1.5 < mean(zs) < -0.9
+    @test 0.005 < mean(z -> z > quantile(TracyWidom(1), 0.95), zs) < 0.11
+    @test 0.38 < mean(1 .- cdf.(TracyWidom(1), zs)) < 0.62
+    zc = map(1:150) do _
+        X = randn(rngtw, ComplexF64, 400, 100)
+        twTest(eigmax(Hermitian(X' * X) ./ 400), 400, 100; beta=2).statistic
+    end
+    @test -2.1 < mean(zc) < -1.45
 end
 
 @testset "Free probability" begin

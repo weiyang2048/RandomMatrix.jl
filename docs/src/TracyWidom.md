@@ -10,6 +10,7 @@ of Painlevé II; published means are ``-1.20653`` (``\beta = 1``),
 ```@docs
 TracyWidom
 twScaling
+twTest
 ```
 
 ## Worked example
@@ -34,4 +35,24 @@ scaling to apply to the largest eigenvalue before comparing with
 ```@example tw
 (mu, sigma) = twScaling(400, 100)
 (mu = round(mu, digits = 3), sigma = round(sigma, digits = 4))
+```
+
+## Testing the largest eigenvalue
+
+`twTest` wires the two ingredients together into Johnstone's test of
+the largest sample eigenvalue against the pure-noise null (identity
+population covariance): it returns the scaled statistic
+``(\lambda - \mu)/\sigma`` and its upper-tail p-value under ``F_1``.
+At ``n = 400``, ``p = 100`` an observed ``\lambda = 2.28`` is
+borderline (p-value ``0.06``), while ``\lambda = 2.35`` is a clear
+signal outlier:
+
+```@example tw
+r = twTest(2.28, 400, 100)
+(statistic = round(r.statistic, digits = 3), pvalue = round(r.pvalue, digits = 3))
+```
+
+```@example tw
+r = twTest(2.35, 400, 100)
+(statistic = round(r.statistic, digits = 3), pvalue = round(r.pvalue, digits = 4))
 ```

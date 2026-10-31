@@ -8,6 +8,25 @@ Registration notes record when a version landed in the Julia General
 registry; a version bump pushed to GitHub is not registered until the
 user triggers Registrator.
 
+## [0.6.0] - 2026-10-30
+
+Not yet registered in General.
+
+### Added
+
+- Johnstone's Tracy–Widom test for the largest eigenvalue:
+  `twTest(lambda, n, p; beta=1)` returns a NamedTuple
+  `(statistic, pvalue)` — the scaled statistic
+  `(lambda - mu) / sigma` from `twScaling(n, p)` and its upper-tail
+  p-value under `TracyWidom(beta)` — answering "is the top sample
+  eigenvalue signal or noise?" against the identity-covariance null
+  without wiring the two ingredients by hand. `beta = 1` (default)
+  is real data, `beta = 2` complex data. Reference: Johnstone,
+  Ann. Statist. 29(2), 2001, DOI 10.1214/aos/1009210544.
+  Simulation-calibrated under the null (at `n = 400`, `p = 100` the
+  test rejects slightly conservatively: 0.033 at the 5% level over
+  400 trials, mean p-value 0.504).
+
 ## [0.5.1] - 2026-10-30
 
 Not yet registered in General.
