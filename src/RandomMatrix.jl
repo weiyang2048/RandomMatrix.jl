@@ -54,6 +54,8 @@ include("Transformations.jl")
 
 include("SpikedCovariance.jl")
 
+include("SpikedManova.jl")
+
 include("CovarianceCleaning.jl")
 
 include("TracyWidom.jl")

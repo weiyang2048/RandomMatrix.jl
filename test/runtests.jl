@@ -200,6 +200,58 @@ end
     @test eigmax(S2) < (1 + sqrt(γ))^2 + 0.35
 end
 
+@testset "Spiked MANOVA / BBP" begin
+    γ₁, γ₂ = 0.5, 0.5
+    ρ = sqrt(γ₁ + γ₂ - γ₁ * γ₂)
+    x₋ = γ₂ * (γ₁ - ρ)^2 / (γ₁ + γ₂)^2
+    x₊ = γ₂ * (γ₁ + ρ)^2 / (γ₁ + γ₂)^2
+    @test manovaThreshold(γ₁, γ₂) ≈ (1 + ρ) / (1 - γ₂)
+    # Supercritical upper spike: phi(6) = 16.5 and t = phi (γ₂ = γ₁),
+    # so the MANOVA location is 16.5 / 17.5.
+    @test manovaSpikeLocation(6.0, γ₁, γ₂) ≈ 16.5 / 17.5
+    # The map is continuous at both critical values: it returns the
+    # Wachter support edges.
+    θ₊ = manovaThreshold(γ₁, γ₂)
+    θ₋ = (1 - ρ) / (1 - γ₂)
+    @test manovaSpikeLocation(θ₊, γ₁, γ₂) ≈ x₊ atol = 1e-12
+    @test manovaSpikeLocation(θ₋, γ₁, γ₂) ≈ x₋ atol = 1e-12
+    # Subcritical spikes stick to the nearer edge.
+    @test manovaSpikeLocation(2.0, γ₁, γ₂) ≈ x₊
+    @test manovaSpikeLocation(0.5, γ₁, γ₂) ≈ x₋
+    # Supercritical lower spike, phi and the t/(1+t) map spelt out.
+    λlow = 0.1 * (0.1 - 0.5) / (0.05 - 1)
+    @test manovaSpikeLocation(0.1, γ₁, γ₂) ≈ λlow / (1 + λlow)
+    # Asymmetric ratios, checked against the map spelt out.
+    θ, a, b = 5.0, 0.25, 0.5
+    λa = θ * (θ - 1 + a) / ((1 - b) * θ - 1)
+    ta = (b / a) * λa
+    @test manovaSpikeLocation(θ, a, b) ≈ ta / (1 + ta)
+    @test manovaThreshold(a, b) ≈ (1 + sqrt(a + b - a * b)) / (1 - b)
+    @test_throws ArgumentError manovaThreshold(0.5, 1.0)
+    @test_throws ArgumentError manovaThreshold(0.0, 0.5)
+    @test_throws ArgumentError manovaSpikeLocation(-1.0, γ₁, γ₂)
+    # Simulation: eigenvalues of (A + B)^{-1} A with A ~ W_p(Σ, n₁),
+    # Σ = diag(θ, 1, ..., 1), B ~ W_p(I, n₂).
+    function manova_eigs(θ, p, n₁, n₂)
+        G = randn(n₁, p)
+        G[:, 1] .*= sqrt(θ)
+        A = Matrix(Symmetric(G' * G))
+        H = randn(n₂, p)
+        B = Matrix(Symmetric(H' * H))
+        C = cholesky(Symmetric(A + B))
+        M = (C.L \ A) / C.U
+        return eigvals(Symmetric((M + M') / 2))
+    end
+    avg = xs -> sum(xs) / length(xs)  # Statistics is loaded further down this file
+    p, n₁, n₂, reps = 100, 200, 200, 6
+    top = [maximum(manova_eigs(6.0, p, n₁, n₂)) for _ in 1:reps]
+    @test avg(top) ≈ manovaSpikeLocation(6.0, γ₁, γ₂) atol = 0.02
+    stuck = [maximum(manova_eigs(2.0, p, n₁, n₂)) for _ in 1:reps]
+    @test x₊ - 0.06 < avg(stuck) < x₊ + 0.05
+    bot = [minimum(manova_eigs(0.1, p, n₁, n₂)) for _ in 1:reps]
+    @test avg(bot) ≈ manovaSpikeLocation(0.1, γ₁, γ₂) atol = 0.015
+end
+
 using Statistics: mean, std
 
 @testset "Covariance cleaning" begin
