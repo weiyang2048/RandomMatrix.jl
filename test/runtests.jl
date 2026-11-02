@@ -1,5 +1,5 @@
 using RandomMatrix
-using Distributions: Normal, Semicircle
+using Distributions: Normal, Semicircle, cdf
 using LinearAlgebra
 using Random
 using Test
@@ -82,6 +82,80 @@ end
     @test Gaussian(1, 0, 1) isa Normal
     @test Gaussian(2, 0, 1) isa ComplexNormal
     @test stieltjes(Semicircle(2))(0) isa Number
+end
+
+@testset "Wachter law" begin
+    # Constructor domain: gamma_i > 0 and gamma1 + gamma2 - gamma1*gamma2 > 0.
+    @test_throws ArgumentError Wachter(0.0, 0.5)
+    @test_throws ArgumentError Wachter(0.5, -1.0)
+    @test_throws ArgumentError Wachter(3.0, 3.0)  # n1 + n2 <= p: A + B singular
+    @test Wachter() == Wachter(0.5, 0.5)
+    # Mean and variance closed forms.
+    @test mean(Wachter(0.25, 0.5)) ≈ 2 / 3
+    @test mean(Wachter(0.5, 0.25)) ≈ 1 / 3
+    @test var(Wachter(0.5, 0.5)) ≈ 0.0625
+    @test var(Wachter(0.25, 0.5)) ≈ 0.125^2 / 0.75^3
+    # Support edges for (0.5, 0.5): (sqrt(3) -/+ 1)^2 / 8 form, 0.066987.../0.933012...
+    d = Wachter(0.5, 0.5)
+    @test pdf(d, 0.06) == 0
+    @test pdf(d, 0.94) == 0
+    @test pdf(d, -0.1) == 0
+    @test pdf(d, 1.1) == 0
+    @test pdf(d, 0.5) ≈ 1.1026577908435842 atol = 1e-12
+    @test pdf(Wachter(0.25, 0.5), 0.5) ≈ 1.2732395447351628 atol = 1e-12
+    # Swap symmetry: 1 - X for X ~ Wachter(g1, g2) is Wachter(g2, g1).
+    @test pdf(Wachter(0.25, 0.5), 0.4) ≈ pdf(Wachter(0.5, 0.25), 0.6) atol = 1e-14
+    @test mean(Wachter(0.25, 0.5)) ≈ 1 - mean(Wachter(0.5, 0.25))
+    # cdf: endpoints, symmetry point, and a numerically integrated anchor.
+    @test cdf(d, -1.0) == 0
+    @test cdf(d, 0.0) == 0
+    @test cdf(d, 1.0) == 1
+    @test cdf(d, 0.5) ≈ 0.5 atol = 1e-10
+    @test cdf(d, 0.25) ≈ 0.21634689593878545 atol = 1e-8
+    @test cdf(Wachter(0.25, 0.5), 0.5) ≈ 0.23791808825216623 atol = 1e-8
+    @test cdf(Wachter(1.0, 0.5), 0.8889) ≈ 1.0 atol = 1e-3  # edge touches 0 at gamma1 = 1
+    @test cdf(Wachter(1.0, 0.5), 0.8) ≈ 0.9427508529513049 atol = 1e-10
+    # Atoms: gamma1 > 1 puts mass 1 - 1/gamma1 at 0, gamma2 > 1 at 1.
+    da = Wachter(1.5, 0.5)
+    @test pdf(da, 0) ≈ 1 / 3
+    @test pdf(da, 1) == 0
+    @test cdf(da, 0.0) ≈ 1 / 3
+    @test mean(da) ≈ 0.25
+    db = Wachter(0.5, 1.5)
+    @test pdf(db, 1) ≈ 1 / 3
+    @test cdf(db, prevfloat(1.0)) ≈ 2 / 3 atol = 1e-6
+    # Sampling: range, moments, atom frequencies (seeded, generous bands).
+    Random.seed!(20261101)
+    xs = rand(d, 20_000)
+    @test all(0 .<= xs .<= 1)
+    @test mean(xs) ≈ 0.5 atol = 0.01
+    @test var(xs) ≈ 0.0625 atol = 0.005
+    Random.seed!(20261102)
+    xa = rand(da, 20_000)
+    @test count(==(0.0), xa) / 20_000 ≈ 1 / 3 atol = 0.02
+    @test mean(xa) ≈ 0.25 atol = 0.01
+    # MANOVA simulation calibration: eigenvalues of (A + B)^{-1} A for
+    # p = 120, n1 = 240 (gamma1 = 0.5), n2 = 480 (gamma2 = 0.25).
+    Random.seed!(20261103)
+    p, n1, n2 = 120, 240, 480
+    evals = Float64[]
+    for _ in 1:40
+        X = randn(p, n1)
+        Y = randn(p, n2)
+        A = X * X'
+        B = Y * Y'
+        L = cholesky(Symmetric(A + B)).L
+        M = L \ A / L'
+        append!(evals, eigvals(Symmetric((M + M') / 2)))
+    end
+    dm = Wachter(0.5, 0.25)
+    @test mean(evals) ≈ mean(dm) atol = 0.01
+    @test var(evals) ≈ var(dm) atol = 0.005
+    for (lo, hi) in [(0.0, 0.2), (0.2, 0.4), (0.4, 0.6), (0.6, 0.8)]
+        emp = count(x -> lo <= x < hi, evals) / length(evals)
+        theo = cdf(dm, hi) - cdf(dm, lo) + (lo == 0.0 ? cdf(dm, 0.0) : 0.0)
+        @test emp ≈ theo atol = 0.03
+    end
 end
 
 @testset "Spacing and transformations" begin

@@ -8,6 +8,31 @@ Registration notes record when a version landed in the Julia General
 registry; a version bump pushed to GitHub is not registered until the
 user triggers Registrator.
 
+## [0.7.0] - 2026-11-01
+
+Not yet registered in General.
+
+### Added
+
+- The Wachter law (MANOVA / Jacobi limiting spectral distribution):
+  `Wachter(γ₁, γ₂)` is the limiting distribution of an eigenvalue of
+  `(A + B)^{-1} A` for independent Wisharts `A ~ W_p(I, n₁)`,
+  `B ~ W_p(I, n₂)` with aspect ratios `γ₁ = p / n₁`, `γ₂ = p / n₂`
+  (the `MarchenkoPastur` convention). Closed-form density on
+  `[x₋, x₊] ⊂ [0, 1]` with `x± = γ₂(γ₁ ± ρ)² / (γ₁ + γ₂)²`,
+  `ρ = sqrt(γ₁ + γ₂ - γ₁γ₂)`; an atom at 0 of mass `1 - 1/γ₁` when
+  `γ₁ > 1` and at 1 of mass `1 - 1/γ₂` when `γ₂ > 1`; mean
+  `γ₂ / (γ₁ + γ₂)` and variance `(γ₁γ₂)² / (γ₁ + γ₂)³`. `pdf`,
+  `cdf` (quadrature in the `sin²θ` variable), `mean`, `var` and
+  exact rejection `rand` (in the same variable) are provided.
+  The parametrization, edges, atoms and moments were verified
+  against MANOVA-matrix simulation across the parameter range,
+  including both atom regimes; the domain requires
+  `γ₁ + γ₂ - γ₁γ₂ > 0` (equivalently `n₁ + n₂ > p`).
+  References: Wachter, Ann. Statist. 8(5), 1980; Collins, Probab.
+  Theory Related Fields 133, 2005; Johnstone, Ann. Statist. 36(6),
+  2008.
+
 ## [0.6.0] - 2026-10-30
 
 Not yet registered in General.

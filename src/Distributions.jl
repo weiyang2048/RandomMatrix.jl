@@ -1,5 +1,5 @@
 export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur,
-    stieltjes
+    Wachter, stieltjes
 # re-export    
 export mean, var, pdf, rand
 
@@ -103,6 +103,177 @@ function Base.rand(rng::AbstractRNG, d::MarchenkoPastur)
         if rand() <= pdf(d, x)
             return x
         end
+    end
+end
+
+"""
+    Wachter(γ₁, γ₂)
+    Wachter()
+
+The Wachter law (the MANOVA / Jacobi limiting spectral distribution):
+the limiting distribution of an eigenvalue of ``(A + B)^{-1} A``, where
+``A \\sim W_p(I, n_1)`` and ``B \\sim W_p(I, n_2)`` are independent
+Wishart matrices whose degrees of freedom grow proportionally with
+``p``, with aspect ratios
+
+```math
+\\gamma_1 = p / n_1, \\qquad \\gamma_2 = p / n_2
+```
+
+(the same convention as [`MarchenkoPastur`](@ref), whose ``\\lambda``
+is ``p / n``). With ``\\rho = \\sqrt{\\gamma_1 + \\gamma_2 -
+\\gamma_1 \\gamma_2}`` the continuous part has density
+
+```math
+f(x) = \\frac{\\gamma_1 + \\gamma_2}{\\gamma_1 \\gamma_2} \\,
+\\frac{\\sqrt{(x_+ - x)(x - x_-)}}{2\\pi x (1 - x)},
+\\qquad x \\in [x_-, x_+],
+```
+
+on the support ``x_\\pm = \\gamma_2 (\\gamma_1 \\pm \\rho)^2 /
+(\\gamma_1 + \\gamma_2)^2``. If ``\\gamma_1 > 1`` (the numerator
+Wishart is rank-deficient) there is an atom at ``0`` of mass
+``1 - 1/\\gamma_1``; if ``\\gamma_2 > 1`` there is an atom at ``1``
+of mass ``1 - 1/\\gamma_2``. Following the convention of
+[`MarchenkoPastur`](@ref), `pdf` at an atom location returns the
+atom mass. The mean and variance are
+
+```math
+\\frac{\\gamma_2}{\\gamma_1 + \\gamma_2},
+\\qquad
+\\frac{(\\gamma_1 \\gamma_2)^2}{(\\gamma_1 + \\gamma_2)^3},
+```
+
+and ``1 - X`` for ``X \\sim`` `Wachter(γ₁, γ₂)` is
+`Wachter(γ₂, γ₁)` (the roles of the two Wisharts swap). The
+parameters must satisfy ``\\gamma_1, \\gamma_2 > 0`` and
+``\\rho^2 = \\gamma_1 + \\gamma_2 - \\gamma_1\\gamma_2 > 0``,
+equivalently ``n_1 + n_2 > p`` (so that ``A + B`` is invertible).
+Defaults are `γ₁ = γ₂ = 0.5`, the symmetric case with mean `1/2`.
+
+`rand` uses exact rejection sampling in the variable
+``x = x_- + (x_+ - x_-) \\sin^2\\theta``, in which the density is
+bounded; `cdf` integrates the density in the same variable
+(Simpson's rule), in which it is smooth even when a support edge
+touches `0` or `1`.
+
+# Examples
+
+```julia
+d = Wachter(0.25, 0.5)   # eigenvalues of (A + B)^{-1} A, p/n1 = 1/4, p/n2 = 1/2
+mean(d)                  # 0.666...
+pdf(d, 0.5)              # 1.2732...
+rand(d)                  # a draw in [0, 1]
+```
+
+References: Wachter, "The limiting empirical measure of multiple
+discriminant ratios", Ann. Statist. 8(5), 1980, 937–957; Collins,
+"Product of random projections, Jacobi ensembles and universality
+problems arising from free probability", Probab. Theory Related
+Fields 133, 2005, 315–349; Johnstone, "Multivariate analysis and
+Jacobi ensembles: Largest eigenvalue, Tracy–Widom limits and rates
+of convergence", Ann. Statist. 36(6), 2008, 2638–2716.
+"""
+struct Wachter <: ContinuousUnivariateDistribution
+    γ₁::Float64
+    γ₂::Float64
+    function Wachter(γ₁=0.5, γ₂=0.5)
+        (γ₁ > 0 && γ₂ > 0 && isfinite(γ₁) && isfinite(γ₂)) ||
+            throw(ArgumentError("Wachter aspect ratios must be positive and finite, got γ₁ = $γ₁, γ₂ = $γ₂"))
+        γ₁ + γ₂ - γ₁ * γ₂ > 0 || throw(ArgumentError(
+            "Wachter requires γ₁ + γ₂ - γ₁γ₂ > 0 (equivalently n₁ + n₂ > p), got γ₁ = $γ₁, γ₂ = $γ₂"))
+        new(γ₁, γ₂)
+    end
+end
+
+# Support edges (x₋, x₊) of the continuous part.
+function _wachter_edges(d::Wachter)
+    ρ = sqrt(d.γ₁ + d.γ₂ - d.γ₁ * d.γ₂)
+    s = d.γ₁ + d.γ₂
+    return (d.γ₂ * (d.γ₁ - ρ)^2 / s^2, d.γ₂ * (d.γ₁ + ρ)^2 / s^2)
+end
+
+# Atom masses (at 0, at 1) from rank-deficient Wisharts.
+_wachter_atoms(d::Wachter) =
+    (max(0.0, 1 - 1 / d.γ₁), max(0.0, 1 - 1 / d.γ₂))
+
+mean(d::Wachter) = d.γ₂ / (d.γ₁ + d.γ₂)
+var(d::Wachter) = (d.γ₁ * d.γ₂)^2 / (d.γ₁ + d.γ₂)^3
+
+Distributions.minimum(d::Wachter) = 0.0
+Distributions.maximum(d::Wachter) = 1.0
+
+function Distributions.pdf(d::Wachter, x::Real)
+    a₀, a₁ = _wachter_atoms(d)
+    x₋, x₊ = _wachter_edges(d)
+    if x == 0
+        # Atom mass, the MarchenkoPastur convention; with no atom the
+        # density either vanishes below x₋ or diverges like x^(-1/2)
+        # at an edge touching 0 (γ₁ = 1).
+        return a₀ > 0 ? a₀ : (x₋ == 0 ? Inf : 0.0)
+    elseif x == 1
+        return a₁ > 0 ? a₁ : (x₊ == 1 ? Inf : 0.0)
+    end
+    (x < x₋ || x > x₊) && return 0.0
+    pref = (d.γ₁ + d.γ₂) / (d.γ₁ * d.γ₂)
+    return pref * sqrt((x₊ - x) * (x - x₋)) / (2π * x * (1 - x))
+end
+
+# Integrand of the continuous part after x = x₋ + Δ sin²θ, which
+# removes both square-root edge singularities: with s = sin²θ the
+# transformed density is pref Δ² s(1 - s) / (π x(θ) (1 - x(θ))).
+# At an endpoint where the edge touches 0 or 1 the direct expression
+# is 0/0; its finite limit is pref Δ / π, used there instead.
+function _wachter_theta_density(d::Wachter, θ::Float64, x₋::Float64, x₊::Float64)
+    Δ = x₊ - x₋
+    pref = (d.γ₁ + d.γ₂) / (d.γ₁ * d.γ₂)
+    if θ == 0
+        return x₋ == 0 ? pref * Δ / π : 0.0
+    elseif θ == π / 2
+        return x₊ == 1 ? pref * Δ / π : 0.0
+    end
+    s = sin(θ)^2
+    x = x₋ + Δ * s
+    return pref * Δ^2 * s * (1 - s) / (π * x * (1 - x))
+end
+
+function Distributions.cdf(d::Wachter, x::Real)
+    a₀, a₁ = _wachter_atoms(d)
+    x < 0 && return 0.0
+    x == 0 && return a₀
+    x >= 1 && return 1.0
+    x₋, x₊ = _wachter_edges(d)
+    x < x₋ && return a₀
+    x >= x₊ && return 1 - a₁
+    θx = asin(sqrt((x - x₋) / (x₊ - x₋)))
+    n = 2000  # Simpson intervals
+    h = θx / n
+    s = 0.0
+    for i in 0:n
+        w = (i == 0 || i == n) ? 1.0 : (isodd(i) ? 4.0 : 2.0)
+        s += w * _wachter_theta_density(d, i * h, x₋, x₊)
+    end
+    return a₀ + s * h / 3
+end
+
+function Base.rand(rng::AbstractRNG, d::Wachter)
+    a₀, a₁ = _wachter_atoms(d)
+    if a₀ > 0 || a₁ > 0
+        t = rand(rng)
+        t < a₀ && return 0.0
+        (a₁ > 0 && t >= 1 - a₁) && return 1.0
+    end
+    x₋, x₊ = _wachter_edges(d)
+    Δ = x₊ - x₋
+    # Rejection sampling in θ (x = x₋ + Δ sin²θ): the acceptance
+    # probability Δ² s(1 - s) / (x (1 - x)) is at most 1 because
+    # x >= Δ s and 1 - x >= Δ (1 - s).
+    while true
+        θ = (π / 2) * rand(rng)
+        s = sin(θ)^2
+        x = x₋ + Δ * s
+        (x <= 0 || x >= 1) && return x
+        rand(rng) * x * (1 - x) <= Δ^2 * s * (1 - s) && return x
     end
 end
 
