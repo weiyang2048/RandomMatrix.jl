@@ -186,12 +186,17 @@ struct Wachter <: ContinuousUnivariateDistribution
     end
 end
 
+# The Wachter discriminant ρ = sqrt(γ₁ + γ₂ − γ₁γ₂); the same ρ drives
+# the spiked MANOVA threshold in SpikedManova.jl.
+_wachter_rho(γ₁::Real, γ₂::Real) = sqrt(γ₁ + γ₂ - γ₁ * γ₂)
+
 # Support edges (x₋, x₊) of the continuous part.
-function _wachter_edges(d::Wachter)
-    ρ = sqrt(d.γ₁ + d.γ₂ - d.γ₁ * d.γ₂)
-    s = d.γ₁ + d.γ₂
-    return (d.γ₂ * (d.γ₁ - ρ)^2 / s^2, d.γ₂ * (d.γ₁ + ρ)^2 / s^2)
+function _wachter_edges(γ₁::Real, γ₂::Real)
+    ρ = _wachter_rho(γ₁, γ₂)
+    s = γ₁ + γ₂
+    return (γ₂ * (γ₁ - ρ)^2 / s^2, γ₂ * (γ₁ + ρ)^2 / s^2)
 end
+_wachter_edges(d::Wachter) = _wachter_edges(d.γ₁, d.γ₂)
 
 # Atom masses (at 0, at 1) from rank-deficient Wisharts.
 _wachter_atoms(d::Wachter) =

@@ -53,3 +53,41 @@ svdThreshold
 svdSpikeLocation
 svdSpikeOverlaps
 ```
+
+## The spiked MANOVA (Jacobi) case
+
+The same transition governs the double-Wishart (MANOVA) matrix
+``(A + B)^{-1} A``, whose bulk follows the [`Wachter`](@ref) law.
+With ``A \sim W_p(\Sigma, n_1)``, ``B \sim W_p(I, n_2)`` and aspect
+ratios ``\gamma_1 = p/n_1``, ``\gamma_2 = p/n_2``, a population spike
+``\theta`` of ``\Sigma`` (bulk at 1) produces an outlier eigenvalue
+only outside the critical window
+``(\theta_-, \theta_+)`` with
+``\theta_\pm = (1 \pm \rho)/(1 - \gamma_2)`` and
+``\rho = \sqrt{\gamma_1 + \gamma_2 - \gamma_1\gamma_2}`` — the same
+``\rho`` as in the Wachter support edges. Inside the window the spike
+is absorbed and the sample eigenvalue sticks to the nearer Wachter
+edge (Wang & Yao, Ann. Statist. 45(1), 2017, Thm. 3.1, mapped from
+the Fisher matrix ``B^{-1}A`` to the MANOVA eigenvalues).
+
+```@docs
+manovaThreshold
+manovaSpikeLocation
+```
+
+### Worked example
+
+At ``\gamma_1 = \gamma_2 = 0.5`` the upper critical spike is
+``\theta_+ \approx 3.73``: a spike of ``\theta = 6`` separates to
+``0.943`` (above the Wachter upper edge ``x_+ \approx 0.933``), a
+spike of ``\theta = 2`` is inside the window and sticks to that edge,
+and a low spike of ``\theta = 0.1`` separates below the bulk at
+``0.040``.
+
+```@example manova
+using RandomMatrix
+(threshold = round(manovaThreshold(0.5, 0.5), digits = 3),
+ outlier = round(manovaSpikeLocation(6.0, 0.5, 0.5), digits = 3),
+ stuck = round(manovaSpikeLocation(2.0, 0.5, 0.5), digits = 3),
+ lower = round(manovaSpikeLocation(0.1, 0.5, 0.5), digits = 3))
+```

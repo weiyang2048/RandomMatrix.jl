@@ -17,21 +17,10 @@
 
 export manovaThreshold, manovaSpikeLocation
 
-# The Wachter discriminant: rho^2 = gamma1 + gamma2 - gamma1 * gamma2,
-# the same rho as in the Wachter law's support edges.
-_manova_rho(γ₁::Real, γ₂::Real) = sqrt(γ₁ + γ₂ - γ₁ * γ₂)
-
 function _manova_check(γ₁::Real, γ₂::Real)
     (0 < γ₁ < 1 && 0 < γ₂ < 1) || throw(ArgumentError(
         "spiked MANOVA aspect ratios must lie in (0, 1), got γ₁ = $γ₁, γ₂ = $γ₂"))
     return nothing
-end
-
-# Support edges x₋ < x₊ of the Wachter(γ₁, γ₂) law.
-function _manova_edges(γ₁::Real, γ₂::Real)
-    ρ = _manova_rho(γ₁, γ₂)
-    s = γ₁ + γ₂
-    return (γ₂ * (γ₁ - ρ)^2 / s^2, γ₂ * (γ₁ + ρ)^2 / s^2)
 end
 
 # Wang & Yao's Fisher displacement phi, mapped to a MANOVA eigenvalue:
@@ -65,7 +54,7 @@ see [`manovaSpikeLocation`](@ref).
 """
 function manovaThreshold(γ₁::Real, γ₂::Real)
     _manova_check(γ₁, γ₂)
-    return (1 + _manova_rho(γ₁, γ₂)) / (1 - γ₂)
+    return (1 + _wachter_rho(γ₁, γ₂)) / (1 - γ₂)
 end
 
 """
@@ -93,12 +82,12 @@ The map is continuous at the critical values: at `θ = θ₊` (resp.
 function manovaSpikeLocation(θ::Real, γ₁::Real, γ₂::Real)
     _manova_check(γ₁, γ₂)
     θ > 0 || throw(ArgumentError("spike θ must be positive, got θ = $θ"))
-    ρ = _manova_rho(γ₁, γ₂)
+    ρ = _wachter_rho(γ₁, γ₂)
     θ₊ = (1 + ρ) / (1 - γ₂)
     θ₋ = (1 - ρ) / (1 - γ₂)
     if θ >= θ₊ || θ <= θ₋
         return _manova_map(θ, γ₁, γ₂)
     end
-    x₋, x₊ = _manova_edges(γ₁, γ₂)
+    x₋, x₊ = _wachter_edges(γ₁, γ₂)
     return θ >= 1 ? x₊ : x₋
 end
