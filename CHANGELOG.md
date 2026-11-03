@@ -8,7 +8,9 @@ Registration notes record when a version landed in the Julia General
 registry; a version bump pushed to GitHub is not registered until the
 user triggers Registrator.
 
-## [Unreleased]
+## [0.8.0] - 2026-11-03
+
+Not yet registered in General.
 
 ### Added
 
@@ -22,12 +24,12 @@ user triggers Registrator.
   to the MANOVA eigenvalues and calibrated against spiked MANOVA
   simulation in the test suite. Landed on `main` 2026-11-02 (commit
   d5c71b9, docs integration completed by the nightly run the same
-  night); not yet in a released version — the version bump and
-  registration are the user's call.
+  night).
 
 ## [0.7.0] - 2026-11-01
 
-Not yet registered in General.
+Registered in General 2026-11-02 (PR #174484, via the
+`[merge approved]` override over the skipped v0.6.0).
 
 ### Added
 
@@ -52,7 +54,8 @@ Not yet registered in General.
 
 ## [0.6.0] - 2026-10-30
 
-Not yet registered in General.
+Never registered in General — skipped at the user's direction; its
+content reached General with v0.7.0.
 
 ### Added
 
