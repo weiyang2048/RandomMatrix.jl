@@ -55,6 +55,18 @@ user triggers Registrator.
   plateau (minimum 0.84 of `1/N`). The finite-temperature form
   factor is not implemented.
 
+### Fixed
+
+- The `beta = 4` conversion in `_tw_tridiagonal_sample` had the
+  `2^(1/6)` factor in the wrong direction: the Dumitriu–Edelman edge
+  variable converges to the stochastic-Airy TW_4 (mean -2.05520,
+  var 0.41092), and multiplication by `2^(1/6)` — not division —
+  gives the classic `TracyWidom(4)` variable. The branch was dead
+  code (`rand` takes the analytic path for `beta in {1, 2, 4}`), so
+  no observable behavior changes; the `BetaHermite` / `BetaLaguerre`
+  docstrings now state the `beta = 4` caveat explicitly, and a
+  seeded moment-band test pins the direction.
+
 ## [0.8.0] - 2026-11-03
 
 Not yet registered in General.

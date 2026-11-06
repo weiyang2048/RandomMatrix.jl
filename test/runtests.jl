@@ -584,6 +584,17 @@ end
         twTest(eigmax(Hermitian(X' * X) ./ 400), 400, 100; beta=2).statistic
     end
     @test -2.1 < mean(zc) < -1.45
+    # The beta = 4 branch of the DE sampler: the raw rescaled edge is
+    # the stochastic-Airy variable (mean -2.05520, var 0.41092), and
+    # the sampler's 2^(1/6) multiplication must land it on the classic
+    # TracyWidom(4) moments. Seeded; bands carry the finite-N bias at
+    # N = 1000 (~+0.01-0.03 on the mean) and the Monte Carlo error
+    # (se ~ 0.011 at 4000 reps). The wrong direction would give
+    # mean ~ -1.83 and var ~ 0.26, far outside both bands.
+    rng4 = Xoshiro(20261106)
+    xs4 = [RandomMatrix._tw_tridiagonal_sample(rng4, 4; N=1000) for _ in 1:4000]
+    @test -2.306884893241 - 0.08 < mean(xs4) < -2.306884893241 + 0.08
+    @test 0.5177237207726 - 0.10 < var(xs4) < 0.5177237207726 + 0.10
 end
 
 @testset "Beta ensembles" begin
