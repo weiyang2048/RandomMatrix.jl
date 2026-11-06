@@ -58,9 +58,11 @@ is allowed.
 The empirical distribution of `λ / sqrt(n)` converges to the
 semicircle law on `[-2, 2]`, and the rescaled largest eigenvalue
 `n^(1/6) (λmax - 2 sqrt(n))` converges to [`TracyWidom`](@ref)`(beta)`
-(Ramírez–Rider–Virág). For `beta = 4` the classical GSE scaling of
-`TracyWidom(4)` differs from this one by the root-2 / `2^(1/6)`
-factors discussed in the `TracyWidom` source notes. The exact identity
+(Ramírez–Rider–Virág) — with one exception: at `beta = 4` that
+rescaled variable converges to the stochastic-Airy normalization of
+TW_4 (mean -2.05520, var 0.41092), and it converges to the classic
+`TracyWidom(4)` (mean -2.30688, var 0.51772) only after
+multiplication by `2^(1/6)`. The exact identity
 `E[sum λᵢ^2] = 2n/beta + n(n-1)` holds at every `n`, and
 `mean(d) = zeros(n)` by the symmetry `λ -> -λ` of the density.
 
@@ -118,7 +120,7 @@ eigenvalues divided by `n` have mean 1 and their empirical
 distribution converges to [`MarchenkoPastur`](@ref)`(p/n)`; the
 largest eigenvalue, centered with [`twScaling`](@ref)`(n, p)`,
 follows `TracyWidom(beta)` in the same sense as for
-[`BetaHermite`](@ref).
+[`BetaHermite`](@ref) (including its `beta = 4` `2^(1/6)` caveat).
 
 ```julia
 rand(BetaLaguerre(1, 400, 100)) ./ 400   # one Wishart spectrum, MP scale

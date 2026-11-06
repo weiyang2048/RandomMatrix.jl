@@ -209,11 +209,18 @@ end
 
 # Dumitriu-Edelman: the top eigenvalue of the beta-Hermite tridiagonal
 # matrix (built by `_beta_hermite_tridiagonal` in BetaEnsembles.jl),
-# rescaled as N^(1/6) (lam - 2 sqrt(N)).
+# rescaled as N^(1/6) (lam - 2 sqrt(N)). That rescaled variable is the
+# stochastic-Airy (Ramirez-Rider-Virag) Tracy-Widom variable, which at
+# beta = 1, 2 coincides with the classic TracyWidom(beta) but at
+# beta = 4 differs from it by a factor 2^(1/6): the SAO limit has
+# mean -2.05520 / var 0.41092, and multiplication by 2^(1/6) gives the
+# classic TracyWidom(4) variable (mean -2.30688 / var 0.51772).
+# (Sutton, "The Fourfold Way": "our normalization at beta = 4 differs
+# from that of Tracy and Widom by a factor of 2^(1/6)".)
 function _tw_tridiagonal_sample(rng::Random.AbstractRNG, β::Real; N::Integer=250)
     lam = eigmax(_beta_hermite_tridiagonal(rng, β, N))
     w = N^(1 / 6) * (lam - 2 * sqrt(N))
-    return β == 4 ? w / 2^(1 / 6) : w
+    return β == 4 ? w * 2^(1 / 6) : w
 end
 
 """
