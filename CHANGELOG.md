@@ -10,6 +10,10 @@ user triggers Registrator.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-06
+
+Not yet registered in General.
+
 ### Added
 
 - General-β ensemble eigenvalue samplers: `BetaHermite(β, n)` and
@@ -89,7 +93,7 @@ user triggers Registrator.
 
 ## [0.8.0] - 2026-11-03
 
-Not yet registered in General.
+Registered in General 2026-11-03 (PR #174646, clean AutoMerge).
 
 ### Added
 
