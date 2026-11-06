@@ -41,6 +41,26 @@ user triggers Registrator.
   test bands were fixed (variance ratios 0.86–1.10 across a
   nine-point `(θ, γ₁, γ₂)` grid at `p = 100`–`200`, 300–1500 reps,
   on the Fisher and MANOVA scales alike).
+- Free compression of a `FreeMeasure`: `freeCompress(μ, τ)` is the
+  law of `p a p` in the compressed space `(pAp, φ/τ)`, where `a` has
+  law `μ` and `p` is a projection of trace `τ ∈ (0, 1]` free from
+  `a` (Nica & Speicher, *Lectures on the Combinatorics of Free
+  Probability*, 2006). The R-transform scales as
+  `R_{μ_τ}(w) = R_μ(τ w)` (free cumulants
+  `κₙ → τⁿ⁻¹ κₙ`, so the mean is preserved), and an atom of mass
+  `m` survives exactly when `m > 1 - τ`, with compressed mass
+  `(m - (1 - τ))/τ`. Headline case: the Marčenko–Pastur law
+  compresses as `MP_γ → MP_{τγ}` — the limiting spectral law of a
+  principal submatrix retaining a `τ` fraction of the coordinates,
+  with the atom at 0 disappearing exactly at `τγ = 1`. The Cauchy
+  transform is evaluated through the implicit equation
+  `G_{μ_τ}(z) = G_μ(s)/τ`, `s - (1 - τ)/G_μ(s) = z`, by Newton
+  iteration on the exact rational `G_μ`. Anchored in the test suite
+  against the `MP_{τγ}` moments (errors ≤ 1.3% on the first three
+  moments at the default resolution), the atom rules at and away
+  from 0, semicircle variance scaling, Bernoulli cumulant-scaling
+  moments, dilation composition, and Wishart principal-submatrix
+  simulation.
 - Spectral form factor diagnostics, beside the spacing statistics:
   `spectralFormFactor(E, t)` is the single-spectrum form factor
   `|Σⱼ exp(-itEⱼ)|²/N²` of the levels exactly as given (the existing

@@ -58,6 +58,20 @@ ss = freeAdd(semicircleLaw(1.0), semicircleLaw(1.0))
 (mean = round(freeMean(ss), digits = 3), var = round(freeVar(ss), digits = 3))
 ```
 
+Free compression by a projection of trace ``\tau`` (the law of
+``p a p`` in the compressed space, with the trace renormalized by
+``1/\tau``) scales the R-transform as ``R(w) \mapsto R(\tau w)``;
+in particular the Marčenko–Pastur law ``MP_\gamma`` compresses to
+``MP_{\tau\gamma}`` — the limiting spectral law of a principal
+submatrix retaining a ``\tau`` fraction of the coordinates. Here
+``MP_{0.5}`` compressed by ``\tau = 1/2`` lands on the mean and
+variance of ``MP_{0.25}``:
+
+```@example freeprob
+comp = freeCompress(freePoissonLaw(0.5), 0.5)
+(mean = round(freeMean(comp), digits = 3), var = round(freeVar(comp), digits = 3))
+```
+
 ```@docs
 FreeMeasure
 semicircleLaw
@@ -70,6 +84,7 @@ rTransform
 sTransform
 freeAdd
 freeMul
+freeCompress
 freeDensity
 freeAtoms
 freeMean

@@ -745,6 +745,94 @@ end
     @test mom(a3, 1) ≈ 1.0 atol = 0.15
 end
 
+@testset "Free compression" begin
+    mom(μ, k) = sum(w * x^k for (x, w) in zip(μ.nodes, μ.weights))
+    mp(k, γ) = k == 1 ? 1.0 : k == 2 ? 1 + γ : 1 + 3γ + γ^2
+    fp = freePoissonLaw(0.5)
+    # Validation and the two exact special cases.
+    @test_throws ArgumentError freeCompress(fp, 0.0)
+    @test_throws ArgumentError freeCompress(fp, -0.5)
+    @test_throws ArgumentError freeCompress(fp, 1.5)
+    id = freeCompress(fp, 1.0)
+    @test id.nodes == fp.nodes && id.weights == fp.weights && id.atoms == fp.atoms
+    d = freeCompress(diracLaw(2.0), 0.3)
+    @test freeMean(d) == 2.0 && freeVar(d) == 0.0 && freeAtoms(d) == [2.0 => 1.0]
+    # Headline anchor: MP_gamma compressed by tau is MP_{tau*gamma}
+    # (R-transform identity R_{mu_tau}(w) = R_mu(tau*w); cumulants
+    # scale as kappa_n -> tau^(n-1) kappa_n). Tolerances are about 3x
+    # the errors measured at the default resolution (2026-11-06):
+    # atom-free cases err <= 0.9% on m3, atom cases <= 1.3%.
+    for (γ, τ, tol) in ((0.5, 0.5, (0.005, 0.01, 0.03)),
+                        (0.5, 0.25, (0.005, 0.01, 0.03)),
+                        (0.25, 0.8, (0.005, 0.01, 0.02)),
+                        (1.0, 0.5, (0.01, 0.02, 0.05)),
+                        (2.0, 0.75, (0.01, 0.03, 0.15)),
+                        (3.0, 0.5, (0.01, 0.03, 0.3)))
+        c = freeCompress(freePoissonLaw(γ), τ)
+        for k in 1:3
+            @test mom(c, k) ≈ mp(k, τ * γ) atol = tol[k]
+        end
+        # ... and it agrees with a freshly built MP_{tau*gamma} law.
+        ref = freePoissonLaw(τ * γ)
+        @test freeMean(c) ≈ freeMean(ref) atol = tol[1]
+        @test freeVar(c) ≈ freeVar(ref) atol = tol[2]
+    end
+    # Atom at 0: MP_2 (mass 1/2) compressed by 3/4 keeps an atom of
+    # (1/2 - 1/4)/(3/4) = 1/3; compressed by 1/2 the atom disappears
+    # exactly at tau*gamma = 1.
+    at1 = freeAtoms(freeCompress(freePoissonLaw(2.0), 0.75))
+    @test length(at1) == 1 && at1[1][1] == 0.0 && at1[1][2] ≈ 1 / 3
+    @test isempty(freeAtoms(freeCompress(freePoissonLaw(2.0), 0.5)))
+    at2 = freeAtoms(freeCompress(freePoissonLaw(3.0), 0.5))
+    @test length(at2) == 1 && at2[1][1] == 0.0 && at2[1][2] ≈ 1 / 3
+    # Atoms away from 0 follow the same threshold rule, and the mean
+    # is preserved exactly (kappa_1 is not scaled).
+    cm = freeCompress(discreteLaw([1.0, 3.0], [0.7, 0.3]), 0.75)
+    atm = freeAtoms(cm)
+    @test length(atm) == 2 && atm[1][1] == 1.0 && atm[1][2] ≈ 0.6 &&
+          atm[2][1] == 3.0 && atm[2][2] ≈ 1 / 15
+    @test freeMean(cm) ≈ 1.6 atol = 0.01
+    cz = freeCompress(discreteLaw([0.0, 2.0], [0.8, 0.2]), 0.5)
+    atz = freeAtoms(cz)
+    @test length(atz) == 1 && atz[1][1] == 0.0 && atz[1][2] ≈ 0.6
+    @test freeMean(cz) ≈ 0.4 atol = 0.01
+    # Semicircle: variance sigma^2 -> tau * sigma^2.
+    cs = freeCompress(semicircleLaw(2.0), 0.5)
+    @test freeMean(cs) ≈ 0.0 atol = 1e-8
+    @test freeVar(cs) ≈ 2.0 atol = 0.06
+    # Bernoulli (+-1): no atoms survive at tau = 1/2, and the moments
+    # follow cumulant scaling (m2 = tau, m4 = 2 tau^2 - tau^3).
+    cb = freeCompress(discreteLaw([-1.0, 1.0], [0.5, 0.5]), 0.5)
+    @test isempty(freeAtoms(cb))
+    @test mom(cb, 2) ≈ 0.5 atol = 0.01
+    @test mom(cb, 4) ≈ 0.375 atol = 0.01
+    # Compression commutes with dilation: MP_0.5 at scale 2,
+    # compressed by 1/2, is MP_0.25 at scale 2.
+    cd = freeCompress(freePoissonLaw(0.5; scale=2.0), 0.5)
+    @test freeMean(cd) ≈ 2.0 atol = 0.01
+    @test freeVar(cd) ≈ 1.0 atol = 0.03
+    # Simulation anchor: the ESD moments of a principal submatrix
+    # retaining half the coordinates of a Wishart matrix (gamma = 1/2)
+    # track the compressed law MP_{1/4}. Seeded; the band is ~5x the
+    # Monte Carlo sd of the 10-rep mean measured at these sizes.
+    Random.seed!(20261106)
+    p, N, reps = 400, 800, 10
+    msub = div(p, 2)
+    emp = zeros(reps, 3)
+    for r in 1:reps
+        X = randn(p, N) ./ sqrt(N)
+        S = X * X'
+        ev = eigvals(Symmetric(S[1:msub, 1:msub]))
+        for k in 1:3
+            emp[r, k] = mean(ev .^ k)
+        end
+    end
+    cc = freeCompress(freePoissonLaw(0.5), 0.5)
+    for k in 1:3
+        @test mean(emp[:, k]) ≈ mom(cc, k) atol = (0.02, 0.03, 0.06)[k]
+    end
+end
+
 @testset "RIE finite-size bias (characterized)" begin
     # Seeded characterization of the bias documented in rieEigenvalues:
     # at the default broadening eta = p^(-1/2) the mean cleaned eigenvalue

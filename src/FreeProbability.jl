@@ -23,7 +23,7 @@
 
 export FreeMeasure, semicircleLaw, freePoissonLaw, diracLaw, discreteLaw,
     empiricalLaw, cauchyTransform, rTransform, sTransform, freeAdd, freeMul,
-    freeDensity, freeAtoms, freeMean, freeVar
+    freeCompress, freeDensity, freeAtoms, freeMean, freeVar
 
 """
     FreeMeasure(nodes, weights, atoms = Pair{Float64,Float64}[])
@@ -453,6 +453,109 @@ function _dilate(μ::FreeMeasure, a::Real)
     nodes = μ.nodes .* a
     atoms = [x * a => m for (x, m) in μ.atoms]
     return FreeMeasure(nodes, copy(μ.weights), atoms)
+end
+
+function _freecompress_atoms(μ::FreeMeasure, τ::Real)
+    out = Pair{Float64,Float64}[]
+    for (a, m) in μ.atoms
+        m > 1 - τ && push!(out, a => (m - (1 - τ)) / τ)
+    end
+    return out
+end
+
+# Cauchy transform of the compression mu_tau at z, via the implicit
+# equation derived in freeCompress's docstring: G_{mu_tau}(z) =
+# G_mu(s)/tau with s - (1 - tau)/G_mu(s) = z, solved by Newton
+# iteration on the exact rational G_mu. `s0` is the continuation state
+# carried along the grid sweep. Returns (G, s); on non-convergence the
+# state is reset once to the closed-form guess s = z/tau and retried.
+function _compress_G(μ, z, τ, s0)
+    s = s0
+    for attempt in 1:2
+        ok = false
+        for _ in 1:60
+            G = cauchyTransform(μ, s)
+            dG = -sum(wt / (s - a)^2 for (a, wt) in zip(μ.nodes, μ.weights))
+            H = s - (1 - τ) / G - z
+            if abs(H) < 1e-12 * (1 + abs(z))
+                ok = true
+                break
+            end
+            Δ = H / (1 + (1 - τ) * dG / G^2)
+            s -= Δ
+            if abs(Δ) < 1e-13 * (1 + abs(s))
+                # Confirm the residual, not just the step size.
+                G = cauchyTransform(μ, s)
+                ok = abs(s - (1 - τ) / G - z) < 1e-10 * (1 + abs(z))
+                break
+            end
+        end
+        ok && return cauchyTransform(μ, s) / τ, s
+        attempt == 1 && (s = z / τ)
+    end
+    return cauchyTransform(μ, s) / τ, s
+end
+
+"""
+    freeCompress(mu, tau; npoints=1201, eps=nothing)
+
+The free compression of `mu` by a factor `tau` in `(0, 1]`: the law of
+`p a p` in the compressed space `(p A p, phi/tau)`, where `a` has law
+`mu` and `p` is a projection of trace `tau` free from `a`. This is the
+compression of Nica & Speicher, *Lectures on the Combinatorics of Free
+Probability*, Cambridge University Press, 2006. Note the normalization:
+the trace on the compressed space is renormalized by `1/tau`, so the
+mean is preserved. (The law of `p a p` under the *original* trace is
+the different measure `(1 - tau) delta_0 + tau * mu_tau`, and some
+authors parametrize the same family by `1/tau >= 1`, as a
+decompression.)
+
+Characterizing identities: the R-transform scales as
+`R_{mu_tau}(w) = R_mu(tau * w)`, i.e. the free cumulants scale as
+`kappa_n -> tau^(n-1) kappa_n`; an atom of `mu` at `a` of mass `m`
+survives exactly when `m > 1 - tau`, with compressed mass
+`(m - (1 - tau)) / tau`. Consequences: a semicircle of variance
+`sigma^2` compresses to a semicircle of variance `tau * sigma^2`, and
+the free Poisson (Marcenko-Pastur) law `MP_gamma` compresses to
+`MP_{tau * gamma}` — its atom at 0 (mass `1 - 1/gamma` for
+`gamma > 1`) disappears exactly when `tau * gamma <= 1`. For a sample
+covariance matrix this is the limiting spectral law of a principal
+submatrix retaining a `tau` fraction of the coordinates.
+
+Computation: the Cauchy transform of the result is evaluated through
+the implicit equation `G_{mu_tau}(z) = G_mu(s) / tau`, where `s` solves
+`s - (1 - tau) / G_mu(s) = z` (Newton iteration on the exact rational
+`G_mu`, with continuation along the grid), the density follows by
+Stieltjes inversion, and the atoms are inserted exactly. `eps` is the
+Stieltjes regularization (default: the grid spacing). `tau == 1`
+returns `mu` unchanged.
+"""
+function freeCompress(μ::FreeMeasure, τ::Real; npoints::Integer=1201, eps=nothing)
+    0 < τ <= 1 ||
+        throw(ArgumentError("freeCompress requires 0 < tau <= 1, got tau = $τ"))
+    τ == 1 && return FreeMeasure(copy(μ.nodes), copy(μ.weights), copy(μ.atoms))
+    # A scalar compresses to itself: p (a I) p = a p has law delta_a in
+    # the compressed space.
+    if length(μ.atoms) == 1 && μ.atoms[1][2] == 1.0
+        return diracLaw(μ.atoms[1][1])
+    end
+    lo = minimum(μ.nodes)
+    hi = maximum(μ.nodes)
+    pad = 0.05 * (hi - lo) + 0.01
+    xs = collect(range(lo - pad, hi + pad; length=npoints))
+    ε = eps === nothing ? (xs[2] - xs[1]) : eps
+    dens = zeros(length(xs))
+    s = complex(0.0, ε)
+    for i in length(xs):-1:1
+        z = xs[i] + im * ε
+        if i == length(xs)
+            s = z / τ
+        end
+        G, s = _compress_G(μ, z, τ, s)
+        dens[i] = max(-imag(G) / π, 0.0)
+    end
+    atoms = _freecompress_atoms(μ, τ)
+    return _assemble_result(xs, dens, atoms, ε)
 end
 
 # Returns (G, converged): converged is false when the Newton iteration
