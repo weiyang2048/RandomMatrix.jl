@@ -230,6 +230,33 @@ end
     @test_throws ArgumentError manovaThreshold(0.5, 1.0)
     @test_throws ArgumentError manovaThreshold(0.0, 0.5)
     @test_throws ArgumentError manovaSpikeLocation(-1.0, γ₁, γ₂)
+    # Fluctuation variance: deterministic anchors are the p-scaled
+    # values from the DJO Prop. 11 formula, validated against
+    # simulation grids before the bands were fixed (see the simulation
+    # variance check at the end of this testset).
+    @test manovaSpikeVariance(6.0, γ₁, γ₂, 100) * 100 ≈ 0.0058475635152019974 atol = 1e-12
+    @test manovaSpikeVariance(0.1, γ₁, γ₂, 100) * 100 ≈ 0.0038577611830804938 atol = 1e-12
+    @test manovaSpikeVariance(5.0, 0.25, 0.5, 200) * 200 ≈ 0.0017342138515128755 atol = 1e-12
+    # Independent spelling of the formula for an asymmetric case:
+    # Fisher variance from h = theta - 1, then the (g2/g1)/(1+t)^2
+    # Jacobian of the map t -> t/(1+t), t = (g2/g1) phi.
+    θv, a2, b2 = 4.0, 0.5, 0.25
+    hv = θv - 1
+    denv = (1 - b2) * θv - 1
+    VFv = 2 * (a2 + b2 - a2 * b2) * hv^2 * θv^2 * (hv^2 - b2 * θv^2 - a2) / denv^4
+    tv = (b2 / a2) * (θv * (θv - 1 + a2) / denv)
+    @test manovaSpikeVariance(θv, a2, b2, 100) ≈ (b2 / a2)^2 / (1 + tv)^4 * VFv / 100 atol = 1e-14
+    # Inside the critical window (and at its edges) there is no
+    # Gaussian variance at the 1/p scale.
+    @test isnan(manovaSpikeVariance(2.0, γ₁, γ₂, 100))
+    @test isnan(manovaSpikeVariance(θ₊, γ₁, γ₂, 100))
+    @test isnan(manovaSpikeVariance(θ₋, γ₁, γ₂, 100))
+    # Complex data halves the variance; bad inputs throw.
+    @test manovaSpikeVariance(6.0, γ₁, γ₂, 100; real=false) ≈
+        manovaSpikeVariance(6.0, γ₁, γ₂, 100) / 2
+    @test_throws ArgumentError manovaSpikeVariance(-1.0, γ₁, γ₂, 100)
+    @test_throws ArgumentError manovaSpikeVariance(6.0, 0.5, 1.0, 100)
+    @test_throws ArgumentError manovaSpikeVariance(6.0, γ₁, γ₂, 0)
     # Simulation: eigenvalues of (A + B)^{-1} A with A ~ W_p(Σ, n₁),
     # Σ = diag(θ, 1, ..., 1), B ~ W_p(I, n₂).
     function manova_eigs(θ, p, n₁, n₂)
@@ -250,6 +277,17 @@ end
     @test x₊ - 0.06 < avg(stuck) < x₊ + 0.05
     bot = [minimum(manova_eigs(0.1, p, n₁, n₂)) for _ in 1:reps]
     @test avg(bot) ≈ manovaSpikeLocation(0.1, γ₁, γ₂) atol = 0.015
+    # Simulation: empirical variance of the outlier against
+    # manovaSpikeVariance, both sides of the window. The band is
+    # generous (120 reps; the 2026-11-06 calibration grids at
+    # p = 100-200 with 300-1500 reps gave ratios 0.86-1.10 across
+    # nine (theta, g1, g2) points, Fisher and MANOVA scales alike).
+    empvar(xs) = (m = avg(xs); sum((xs .- m) .^ 2) / (length(xs) - 1))
+    p₂, n₃ = 80, 160
+    tops = [maximum(manova_eigs(6.0, p₂, n₃, n₃)) for _ in 1:120]
+    @test 0.45 < empvar(tops) / manovaSpikeVariance(6.0, γ₁, γ₂, p₂) < 2.0
+    bots = [minimum(manova_eigs(0.1, p₂, n₃, n₃)) for _ in 1:120]
+    @test 0.45 < empvar(bots) / manovaSpikeVariance(0.1, γ₁, γ₂, p₂) < 2.0
 end
 
 using Statistics: mean, std

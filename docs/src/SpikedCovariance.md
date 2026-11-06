@@ -73,6 +73,7 @@ the Fisher matrix ``B^{-1}A`` to the MANOVA eigenvalues).
 ```@docs
 manovaThreshold
 manovaSpikeLocation
+manovaSpikeVariance
 ```
 
 ### Worked example
@@ -90,4 +91,14 @@ using RandomMatrix
  outlier = round(manovaSpikeLocation(6.0, 0.5, 0.5), digits = 3),
  stuck = round(manovaSpikeLocation(2.0, 0.5, 0.5), digits = 3),
  lower = round(manovaSpikeLocation(0.1, 0.5, 0.5), digits = 3))
+```
+
+Above the threshold the outlier's fluctuations are Gaussian at the
+``1/p`` scale (Dharmawansa, Johnstone & Onatski 2014, Prop. 11, pushed
+through the map from the Fisher matrix to the MANOVA eigenvalues), so
+at ``p = 100`` the spike of ``\theta = 6`` above fluctuates with
+standard deviation ``\sqrt{\mathrm{manovaSpikeVariance}} \approx 0.0076``:
+
+```@example manova
+round(sqrt(manovaSpikeVariance(6.0, 0.5, 0.5, 100)), digits = 4)
 ```
