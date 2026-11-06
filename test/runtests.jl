@@ -586,6 +586,81 @@ end
     @test -2.1 < mean(zc) < -1.45
 end
 
+@testset "Beta ensembles" begin
+    using Distributions: insupport
+    # API shape: multivariate Distributions types whose rand returns
+    # the sorted spectrum.
+    dh = BetaHermite(2, 40)
+    @test length(dh) == 40
+    λ0 = rand(MersenneTwister(7), dh)
+    @test length(λ0) == 40 && issorted(λ0)
+    @test size(rand(MersenneTwister(7), dh, 3)) == (40, 3)
+    @test rand(MersenneTwister(7), dh) == λ0   # seeded reproducibility
+    @test mean(dh) == zeros(40)
+    @test insupport(dh, λ0)
+    @test !insupport(dh, reverse(λ0))
+    dl = BetaLaguerre(1, 60, 30)
+    @test length(dl) == 30
+    μ0 = rand(MersenneTwister(7), dl)
+    @test issorted(μ0) && minimum(μ0) >= 0
+    @test insupport(dl, μ0)
+    # Validation.
+    @test_throws ArgumentError BetaHermite(0, 5)
+    @test_throws ArgumentError BetaHermite(-2, 5)
+    @test_throws ArgumentError BetaHermite(NaN, 5)
+    @test_throws ArgumentError BetaHermite(2, 0)
+    @test_throws ArgumentError BetaLaguerre(0, 10, 5)
+    @test_throws ArgumentError BetaLaguerre(1, 10, 0)
+    @test_throws ArgumentError BetaLaguerre(1, 5, 10)
+    # Degenerate sizes: n = 1 Hermite is a single normal; p = 1
+    # Laguerre is a scaled chi-square with E[lam] = n exactly.
+    @test length(rand(MersenneTwister(3), BetaHermite(2, 1))) == 1
+    rng1 = MersenneTwister(20261108)
+    @test 44 < mean(rand(rng1, BetaLaguerre(2, 50, 1))[1] for _ in 1:400) < 56
+    # Simulation calibration (bands fixed from a 2000/400-rep
+    # calibration at N = 200, n = 400, p = 100: trace fingerprints
+    # matched the exact identities to 1e-3, bulk moments to ~0.01,
+    # edge means to ~0.09 at beta = 1, 2).
+    #
+    # Hermite trace identity E[sum lam^2] = 2N/beta + N(N-1) is exact,
+    # and the scaled bulk moments tend to the semicircle values 1, 2.
+    rngh = MersenneTwister(20261109)
+    for β in (0.5, 1.0, 2.0, 4.0, 3.7)
+        N = 120
+        specs = [rand(rngh, BetaHermite(β, N)) for _ in 1:300]
+        exact = 2N / β + N * (N - 1)
+        @test 0.99 < mean(sum(abs2, λ) for λ in specs) / exact < 1.01
+        @test 0.94 < mean(mean(abs2, λ) for λ in specs) / N < 1.06
+        @test 1.8 < mean(mean(λ .^ 4) for λ in specs) / N^2 < 2.2
+    end
+    # Hermite edge vs TracyWidom at beta = 1, 2 (calibration means
+    # -1.296, -1.762 at N = 200; the bands carry the finite-N bias).
+    rnge = MersenneTwister(20261110)
+    for (β, lo, hi) in ((1.0, -1.55, -0.9), (2.0, -1.98, -1.58))
+        w = [200^(1 / 6) * (maximum(rand(rnge, BetaHermite(β, 200))) - 2 * sqrt(200))
+             for _ in 1:300]
+        @test lo < mean(w) < hi
+    end
+    # Laguerre trace identity E[sum lam] = n p is exact; on the 1/n
+    # scale the bulk tends to MarchenkoPastur(p/n) (mean 1, second
+    # moment 1 + p/n) and the lower edge to (1 - sqrt(p/n))^2.
+    rngl = MersenneTwister(20261111)
+    for β in (0.5, 1.0, 2.0, 4.0, 3.7)
+        specs = [rand(rngl, BetaLaguerre(β, 200, 50)) for _ in 1:300]
+        @test 0.99 < mean(sum, specs) / (200 * 50) < 1.01
+        @test 0.97 < mean(mean(μ) for μ in specs) / 200 < 1.03
+        @test 1.18 < mean(mean(abs2, μ) for μ in specs) / 200^2 < 1.32
+        @test 0.15 < mean(minimum(μ) for μ in specs) / 200 < 0.38
+    end
+    # Laguerre edge vs Johnstone scaling at beta = 1 (calibration
+    # mean -1.224 at (400, 100), 400 reps).
+    μt, σt = twScaling(400, 100)
+    rngw = MersenneTwister(20261112)
+    z = [(maximum(rand(rngw, BetaLaguerre(1, 400, 100))) / 400 - μt) / σt
+         for _ in 1:150]
+    @test -1.55 < mean(z) < -0.9
+end
+
 @testset "Free probability" begin
     sc = semicircleLaw(1.0)
     @test freeMean(sc) ≈ 0.0 atol = 1e-10

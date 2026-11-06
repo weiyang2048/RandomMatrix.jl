@@ -208,12 +208,10 @@ function Distributions.rand(rng::Random.AbstractRNG, d::TracyWidom)
 end
 
 # Dumitriu-Edelman: the top eigenvalue of the beta-Hermite tridiagonal
-# matrix with diagonal sqrt(2/beta) N(0,1) and off-diagonal
-# chi_{(N-i) beta} / sqrt(beta), rescaled as N^(1/6) (lam - 2 sqrt(N)).
+# matrix (built by `_beta_hermite_tridiagonal` in BetaEnsembles.jl),
+# rescaled as N^(1/6) (lam - 2 sqrt(N)).
 function _tw_tridiagonal_sample(rng::Random.AbstractRNG, β::Real; N::Integer=250)
-    dv = sqrt(2 / β) .* randn(rng, N)
-    ev = [sqrt(rand(rng, Chisq((N - i) * β))) / sqrt(β) for i in 1:N-1]
-    lam = eigmax(SymTridiagonal(dv, ev))
+    lam = eigmax(_beta_hermite_tridiagonal(rng, β, N))
     w = N^(1 / 6) * (lam - 2 * sqrt(N))
     return β == 4 ? w / 2^(1 / 6) : w
 end

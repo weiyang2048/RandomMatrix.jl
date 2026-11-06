@@ -11,6 +11,8 @@ of Painlevé II; published means are ``-1.20653`` (``\beta = 1``),
 TracyWidom
 twScaling
 twTest
+BetaHermite
+BetaLaguerre
 ```
 
 ## Worked example
@@ -55,4 +57,29 @@ r = twTest(2.28, 400, 100)
 ```@example tw
 r = twTest(2.35, 400, 100)
 (statistic = round(r.statistic, digits = 3), pvalue = round(r.pvalue, digits = 4))
+```
+
+## Sampling the β-ensembles
+
+[`BetaHermite`](@ref) and [`BetaLaguerre`](@ref) sample the *full
+spectrum* of a Gaussian / Wishart β-ensemble at any ``\beta > 0``,
+from the Dumitriu–Edelman tridiagonal models — the same construction
+behind the general-β `rand` of `TracyWidom`. On the ``1/\sqrt{n}``
+scale the Hermite bulk follows the semicircle law on ``[-2, 2]``
+(extremes near ``\pm 2``, scaled second moment near ``1``):
+
+```@example tw
+λ = rand(BetaHermite(2, 400))
+(round(minimum(λ) / sqrt(400), digits = 2),
+ round(maximum(λ) / sqrt(400), digits = 2),
+ round(mean(λ .^ 2) / 400, digits = 2))
+```
+
+For the Laguerre ensemble the eigenvalues on the ``1/n`` scale
+follow `MarchenkoPastur(p/n)` — here ``p/n = 1/4``, so the mean is
+``1`` and the upper edge is ``(1 + 1/2)^2 = 2.25``:
+
+```@example tw
+μ = rand(BetaLaguerre(1, 400, 100)) ./ 400
+(round(mean(μ), digits = 3), round(maximum(μ), digits = 2))
 ```

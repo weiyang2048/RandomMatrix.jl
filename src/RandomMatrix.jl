@@ -60,6 +60,8 @@ include("CovarianceCleaning.jl")
 
 include("TracyWidom.jl")
 
+include("BetaEnsembles.jl")
+
 include("FreeProbability.jl")
 
 include("Spacing.jl")
