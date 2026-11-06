@@ -66,6 +66,8 @@ include("FreeProbability.jl")
 
 include("Spacing.jl")
 
+include("SpectralFormFactor.jl")
+
 include("Distributions.jl")
 
 include("Math.jl")

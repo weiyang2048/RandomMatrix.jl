@@ -763,3 +763,5 @@ end
     # (see [extras]/[targets] in Project.toml), never a runtime dep.
     Aqua.test_all(RandomMatrix)
 end
+
+include("test_spectralformfactor.jl")

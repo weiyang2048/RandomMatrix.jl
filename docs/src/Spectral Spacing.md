@@ -16,3 +16,25 @@ unfoldedSpacings
 ```@docs
 numberVariance
 ```
+## Spectral form factor
+
+The spectral form factor is the dynamical companion of the spacing
+statistics above: where `numberVariance` probes level correlations
+in the spectrum domain, `spectralFormFactor` probes them in the
+time domain, through the dip–ramp–plateau structure of the
+ensemble-averaged form factor.
+
+```@docs
+spectralFormFactor
+```
+
+```@docs
+ensembleSpectralFormFactor
+```
+
+```@example
+using RandomMatrix, Random
+specs = [rand(MersenneTwister(42), BetaHermite(2, 100)) for _ in 1:50]
+parts = ensembleSpectralFormFactor(specs, [0.5, 2.0, 6.3]; unfold=true)
+parts.total   # decays, ramps, and approaches the plateau 1/100
+```

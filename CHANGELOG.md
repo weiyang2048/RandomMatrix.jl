@@ -41,6 +41,19 @@ user triggers Registrator.
   test bands were fixed (variance ratios 0.86–1.10 across a
   nine-point `(θ, γ₁, γ₂)` grid at `p = 100`–`200`, 300–1500 reps,
   on the Fisher and MANOVA scales alike).
+- Spectral form factor diagnostics, beside the spacing statistics:
+  `spectralFormFactor(E, t)` is the single-spectrum form factor
+  `|Σⱼ exp(-itEⱼ)|²/N²` of the levels exactly as given (the existing
+  `unfoldedeigvals` is applied only with `unfold=true`), and
+  `ensembleSpectralFormFactor(spectra, t)` returns the
+  `(total, connected, disconnected)` decomposition of Cotler et al.,
+  "Black holes and random matrices", J. High Energy Phys.
+  2017(5):118. Calibrated against the structural facts before the
+  test bands were fixed: unfolded `BetaHermite` spectra dip to
+  0.13 (β = 1) / 0.07 (β = 2) of the `1/N` plateau and ramp back to
+  it at the Heisenberg time, while Poisson levels sit flat at the
+  plateau (minimum 0.84 of `1/N`). The finite-temperature form
+  factor is not implemented.
 
 ## [0.8.0] - 2026-11-03
 
