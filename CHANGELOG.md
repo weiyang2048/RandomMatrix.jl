@@ -10,6 +10,34 @@ user triggers Registrator.
 
 ## [Unreleased]
 
+### Added
+
+- Unbalanced complex Jacobi Tracy-Widom correction (Didier, Gkogkou,
+  Lopez Santander & McLaughlin, arXiv:2611.00577). For
+  `J = (A + B)^{-1} B` with `A ~ CW_p(I, m)`, `B ~ CW_p(I, n)` in the
+  regime `n - p = b p`, `m - p = a p^(1 + nu)`, `nu > 0`,
+  `jacobiTWScaling(p, a, b, nu)` returns the finite-p location
+  `beta_p` (eq. (2.12)) and scale `checkC_p p^(-2/3)` (eq. (4.23))
+  standardizing the largest eigenvalue to `TracyWidom(2)`, and
+  `jacobiTWCDF` / `jacobiTWThreshold` implement Theorem 3.1's
+  explicit `p^(-2/3)` correction
+  `F_2(s) (1 - 2 Chat_p p^(-2/3) v(s)) + O(p^(-1))` and its
+  threshold map `phi_p(chi_p^{-1}(s))`. The public scale is the
+  finite-p coefficient, NOT Corollary 3.2's closed-form limiting
+  scale `1 / (C p^(nu + 2/3))`: the two agree only to `1 + o(1)`
+  with a slowly vanishing error (relative deficit ~ `7 p^(-nu)` at
+  `b = 1`), and at `nu = 1/2` the limiting scale runs 2.36 / 1.89 /
+  1.60 times the finite-p scale at `p = 50 / 100 / 200`, so it is
+  not exposed. Simulation-validated: at `nu = 1/2`, `a = b = 1`, the
+  standardized largest eigenvalue has mean/sd -1.821/0.906,
+  -1.777/0.891, -1.771/0.886 at `p = 50 / 100 / 200`
+  (20,000 / 8,000 / 3,000 replications; `TracyWidom(2)` targets
+  -1.7711 / 0.9018), the correction term matches its predicted size
+  and `p^(-2/3)` decay (max 0.0026 / 0.0016 / 0.0010 of CDF), and
+  the remaining error is the theorem's `O(p^(-1))` remainder (sup
+  0.014 at `p = 50`), which dominates the displayed term at
+  simulable sizes.
+
 ## [0.10.0] - 2026-11-06
 
 Not yet registered in General.

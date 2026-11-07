@@ -59,6 +59,54 @@ r = twTest(2.35, 400, 100)
 (statistic = round(r.statistic, digits = 3), pvalue = round(r.pvalue, digits = 4))
 ```
 
+## The unbalanced Jacobi edge
+
+For the Jacobi (MANOVA) matrix ``J = (A + B)^{-1} B`` of two
+independent complex Wisharts, the largest eigenvalue still has
+Tracy–Widom(2) fluctuations at the right edge — but in the
+*unbalanced* regime ``n - p = b\, p``, ``m - p = a\, p^{1+\nu}``
+(``\nu > 0``), where one Wishart is much fatter than the other, the
+centering is not Johnstone's. Didier, Gkogkou, Lopez Santander &
+McLaughlin (arXiv:2611.00577, 2026) give the finite-``p`` location
+and scale explicitly, together with an explicit ``p^{-2/3}``
+correction to the distribution function (their Theorem 3.1):
+
+```@docs
+jacobiTWScaling
+jacobiTWCDF
+jacobiTWThreshold
+```
+
+At ``p = 100``, ``a = b = 1``, ``\nu = 1/2`` the edge sits at
+``\beta_p \approx 0.399`` with scale ``\sigma_p \approx 0.0071``:
+
+```@example jacobi
+using RandomMatrix, Distributions
+ls = jacobiTWScaling(100, 1.0, 1.0, 0.5)
+(location = round(ls.location, digits = 4), scale = round(ls.scale, digits = 5))
+```
+
+Theorem 3.1 refines ``P(\theta_{\max} \le \varphi_p(\chi_p^{-1}(s)))``
+beyond the plain ``F_2(s)``: at ``s = -1`` the correction moves the
+cdf from 0.8072 to 0.8086 (the term is genuinely of order
+``p^{-2/3}``, and small), and the threshold map turns Tracy–Widom
+quantiles into approximate quantiles of ``\theta_{\max}`` — the 95%
+point is ``\approx 0.398``:
+
+```@example jacobi
+(plain = round(jacobiTWCDF(-1.0, 100, 1.0, 1.0, 0.5; corrected = false), digits = 4),
+ corrected = round(jacobiTWCDF(-1.0, 100, 1.0, 1.0, 0.5), digits = 4),
+ q95 = round(jacobiTWThreshold(quantile(TracyWidom(2), 0.95), 100, 1.0, 1.0, 0.5), digits = 4))
+```
+
+One warning, also spelled out in the docstring of
+[`jacobiTWScaling`](@ref): the paper's Corollary 3.2 gives a
+closed-form *limiting* scale as well, but it agrees with the
+finite-``p`` scale only to ``1 + o(1)`` with a slowly vanishing
+error — at ``\nu = 1/2`` it runs 1.6–2.4 times too wide at
+``p = 50``–``200``. The package exposes only the finite-``p``
+scale.
+
 ## Sampling the β-ensembles
 
 [`BetaHermite`](@ref) and [`BetaLaguerre`](@ref) sample the *full
