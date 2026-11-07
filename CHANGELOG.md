@@ -10,9 +10,34 @@ user triggers Registrator.
 
 ## [Unreleased]
 
-## [0.9.0] - 2026-11-06
+## [0.10.0] - 2026-11-06
 
 Not yet registered in General.
+
+### Added
+
+- Finite-temperature spectral form factor: `spectralFormFactor` and
+  `ensembleSpectralFormFactor` now take a `beta` keyword (inverse
+  temperature, default `0.0`) giving Cotler et al.'s
+  `g(t, beta) = |Z(beta + i t)|^2 / Z(beta)^2` with
+  `Z(beta + i t) = sum_j exp(-(beta + i t) E_j)`. At `beta = 0` this
+  reduces exactly to the previous zero-temperature functions. At
+  `beta > 0` the levels carry thermal weights `exp(-beta E_j)`:
+  `g(0, beta) = 1` still holds, and the late-time plateau rises from
+  `1/N` to the participation ratio `sum w^2 / (sum w)^2` of the
+  weights — calibrated in the test suite against the time-averaged
+  form factor of raw `BetaHermite` spectra (agreement at the
+  percent level at `beta = 0.5`). The ensemble decomposition
+  normalizes each spectrum by its own `Z(beta)`, so
+  `total = connected + disconnected` holds at every `beta`.
+  Amplitudes are evaluated on energies shifted by a common constant
+  (which cancels exactly in the normalized ratio), so spectra at
+  large absolute energies stay finite where the raw exponentials
+  would underflow.
+
+## [0.9.0] - 2026-11-06
+
+Registered in General 2026-11-06 (PR #175190, clean AutoMerge).
 
 ### Added
 

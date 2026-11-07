@@ -22,7 +22,10 @@ The spectral form factor is the dynamical companion of the spacing
 statistics above: where `numberVariance` probes level correlations
 in the spectrum domain, `spectralFormFactor` probes them in the
 time domain, through the dip–ramp–plateau structure of the
-ensemble-averaged form factor.
+ensemble-averaged form factor. Both functions take a `beta`
+keyword for the finite-temperature form factor
+$|Z(\beta + it)|^2 / Z(\beta)^2$ (the default `beta = 0` is the
+zero-temperature case).
 
 ```@docs
 spectralFormFactor

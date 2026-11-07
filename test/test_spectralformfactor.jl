@@ -61,3 +61,62 @@
         @test 0.65 * plateau < pβ.connected[end] < 1.3 * plateau
     end
 end
+
+@testset "Spectral form factor (finite temperature)" begin
+    # beta = 0 is exactly the zero-temperature function, single and ensemble.
+    E = [0.3, 1.1, 2.9, 4.2, 8.0]
+    ts = collect(range(0.0, 6.0, length=25))
+    @test spectralFormFactor(E, ts; beta=0.0) ≈ spectralFormFactor(E, ts)
+    rng = MersenneTwister(20261114)
+    specs = [sort(rand(rng, 20)) .* 20 for _ in 1:5]
+    p0 = ensembleSpectralFormFactor(specs, ts; beta=0.0)
+    pdef = ensembleSpectralFormFactor(specs, ts)
+    @test p0.total ≈ pdef.total && p0.connected ≈ pdef.connected &&
+        p0.disconnected ≈ pdef.disconnected
+
+    # Exact thermal anchors: g(0, beta) = 1 at any beta; a single level
+    # gives 1 at all times; the two-level case at t = pi, beta = 1 is
+    # ((1 - e^-1)/(1 + e^-1))^2; the thermal form factor is invariant
+    # under a common shift of all energies (the shift cancels between
+    # Z(beta + it) and Z(beta)) — and the shifted evaluation stays
+    # finite where the raw exponentials would underflow.
+    @test spectralFormFactor(E, 0.0; beta=2.0) == 1.0
+    @test spectralFormFactor([3.7], 2.3; beta=1.5) ≈ 1.0 atol = 1e-12
+    @test spectralFormFactor([0.0, 1.0], π; beta=1.0) ≈
+        ((1 - exp(-1)) / (1 + exp(-1)))^2 atol = 1e-12
+    @test spectralFormFactor([1000.0, 1001.0, 1002.5], π; beta=1.0) ≈
+        spectralFormFactor([0.0, 1.0, 2.5], π; beta=1.0) atol = 1e-12
+    @test all(isfinite, spectralFormFactor([1000.0, 1001.0, 1002.5], ts; beta=1.0))
+    @test_throws ArgumentError spectralFormFactor(E, 1.0; beta=-0.1)
+    @test_throws ArgumentError spectralFormFactor(E, 1.0; beta=Inf)
+    @test_throws ArgumentError spectralFormFactor(E, 1.0; beta=NaN)
+    @test_throws ArgumentError ensembleSpectralFormFactor(specs, 1.0; beta=-1.0)
+
+    # Ensemble decomposition at beta > 0: the identity survives, at
+    # t = 0 every part is trivial, and a single spectrum reduces to
+    # the single-spectrum function.
+    βT = 0.7
+    parts = ensembleSpectralFormFactor(specs, ts; beta=βT)
+    @test parts.total ≈ parts.connected .+ parts.disconnected
+    at0 = ensembleSpectralFormFactor(specs, 0.0; beta=βT)
+    @test at0.total == 1.0 && at0.disconnected == 1.0 && at0.connected == 0.0
+    one = ensembleSpectralFormFactor([specs[1]], 1.3; beta=βT)
+    @test one.connected == 0.0
+    @test one.disconnected ≈ one.total ≈ spectralFormFactor(specs[1], 1.3; beta=βT)
+
+    # Thermal plateau (seeded calibration, 2026-11-06 prototype):
+    # the time average of the ensemble total over t in [20, 60] sits
+    # at the participation ratio sum w^2/(sum w)^2 of the thermal
+    # weights (prototype ratio 1.004 at this configuration), far
+    # above the beta = 0 plateau 1/N.
+    rngT = MersenneTwister(20261115)
+    NT, MT = 50, 40
+    specT = [rand(rngT, BetaHermite(2.0, NT)) for _ in 1:MT]
+    tslow = collect(range(20.0, 60.0, length=200))
+    pT = ensembleSpectralFormFactor(specT, tslow; beta=0.5)
+    plateauT = mean(let w = exp.(-0.5 .* (s .- minimum(s)))
+        sum(w .^ 2) / sum(w)^2
+    end for s in specT)
+    @test plateauT > 3 / NT
+    @test 0.85 * plateauT < mean(pT.total) < 1.15 * plateauT
+end
