@@ -10,6 +10,10 @@ user triggers Registrator.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-08
+
+Not yet registered in General.
+
 ### Added
 
 - `fitWachter(evals)`: method-of-moments estimation of the Wachter
@@ -51,7 +55,7 @@ user triggers Registrator.
 
 ## [0.10.0] - 2026-11-06
 
-Not yet registered in General.
+Registered in General 2026-11-07 (PR #175272).
 
 ### Added
 
