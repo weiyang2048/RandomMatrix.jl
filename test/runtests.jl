@@ -156,6 +156,34 @@ end
         theo = cdf(dm, hi) - cdf(dm, lo) + (lo == 0.0 ? cdf(dm, 0.0) : 0.0)
         @test emp ≈ theo atol = 0.03
     end
+    # fitWachter: method-of-moments inversion of the law's mean/variance.
+    # The inversion is algebraically exact — the fitted law's moments
+    # reproduce the input spectrum's moments to roundoff.
+    Random.seed!(20261108)
+    xs = rand(Wachter(0.5, 0.25), 5_000)
+    f = fitWachter(xs)
+    @test mean(Wachter(f.γ₁, f.γ₂)) ≈ mean(xs) atol = 1e-12
+    @test var(Wachter(f.γ₁, f.γ₂)) ≈ var(xs; corrected = false) atol = 1e-12
+    @test f.γ₁ ≈ 0.5 atol = 0.03   # seeded fit: (0.5044, 0.2468)
+    @test f.γ₂ ≈ 0.25 atol = 0.03
+    # Pooled MANOVA spectrum above (true gamma1 = 0.5, gamma2 = 0.25):
+    # seeded fit (0.5042, 0.2523).
+    fm = fitWachter(evals)
+    @test fm.γ₁ ≈ 0.5 atol = 0.02
+    @test fm.γ₂ ≈ 0.25 atol = 0.02
+    # Atom regime (gamma1 = 1.5 > 1): seeded fit (1.5022, 0.4998).
+    Random.seed!(20261112)
+    xa2 = rand(da, 20_000)
+    fa = fitWachter(xa2)
+    @test fa.γ₁ ≈ 1.5 atol = 0.02
+    @test fa.γ₂ ≈ 0.5 atol = 0.02
+    # Degenerate / impossible spectra throw.
+    @test_throws ArgumentError fitWachter(Float64[])
+    @test_throws ArgumentError fitWachter([0.5, 1.2])
+    @test_throws ArgumentError fitWachter(fill(0.5, 10))        # zero variance
+    @test_throws ArgumentError fitWachter(zeros(10))            # single atom at 0
+    @test_throws ArgumentError fitWachter([0.0, 1.0, 0.0, 1.0]) # Bernoulli bound
+    @test_throws ArgumentError fitWachter([0.5, NaN])
 end
 
 @testset "Spacing and transformations" begin

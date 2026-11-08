@@ -1,5 +1,5 @@
 export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur,
-    Wachter, stieltjes
+    Wachter, fitWachter, stieltjes
 # re-export    
 export mean, var, pdf, rand
 
@@ -280,6 +280,47 @@ function Base.rand(rng::AbstractRNG, d::Wachter)
         (x <= 0 || x >= 1) && return x
         rand(rng) * x * (1 - x) <= Δ^2 * s * (1 - s) && return x
     end
+end
+
+"""
+    fitWachter(evals) -> (γ₁ = ..., γ₂ = ...)
+
+Estimate the Wachter aspect ratios ``γ₁ = p/n₁`` and ``γ₂ = p/n₂`` from a
+spectrum `evals` of eigenvalues of a MANOVA matrix ``(A + B)^{-1} A`` —
+the analogue of `fitMarchenkoPastur` for the Jacobi case.
+
+Method of moments: the [`Wachter`](@ref) law has mean
+``m = γ₂ / (γ₁ + γ₂)`` and variance ``v = (γ₁ γ₂)^2 / (γ₁ + γ₂)^3``.
+With ``s = γ₁ + γ₂`` the variance factors as ``v = s (m (1 - m))^2``, so
+the empirical mean and population variance of `evals` invert in closed
+form: ``s = v / (m (1 - m))^2``, ``γ₂ = m s``, ``γ₁ = (1 - m) s``. The
+atoms at 0 and 1 (for ``γ₁ > 1`` / ``γ₂ > 1``) need no special handling —
+they enter the empirical moments directly.
+
+An `ArgumentError` is thrown when no Wachter law can match the spectrum:
+empty input, eigenvalues outside ``[0, 1]``, a degenerate spectrum (zero
+variance, or a single atom), or a variance at the Bernoulli bound
+``v = m (1 - m)`` — a spectrum supported on ``{0, 1}`` alone, which is
+also exactly where the Wachter domain ``γ₁ + γ₂ - γ₁ γ₂ > 0`` closes.
+"""
+function fitWachter(evals::AbstractVector{<:Real})
+    λ = collect(float.(evals))
+    isempty(λ) && throw(ArgumentError("fitWachter: no eigenvalues given"))
+    all(x -> isfinite(x) && -1e-8 <= x <= 1 + 1e-8, λ) || throw(ArgumentError(
+        "fitWachter: MANOVA eigenvalues must lie in [0, 1], got range " *
+        "[$(minimum(λ)), $(maximum(λ))]"))
+    m = mean(λ)
+    v = var(λ; corrected = false)
+    0 < m < 1 || throw(ArgumentError(
+        "fitWachter: spectrum mean $m is not in (0, 1) — the spectrum is a single atom"))
+    v > 0 || throw(ArgumentError(
+        "fitWachter: spectrum has zero variance — no Wachter law fits a single atom"))
+    v < m * (1 - m) || throw(ArgumentError(
+        "fitWachter: variance $v reaches the Bernoulli bound m(1 - m) = " *
+        "$(m * (1 - m)) for a [0, 1] spectrum — the spectrum is supported " *
+        "on {0, 1} alone and no Wachter law matches it"))
+    s = v / (m * (1 - m))^2
+    return (γ₁ = (1 - m) * s, γ₂ = m * s)
 end
 
 """

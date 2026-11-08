@@ -12,6 +12,17 @@ user triggers Registrator.
 
 ### Added
 
+- `fitWachter(evals)`: method-of-moments estimation of the Wachter
+  aspect ratios `γ₁ = p/n₁`, `γ₂ = p/n₂` from a MANOVA spectrum (the
+  Jacobi analogue of `fitMarchenkoPastur`). The law's mean
+  `m = γ₂/(γ₁ + γ₂)` and variance `v = (γ₁γ₂)²/(γ₁ + γ₂)³` invert in
+  closed form via `v = s (m (1 - m))²` with `s = γ₁ + γ₂`; atoms at
+  0/1 enter the empirical moments directly. Spectra no Wachter law can
+  match (degenerate, or at the Bernoulli bound `v = m (1 - m)`) throw
+  `ArgumentError`. Calibrated in-suite: exact moment round-trip,
+  pooled MANOVA fit (0.504, 0.252) at true (0.5, 0.25), atom-regime
+  fit (1.502, 0.500) at true (1.5, 0.5).
+
 - Unbalanced complex Jacobi Tracy-Widom correction (Didier, Gkogkou,
   Lopez Santander & McLaughlin, arXiv:2611.00577). For
   `J = (A + B)^{-1} B` with `A ~ CW_p(I, m)`, `B ~ CW_p(I, n)` in the
