@@ -10,6 +10,30 @@ user triggers Registrator.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-10
+
+Not yet registered in General.
+
+### Added
+
+- `manovaTWTest(theta, p, m, n; beta=1)` and
+  `manovaTWScaling(p, m, n; beta=1)`: Johnstone's Tracy–Widom
+  greatest-root test for a MANOVA (double Wishart) problem — the
+  balanced-regime Jacobi analogue of `twTest`. For the largest
+  eigenvalue `theta` of `(A + B)⁻¹ B` with `A ~ W_p(I, m)` the
+  error Wishart and `B ~ W_p(I, n)` the hypothesis Wishart, the
+  logit transform `W = log(theta / (1 - theta))` is centered and
+  scaled by the constants of Johnstone, Ann. Statist. 36(6), 2008
+  (eqs. (5)–(6) for real data; the weighted constants of Theorem 2
+  for complex data, `beta=2`), giving a `TracyWidom(beta)`
+  statistic and upper-tail p-value (Roy's largest-root test with a
+  Tracy–Widom p-value). Calibrated against simulation before the
+  test bands were set: at `(p, m, n) = (20, 160, 40)`,
+  `(50, 100, 50)`, `(40, 120, 20)` and `(30, 60, 90)` the scaled
+  statistic's mean/sd match the Tracy–Widom values within Monte
+  Carlo error and the 5% rejection rate falls in 0.040–0.054
+  (real) and 0.043–0.047 (complex).
+
 ## [0.11.0] - 2026-11-08
 
 Not yet registered in General.

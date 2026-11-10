@@ -59,6 +59,50 @@ r = twTest(2.35, 400, 100)
 (statistic = round(r.statistic, digits = 3), pvalue = round(r.pvalue, digits = 4))
 ```
 
+## Testing the largest MANOVA root
+
+For a double Wishart (MANOVA) problem, Roy's greatest-root test
+asks the same question about the largest eigenvalue ``\theta`` of
+``(A + B)^{-1} B``, with ``A \sim W_p(I, m)`` the error Wishart and
+``B \sim W_p(I, n)`` the hypothesis Wishart. Johnstone (2008) showed
+that the logit transform ``W = \log(\theta / (1 - \theta))`` is
+Tracy–Widom after centering and scaling — the angles in the
+constants carry ``-1/2`` / ``-1`` corrections, which make the
+approximation second-order accurate:
+
+```@docs
+manovaTWScaling
+manovaTWTest
+```
+
+At ``p = 50``, ``m = 100``, ``n = 50`` the logit-scale centering is
+``\mu \approx 2.064`` with scale ``\sigma \approx 0.127``; an
+observed root ``\theta = 0.88`` is consistent with noise
+(p-value ``0.294``), while ``\theta = 0.90`` is a borderline signal
+(p-value ``0.045``):
+
+```@example tw
+(mu, sigma) = manovaTWScaling(50, 100, 50)
+(mu = round(mu, digits = 4), sigma = round(sigma, digits = 4))
+```
+
+```@example tw
+r = manovaTWTest(0.88, 50, 100, 50)
+(statistic = round(r.statistic, digits = 3), pvalue = round(r.pvalue, digits = 3))
+```
+
+```@example tw
+r = manovaTWTest(0.90, 50, 100, 50)
+(statistic = round(r.statistic, digits = 3), pvalue = round(r.pvalue, digits = 3))
+```
+
+One convention warning: the package's Wachter law and spiked
+MANOVA functions describe ``(A + B)^{-1} A`` with ``A`` the
+numerator Wishart on ``n_1`` degrees of freedom. The largest
+eigenvalue ``x`` of that matrix is the greatest root with error
+degrees of freedom ``n_2`` and hypothesis degrees of freedom
+``n_1`` — test it as `manovaTWTest(x, p, n₂, n₁)`.
+
 ## The unbalanced Jacobi edge
 
 For the Jacobi (MANOVA) matrix ``J = (A + B)^{-1} B`` of two

@@ -625,6 +625,76 @@ end
     @test 0.5177237207726 - 0.10 < var(xs4) < 0.5177237207726 + 0.10
 end
 
+@testset "MANOVA Tracy-Widom test" begin
+    using Distributions: cdf, quantile
+    # Real scaling recomputed independently from Johnstone's eq. (6).
+    γa = 2 * asin(sqrt((min(50, 50) - 1 / 2) / (100 + 50 - 1)))
+    φa = 2 * asin(sqrt((max(50, 50) - 1 / 2) / (100 + 50 - 1)))
+    μr = 2 * log(tan((φa + γa) / 2))
+    σr = (16 / (100 + 50 - 1)^2 / (sin(φa + γa)^2 * sin(φa) * sin(γa)))^(1 / 3)
+    @test manovaTWScaling(50, 100, 50) == (μr, σr)
+    # Complex scaling: the Theorem 2 weighted constants, pinned at the
+    # values of the calibration prototype (an independent implementation
+    # of the same formulas, validated by simulation below and in the
+    # 2026-11-09 calibration: 1500 reps at three configurations gave
+    # z mean -1.849 / -1.764 / -1.785 against the TW_2 mean -1.771).
+    μc, σc = manovaTWScaling(50, 100, 50; beta=2)
+    @test μc ≈ 2.079395707874801 atol = 1e-12
+    @test σc ≈ 0.12651634469655962 atol = 1e-12
+    # Deterministic anchors from the TW quantiles, both betas.
+    invlogit(w) = 1 / (1 + exp(-w))
+    for (beta, μ, σ) in ((1, μr, σr), (2, μc, σc))
+        q95 = quantile(TracyWidom(beta), 0.95)
+        r = manovaTWTest(invlogit(μ + σ * q95), 50, 100, 50; beta=beta)
+        @test keys(r) == (:statistic, :pvalue)
+        @test r.statistic ≈ q95
+        @test r.pvalue ≈ 0.05 atol = 2e-3
+        @test manovaTWTest(invlogit(μ), 50, 100, 50; beta=beta).pvalue ≈
+              1 - cdf(TracyWidom(beta), 0.0)
+    end
+    # The p-value decreases as theta grows and stays in [0, 1].
+    ps = [manovaTWTest(θ, 50, 100, 50).pvalue for θ in (0.85, 0.88, 0.90, 0.92)]
+    @test issorted(ps; rev=true) && all(p -> 0 <= p <= 1, ps)
+    @test_throws ArgumentError manovaTWTest(0.9, 50, 100, 50; beta=4)
+    @test_throws ArgumentError manovaTWTest(0.9, 50, 100, 50; beta=3)
+    @test_throws ArgumentError manovaTWTest(0.0, 50, 100, 50)
+    @test_throws ArgumentError manovaTWTest(1.0, 50, 100, 50)
+    @test_throws ArgumentError manovaTWTest(1.2, 50, 100, 50)
+    @test_throws ArgumentError manovaTWTest(NaN, 50, 100, 50)
+    @test_throws ArgumentError manovaTWTest(0.9, 1, 100, 50)
+    @test_throws ArgumentError manovaTWTest(0.9, 50, 1, 50)
+    @test_throws ArgumentError manovaTWTest(0.9, 50, 100, 1)
+    # Angle fractions leave (0, 1) when max(p, n) >= m + n - 1/2.
+    @test_throws ArgumentError manovaTWTest(0.5, 100, 10, 10)
+    @test_throws ArgumentError manovaTWTest(0.5, 100, 10, 10; beta=2)
+    # Simulation calibration under the null at (p, m, n) = (50, 100, 50):
+    # the scaled statistic follows TW_1 / TW_2 and the test rejects at
+    # about the nominal rate (calibration prototype, 2000 / 1500 reps:
+    # real mean -1.145, rejection 0.047; complex mean -1.764, rejection
+    # 0.047 — bands here carry the smaller in-suite rep counts).
+    function manova_theta_max(rng, p, m, n; complex::Bool=false)
+        if complex
+            X = (randn(rng, m, p) .+ im .* randn(rng, m, p)) ./ sqrt(2)
+            Y = (randn(rng, n, p) .+ im .* randn(rng, n, p)) ./ sqrt(2)
+            A, B = Hermitian(X' * X), Hermitian(Y' * Y)
+            C = cholesky(Hermitian(Matrix(A + B)))
+            return eigmax(Hermitian(C.L \ Matrix(B) / C.L'))
+        end
+        X = randn(rng, m, p); Y = randn(rng, n, p)
+        A, B = Symmetric(X' * X), Symmetric(Y' * Y)
+        C = cholesky(Symmetric(Matrix(A + B)))
+        return eigmax(Symmetric(C.L \ Matrix(B) / C.L'))
+    end
+    rngm = MersenneTwister(20261109)
+    zs = [manovaTWTest(manova_theta_max(rngm, 50, 100, 50), 50, 100, 50).statistic
+          for _ in 1:250]
+    @test -1.55 < mean(zs) < -0.85
+    @test 0.005 < mean(z -> z > quantile(TracyWidom(1), 0.95), zs) < 0.11
+    zc = [manovaTWTest(manova_theta_max(rngm, 50, 100, 50; complex=true),
+                        50, 100, 50; beta=2).statistic for _ in 1:200]
+    @test -2.05 < mean(zc) < -1.5
+end
+
 @testset "Beta ensembles" begin
     using Distributions: insupport
     # API shape: multivariate Distributions types whose rand returns
