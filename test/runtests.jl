@@ -66,6 +66,16 @@ end
     @test size(A) == (6, 6)
     E = randElliptic(4)
     @test size(E) == (4, 4)
+    # r is a pair correlation: the valid range is (-1, 1] (r = 1 is the
+    # Hermitian case). Outside it the call used to leak a PosDefException
+    # from the bivariate-normal construction inside preNORTA.
+    @test size(randElliptic(4, r=1.0)) == (4, 4)
+    @test size(randElliptic(4, r=-0.999)) == (4, 4)
+    @test_throws ArgumentError randElliptic(4, r=-1.0)
+    @test_throws ArgumentError randElliptic(4, r=1.5)
+    @test_throws ArgumentError randElliptic(4, r=-2.0)
+    @test_throws ArgumentError randElliptic(4, r=NaN)
+    @test_throws ArgumentError randElliptic(4, r=Inf)
 end
 
 @testset "Scalar distributions" begin

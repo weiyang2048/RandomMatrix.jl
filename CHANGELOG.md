@@ -10,6 +10,17 @@ user triggers Registrator.
 
 ## [Unreleased]
 
+### Fixed
+
+- `randElliptic` now validates the pair correlation at entry: `r` must
+  be finite and lie in `(-1, 1]` (`r = 1` is the Hermitian case), and
+  anything else throws `ArgumentError` naming the valid range.
+  Previously `r = -1`, `|r| > 1` and non-finite `r` leaked a
+  `PosDefException` from the bivariate-normal construction inside
+  `preNORTA`, with no indication that `r` was the problem. Behavior
+  for every valid `r` is unchanged; `r = -1` (perfect anticorrelation)
+  remains unsupported, as the construction is singular there.
+
 ## [0.12.0] - 2026-11-10
 
 Not yet registered in General.

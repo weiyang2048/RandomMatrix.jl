@@ -47,7 +47,9 @@ randElliptic(n; r, norm)
 ```
 - `d` : default `Normal()`, entry distribution
 - `n`  : dimensions 
-- `r` : default `0.5`, the correlation of ``H_{ij},H_{ji}`` pairs
+- `r` : default `0.5`, the correlation of ``H_{ij},H_{ji}`` pairs; must lie in ``(-1, 1]``
+  (`r = 1` gives a Hermitian matrix; `r = -1` is not supported — the NORTA / bivariate-normal
+  construction below is singular there)
 - `norm` : default `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.  
 - `diag` : default `diag=d`, the distribution for diagonal entries.
 
@@ -87,10 +89,16 @@ randElliptic(Poisson(10),500, r=0.1 , norm=true)
 ```
 """
 function randElliptic(d::D, n::Int; r = 0.5::Float64, diag=d::D, norm = false::Bool) where  D<:S
+    # r is a correlation, and the construction below needs the bivariate
+    # normal with correlation rhohat to be positive definite: validate at
+    # the boundary instead of leaking a PosDefException from inside
+    # preNORTA / MvNormal (which is what r = -1, |r| > 1 and non-finite r
+    # produced before). r = -1 remains unsupported (singular limit).
+    (isfinite(r) && -1 < r <= 1) ||
+        throw(ArgumentError("randElliptic requires the pair correlation r in (-1, 1], got r = $r"))
     if r==1
         return randHermitian(d,n,diag=diag,norm=norm)
     end
-    # TODO: take care of the r=-1 case.
 
     r = preNORTA(d,r).ρhat
     M = zeros(n,n)
