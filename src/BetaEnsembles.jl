@@ -20,6 +20,12 @@
 # the eigenvalue laws of real and complex Wishart Gram matrices, and
 # E[sum lam] = n p exactly, so the eigenvalues divided by n follow the
 # Marchenko-Pastur bulk with aspect p/n at every beta.
+# For n < p the Gram matrix is singular of rank n: its spectrum is
+# p - n exact zeros plus n positive eigenvalues, and by the Gram swap
+# (the nonzero spectra of X'X and XX' agree) those positive
+# eigenvalues are the nonsingular ensemble with (n, p) exchanged, so
+# the singular case routes through the same bidiagonal builder with
+# the arguments swapped. E[sum lam] = n p holds in both cases.
 
 export BetaHermite, BetaLaguerre
 
@@ -112,8 +118,11 @@ so at `beta = 1` and `beta = 2` these are exactly the eigenvalues of
 a real and a complex Wishart matrix `X'X` with `X` an `n x p`
 standard Gaussian matrix. `rand` returns the `p` eigenvalues as a
 sorted vector; `rand(rng, d, k)` draws `k` spectra as the columns of
-a `p x k` matrix. Requires `n >= p >= 1` (for `n < p` the Gram matrix
-is singular, a case this sampler does not cover).
+a `p x k` matrix. Requires `n >= 1` and `p >= 1`. For `n < p` the
+Gram matrix is singular of rank `n`, and `rand` returns its spectrum
+in the same form: `p - n` exact zeros plus `n` positive eigenvalues
+which, by the Gram swap between `X'X` and `XX'`, follow the joint
+density above with `n` and `p` exchanged.
 
 The exact identity `E[sum λᵢ] = n p` holds at every `beta`, so the
 eigenvalues divided by `n` have mean 1 and their empirical
@@ -137,8 +146,7 @@ struct BetaLaguerre <: ContinuousMultivariateDistribution
         (isfinite(β) && β > 0) ||
             throw(ArgumentError("beta must be positive and finite, got β = $β"))
         p >= 1 || throw(ArgumentError("BetaLaguerre requires p >= 1, got p = $p"))
-        n >= p || throw(ArgumentError(
-            "BetaLaguerre requires n >= p (the Gram matrix is singular for n < p), got n = $n, p = $p"))
+        n >= 1 || throw(ArgumentError("BetaLaguerre requires n >= 1, got n = $n"))
         new(float(β), Int(n), Int(p))
     end
 end
@@ -150,6 +158,15 @@ Distributions.insupport(d::BetaLaguerre, x::AbstractVector) =
 
 function Distributions._rand!(rng::Random.AbstractRNG, d::BetaLaguerre,
                               x::AbstractVector{<:Real})
-    x .= eigvals(_beta_laguerre_tridiagonal(rng, d.β, d.n, d.p))
+    if d.n >= d.p
+        x .= eigvals(_beta_laguerre_tridiagonal(rng, d.β, d.n, d.p))
+    else
+        # Singular case n < p: p - n eigenvalues are exactly 0, and
+        # the n positive ones are the spectrum of the dual Gram
+        # matrix, i.e. the nonsingular ensemble with (n, p) swapped.
+        x[1:(d.p - d.n)] .= 0.0
+        x[(d.p - d.n + 1):end] .=
+            eigvals(_beta_laguerre_tridiagonal(rng, d.β, d.p, d.n))
+    end
     return x
 end

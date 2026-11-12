@@ -10,6 +10,17 @@ user triggers Registrator.
 
 ## [Unreleased]
 
+### Added
+
+- `BetaLaguerre` now covers the singular case `n < p`: the
+  constructor accepts any `n >= 1`, and `rand` returns the full
+  `p`-eigenvalue spectrum of the singular Gram matrix — `p - n`
+  exact zeros plus `n` positive eigenvalues drawn from the dual
+  ensemble with `(n, p)` exchanged (the Gram swap between `X'X` and
+  `XX'`, routed through the same Dumitriu–Edelman bidiagonal
+  builder). Non-singular draws are unchanged, and
+  `E[sum λᵢ] = n p` holds in both cases.
+
 ### Fixed
 
 - `randElliptic` now validates the pair correlation at entry: `r` must

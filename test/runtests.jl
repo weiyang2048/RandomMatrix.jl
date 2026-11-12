@@ -730,7 +730,7 @@ end
     @test_throws ArgumentError BetaHermite(2, 0)
     @test_throws ArgumentError BetaLaguerre(0, 10, 5)
     @test_throws ArgumentError BetaLaguerre(1, 10, 0)
-    @test_throws ArgumentError BetaLaguerre(1, 5, 10)
+    @test_throws ArgumentError BetaLaguerre(1, 0, 5)
     # Degenerate sizes: n = 1 Hermite is a single normal; p = 1
     # Laguerre is a scaled chi-square with E[lam] = n exactly.
     @test length(rand(MersenneTwister(3), BetaHermite(2, 1))) == 1
@@ -770,6 +770,36 @@ end
         @test 0.97 < mean(mean(μ) for μ in specs) / 200 < 1.03
         @test 1.18 < mean(mean(abs2, μ) for μ in specs) / 200^2 < 1.32
         @test 0.15 < mean(minimum(μ) for μ in specs) / 200 < 0.38
+    end
+    # Singular Laguerre, n < p: the spectrum is p - n exact zeros
+    # plus the n positive eigenvalues of the dual (Gram-swapped)
+    # ensemble, so the trace identity E[sum lam] = n p still holds
+    # and the positive part carries the dual's bulk moments
+    # (MarchenkoPastur(n/p) on the 1/p scale; same bands as the
+    # (200, 50) block above, whose draws the positive part equals
+    # in law).
+    dls = BetaLaguerre(1, 30, 60)
+    @test length(dls) == 60
+    μs0 = rand(MersenneTwister(7), dls)
+    @test length(μs0) == 60 && issorted(μs0)
+    @test count(==(0.0), μs0) == 30 && all(>(0), μs0[31:end])
+    @test insupport(dls, μs0)
+    @test size(rand(MersenneTwister(7), dls, 3)) == (60, 3)
+    @test rand(MersenneTwister(7), dls) == μs0   # seeded reproducibility
+    # The positive part is exactly a draw of the swapped ensemble:
+    # same bidiagonal builder, same RNG stream.
+    @test μs0[31:end] == rand(MersenneTwister(7), BetaLaguerre(1, 60, 30))
+    # Rank-one edge: n = 1 leaves a single positive eigenvalue.
+    μ1 = rand(MersenneTwister(3), BetaLaguerre(2, 1, 5))
+    @test count(==(0.0), μ1) == 4 && μ1[end] > 0
+    rngs = MersenneTwister(20261113)
+    for β in (0.5, 1.0, 2.0, 4.0, 3.7)
+        specs = [rand(rngs, BetaLaguerre(β, 50, 200)) for _ in 1:300]
+        @test all(s -> count(==(0.0), s) == 150, specs)
+        @test 0.99 < mean(sum, specs) / (50 * 200) < 1.01
+        pos = [s[151:end] for s in specs]
+        @test 0.97 < mean(mean, pos) / 200 < 1.03
+        @test 1.18 < mean(mean(abs2, μ) for μ in pos) / 200^2 < 1.32
     end
     # Laguerre edge vs Johnstone scaling at beta = 1 (calibration
     # mean -1.224 at (400, 100), 400 reps).
