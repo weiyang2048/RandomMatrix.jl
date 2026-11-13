@@ -72,6 +72,38 @@ comp = freeCompress(freePoissonLaw(0.5), 0.5)
 (mean = round(freeMean(comp), digits = 3), var = round(freeVar(comp), digits = 3))
 ```
 
+## Free Bessel laws
+
+`FreeBessel(s, t)` is the free Bessel law ``\pi_{s,t}`` of Banica,
+Belinschi, Capitaine & Collins (Canad. J. Math. 63(1), 2011): the law
+whose moment series satisfies ``f = 1 + z f^s (f + t - 1)``. At
+``t = 1`` and integer ``s`` it is the limiting spectral distribution
+of a product of ``s`` independent square Ginibre (equivalently square
+Wishart) matrices — ``\pi_{2,1}`` is the free square of the
+Marčenko–Pastur law — and its moments are the Fuss–Catalan numbers.
+For ``t < 1`` it carries an atom ``1 - t`` at 0 and its support is
+bounded away from 0. The parametrization is ``(s, t)`` as in the
+paper, deliberately not a product depth and a Marčenko–Pastur ratio:
+a product of ``k \ge 2`` laws ``\mathrm{MP}_\gamma`` with
+``\gamma \ne 1`` is ``\pi_{s,t}`` for no ``(s, t)``. Exact moments
+(`freeBesselMoments`, the Fuss–Narayana formula) and the support and
+atom (`freeBesselSupport`) are separate queries; the constructor
+returns the grid law itself, whose first four moments match the exact
+ones to at most about 0.13% at the default resolution.
+
+```@example freeprob
+fb = FreeBessel(2, 1)             # product of two square Wisharts' limit
+(mean = round(freeMean(fb), digits = 3), var = round(freeVar(fb), digits = 3))
+```
+
+```@example freeprob
+freeBesselMoments(2, 1, 5)        # Fuss-Catalan: 1, 3, 12, 55, 273
+```
+
+```@example freeprob
+freeAtoms(FreeBessel(2, 0.5))     # atom 1 - t at 0
+```
+
 ```@docs
 FreeMeasure
 semicircleLaw
@@ -79,6 +111,9 @@ freePoissonLaw
 diracLaw
 discreteLaw
 empiricalLaw
+FreeBessel
+freeBesselMoments
+freeBesselSupport
 cauchyTransform
 rTransform
 sTransform

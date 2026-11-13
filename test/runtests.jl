@@ -971,6 +971,133 @@ end
     end
 end
 
+@testset "Free Bessel laws" begin
+    mom(μ, k) = sum(w * x^k for (x, w) in zip(μ.nodes, μ.weights))
+    # Domain: (s, t) in (0, Inf)^2 minus the critical rectangle
+    # (0, 1) x (1, Inf) (BBCC Definition 1.4); all three entry points
+    # share the validation.
+    @test_throws ArgumentError FreeBessel(0.5, 2.0)
+    @test_throws ArgumentError FreeBessel(0.0, 1.0)
+    @test_throws ArgumentError FreeBessel(2.0, 0.0)
+    @test_throws ArgumentError FreeBessel(-1.0, 1.0)
+    @test_throws ArgumentError FreeBessel(NaN, 1.0)
+    @test_throws ArgumentError freeBesselMoments(0.5, 2.0, 3)
+    @test_throws ArgumentError freeBesselSupport(0.5, 2.0)
+    @test freeBesselMoments(0.5, 1.0, 1) == [1.0]   # rectangle boundary is in-domain
+    # Exact moments: Fuss-Catalan anchors at t = 1 (BBCC Theorem 5.2).
+    @test freeBesselMoments(2, 1, 5) ≈ [1, 3, 12, 55, 273] atol = 1e-10
+    @test freeBesselMoments(3, 1, 5) ≈ [1, 4, 22, 140, 969] atol = 1e-10
+    @test freeBesselMoments(2, 0.5, 4) ≈ [0.5, 1.0, 2.625, 7.875] atol = 1e-10
+    @test freeBesselMoments(2, 2, 4) ≈ [2.0, 10.0, 66.0, 498.0] atol = 1e-8
+    # The Fuss-Narayana formula against an independent recursion from
+    # the defining equation f = 1 + z f^s (f + t - 1) (series
+    # reversion, as in _free_compress_series_pow): agreement to
+    # < 2e-12 measured at these non-integer cases, k <= 8.
+    function series_pow_fb(m, alpha, K)
+        g = zeros(K + 1)
+        g[1] = 1.0
+        for n in 1:K
+            acc = 0.0
+            for j in 1:n
+                acc += (j * (alpha + 1.0) - n) * m[j + 1] * g[n - j + 1]
+            end
+            g[n + 1] = acc / (n * m[1])
+        end
+        return g
+    end
+    function moments_eq(s, t, K)
+        m = zeros(K + 1)
+        m[1] = 1.0
+        for n in 1:K
+            g = series_pow_fb(m, s, n - 1)
+            h = zeros(n)
+            h[1] = t
+            h[2:end] .= m[2:n]
+            c = zeros(2n - 1)
+            for i in 1:n, j in 1:n
+                c[i + j - 1] += g[i] * h[j]
+            end
+            m[n + 1] = c[n]
+        end
+        return m[2:end]
+    end
+    for (s, t) in ((2.5, 1.0), (1.5, 0.8), (2.0, 3.0))
+        @test freeBesselMoments(s, t, 8) ≈ moments_eq(s, t, 8) atol = 1e-9
+    end
+    # Support and atom (BBCC Theorems 2.1, 3.1, 3.2; the paper's
+    # tabulated values, matched to machine precision in calibration).
+    sup_cases = [  # (s, t, lo, hi, atom)
+        (2, 1, 0.0, 6.75, 0.0),
+        (3, 1, 0.0, 256 / 27, 0.0),
+        (2, 0.5, 0.02835013639061783, 4.409149863609382, 0.5),
+        (3, 0.5, 0.010699944289941846, 5.84115190756191, 0.5),
+        (2, 2, 0.0, 11.090169943749475, 0.0),
+        (2, 3, 0.0, 15.273773638989788, 0.0),
+        (1, 2, (1 - sqrt(2))^2, (1 + sqrt(2))^2, 0.0),
+        (1, 0.5, (1 - sqrt(0.5))^2, (1 + sqrt(0.5))^2, 0.5)]
+    for (s, t, lo, hi, at) in sup_cases
+        sup = freeBesselSupport(s, t)
+        @test sup.lo ≈ lo atol = 1e-9
+        @test sup.hi ≈ hi atol = 1e-9
+        @test sup.atom ≈ at atol = 1e-12
+    end
+    # The grid law against the exact moments. Bands are ~30x the worst
+    # relative errors measured at the default resolution in
+    # calibration (0.13% at (3, 1), <= 0.03% elsewhere).
+    for (s, t) in ((2, 1), (3, 1), (2, 0.5), (2, 2), (2, 3), (1.5, 2),
+                   (1, 2), (1, 0.5), (2.5, 1), (1.5, 0.8))
+        μ = FreeBessel(s, t)
+        @test all(isfinite, μ.weights)
+        ex = freeBesselMoments(s, t, 4)
+        for k in 1:4
+            @test mom(μ, k) ≈ ex[k] atol = 5e-3 * ex[k]
+        end
+        @test freeMean(μ) ≈ t atol = 5e-3 * t
+    end
+    # The atom is carried exactly, and only for t < 1.
+    @test freeAtoms(FreeBessel(2, 0.5)) == [0.0 => 0.5]
+    at = freeAtoms(FreeBessel(1.5, 0.8))
+    @test length(at) == 1 && at[1][1] == 0.0
+    @test at[1][2] ≈ 0.2 atol = 1e-12
+    @test isempty(freeAtoms(FreeBessel(2, 1)))
+    @test isempty(freeAtoms(FreeBessel(2, 2)))
+    # s = 1 dictionary: pi_{1,t} is the dilation by t of MP_{1/t}.
+    @test mom(FreeBessel(1, 0.5), 3) ≈ mom(freePoissonLaw(2.0; scale=0.5), 3) atol = 2e-3
+    @test mom(FreeBessel(1, 0.5), 3) ≈ 1.375 atol = 2e-3
+    # Singular-edge rates, read off the constructor's grid sweep
+    # (interior-seeded continuation; isolated small-x evaluation can
+    # land on the wrong branch). At s = 2, t > 1:
+    # pi rho(x) sqrt(x) -> 1/sqrt(t - 1) = 0.7071 at t = 3, matched to
+    # 0.2% in calibration; at t = 1: rho(x) x^{2/3} ->
+    # sin(2 pi/3)/pi = 0.2757, approached from below.
+    sup = freeBesselSupport(2, 3)
+    u = range(0, 1; length=2001)
+    xs = sup.lo .+ (sup.hi - sup.lo) .* u .^ 3
+    rho = RandomMatrix._fb_density(2.0, 3.0, xs)
+    idx = findall(x -> 1e-5 < x < 5e-3, xs)
+    @test all(v -> abs(v / (1 / sqrt(2.0)) - 1) < 0.02, π .* rho[idx] .* sqrt.(xs[idx]))
+    sup = freeBesselSupport(2, 1)
+    xs = sup.lo .+ (sup.hi - sup.lo) .* u .^ 3
+    rho = RandomMatrix._fb_density(2.0, 1.0, xs)
+    idx = findall(x -> 1e-4 < x < 1e-3, xs)
+    @test all(v -> abs(v / (sin(2π / 3) / π) - 1) < 0.10, rho[idx] .* xs[idx] .^ (2 / 3))
+    # Cross-check against the package's own machinery (fast route):
+    # for s >= 1, t <= 1, pi_{s,t} renormalized is the free compression
+    # of pi_{s,1} by t (BBCC's compression description), so
+    # freeCompress(FreeBessel(2, 1), 1/2) must have the continuous
+    # moments of pi_{2,1/2} divided by t, and no atom. Errors measured
+    # in calibration: 0.5-2.9% (freeCompress's own budget on a law with
+    # an x^(-2/3) edge); bands ~3x. The freeMul cross-check
+    # (pi_{2,1} = MP_1 boxtimes MP_1, moments within freeMul's
+    # documented 11-15% budget) is a calibration script, not a suite
+    # test — see hidden_files/freebessel_freemul_calibration.jl.
+    cc = freeCompress(FreeBessel(2, 1), 0.5)
+    @test isempty(freeAtoms(cc))
+    for (k, tol) in ((1, 0.015), (2, 0.065), (3, 0.28), (4, 1.4))
+        @test mom(cc, k) ≈ freeBesselMoments(2, 0.5, 4)[k] / 0.5 atol = tol
+    end
+end
+
 @testset "RIE finite-size bias (characterized)" begin
     # Seeded characterization of the bias documented in rieEigenvalues:
     # at the default broadening eta = p^(-1/2) the mean cleaned eigenvalue
