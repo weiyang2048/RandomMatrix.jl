@@ -1,5 +1,5 @@
 using RandomMatrix
-using Distributions: Normal, Semicircle, cdf, Gamma, Poisson, Uniform, DiscreteUniform
+using Distributions: Normal, Semicircle, cdf, Gamma, Poisson, Uniform, DiscreteUniform, quantile
 using LinearAlgebra
 using Random
 using Test
@@ -260,6 +260,88 @@ end
     @test abs(eigmax(S) - spikeLocation(4.0, γ)) < 3.5 * sqrt(spikeVariance(4.0, γ, 400))
     S2 = randSpikedCovariance(200, 400, [1.3])
     @test eigmax(S2) < (1 + sqrt(γ))^2 + 0.35
+end
+
+@testset "Spiked covariance / general H" begin
+    t2, w2 = [1.0, 4.0], [0.5, 0.5]
+    # Anchor 1: H = delta_1 and H = delta_{sigma^2} reduce to the
+    # scalar layer. Calibrated 2026-11-13: agreement at rounding
+    # error (<= 5e-16 relative) across gamma in {0.1,...,4} before
+    # these bands were set.
+    for γ in (0.25, 0.5, 1.0, 2.0), σ2 in (1.0, 2.5)
+        σ = sqrt(σ2)
+        @test bbpThreshold([σ2], [1.0], γ) ≈ bbpThreshold(γ; σ) atol = 1e-10
+        for l in σ2 .* (1.2, 2.0, 4.0, 8.0)
+            @test spikeLocation(l, [σ2], [1.0], γ) ≈ spikeLocation(l, γ; σ) atol = 1e-10
+            @test spikeOverlap(l, [σ2], [1.0], γ) ≈ spikeOverlap(l, γ; σ) atol = 1e-10
+        end
+        @test estimateSpike(spikeLocation(6 * σ2, γ; σ), [σ2], [1.0], γ) ≈ 6 * σ2 atol = 1e-8
+    end
+    # Anchor 2: two-point H, closed forms. psi(10) = 10 * 43/36 and
+    # the overlap is 287/387 exactly; the threshold and the stuck
+    # location (the bulk edge) are pinned to the calibrated values,
+    # and the edge agrees with the Silverstein critical values.
+    γ = 0.5
+    lc = bbpThreshold(t2, w2, γ)
+    @test lc ≈ 6.010035004366989 atol = 1e-9
+    @test spikeLocation(2.0, t2, w2, γ) ≈ 9.29994995023861 atol = 1e-9
+    @test spikeLocation(2.0, t2, w2, γ) ≈
+          RandomMatrix._silverstein_edges(t2, w2, γ)[end] atol = 1e-9
+    @test spikeLocation(lc, t2, w2, γ) ≈ 9.29994995023861 atol = 1e-9
+    @test spikeOverlap(2.0, t2, w2, γ) == 0.0
+    @test dTransform(10.0, t2, w2, γ) ≈ 430 / 36 atol = 1e-12
+    @test spikeLocation(10.0, t2, w2, γ) ≈ 430 / 36 atol = 1e-12
+    @test spikeOverlap(10.0, t2, w2, γ) ≈ 287 / 387 atol = 1e-12
+    @test estimateSpike(430 / 36, t2, w2, γ) ≈ 10.0 atol = 1e-8
+    @test estimateSpike(9.0, t2, w2, γ) ≈ lc atol = 1e-9
+    # Input forms: FreeMeasure delegates to nodes/weights (exact);
+    # a Distributions law is its quantile grid (exact same path).
+    μ = discreteLaw(t2, w2)
+    @test bbpThreshold(μ, γ) == lc
+    @test spikeLocation(10.0, μ, γ) == spikeLocation(10.0, t2, w2, γ)
+    @test spikeOverlap(10.0, μ, γ) == spikeOverlap(10.0, t2, w2, γ)
+    @test estimateSpike(430 / 36, μ, γ) == estimateSpike(430 / 36, t2, w2, γ)
+    @test dTransform(10.0, μ, γ) == dTransform(10.0, t2, w2, γ)
+    U = Uniform(0.5, 2.5)
+    qpts = quantile.(Ref(U), [(i - 0.5) / 401 for i in 1:401])
+    @test spikeLocation(8.0, U, γ) == spikeLocation(8.0, qpts, fill(1.0, 401), γ)
+    @test bbpThreshold(U, γ) == bbpThreshold(qpts, fill(1.0, 401), γ)
+    # Errors.
+    @test_throws ArgumentError dTransform(4.0, t2, w2, γ)
+    @test_throws ArgumentError bbpThreshold([0.0], [1.0], γ)
+    @test_throws ArgumentError bbpThreshold(t2, w2, 0.0)
+    @test_throws ArgumentError spikeLocation(4.0, [-1.0], [1.0], γ)
+    @test_throws ArgumentError spikeLocation(4.0, Float64[], Float64[], γ)
+    @test_throws ArgumentError spikeLocation(4.0, [1.0, 2.0], [1.0], γ)
+    # Anchor 3: formed-matrix simulation against the spread two-point
+    # bulk. Bands from the 2026-11-13 calibration run (same seeds and
+    # construction): supercritical location deviated -0.065, overlap
+    # +0.004; the sub-threshold top eigenvalue centred 0.106 below the
+    # edge (Tracy-Widom centring) with overlap 0.0004.
+    function simtop(θ; reps=40)
+        rng = MersenneTwister(20261113)
+        p, n = 400, 800
+        evals = vcat(fill(1.0, 200), fill(4.0, 199), [θ])
+        Q = Matrix(qr(randn(rng, p, p)).Q)
+        A = Q * Diagonal(sqrt.(evals)) * Q'
+        u = Q[:, end]
+        tops, ovs = Float64[], Float64[]
+        for _ in 1:reps
+            X = A * randn(rng, p, n) / sqrt(n)
+            F = eigen(Symmetric(X * X'))
+            push!(tops, F.values[end])
+            push!(ovs, abs2(dot(F.vectors[:, end], u)))
+        end
+        return sum(tops) / reps, sum(ovs) / reps
+    end
+    θsup = 2.2 * lc
+    mt, mo = simtop(θsup)
+    @test abs(mt - spikeLocation(θsup, t2, w2, γ)) < 0.25
+    @test abs(mo - spikeOverlap(θsup, t2, w2, γ)) < 0.03
+    mt2, mo2 = simtop(2.0)
+    bp = spikeLocation(2.0, t2, w2, γ)
+    @test bp - 0.3 < mt2 < bp + 0.05
+    @test mo2 < 0.02
 end
 
 @testset "Spiked MANOVA / BBP" begin

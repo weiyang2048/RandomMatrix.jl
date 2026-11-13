@@ -76,6 +76,29 @@ user triggers Registrator.
   corrected-LRT values for `x − 1 − log x`, the Rademacher witness
   (variance of `G(x²)` collapses 10 → 1 at `γ = 0.5`), and a seeded
   Wishart size check at `p = 200`.
+- The spiked-covariance layer now covers a general population
+  spectrum: `bbpThreshold`, `spikeLocation`, `spikeOverlap` and
+  `estimateSpike` gain methods taking the population spectral
+  distribution `H` in the three input forms of `silversteinLaw`
+  (discrete points/masses, a `FreeMeasure`, or a `Distributions`
+  law), and a new `dTransform` exposes the D-transform
+  `D(l) = l (1 + gamma * int t / (l - t) dH(t))` of Baik &
+  Silverstein (J. Multivariate Anal. 97, 2006) whose minimizer is
+  the generalized threshold, whose value at a supercritical spike
+  is the outlier location, and whose logarithmic derivative gives
+  the eigenvector overlap. Sub-threshold spikes follow the scalar
+  layer's conventions (location returns the bulk edge — the upper
+  support edge of `silversteinLaw(H, gamma)` — overlap returns 0,
+  `estimateSpike` returns the threshold). At `H = delta_{sigma^2}`
+  every formula reduces algebraically to the scalar layer;
+  calibrated before the test bands were set: the reduction holds at
+  rounding error (<= 5e-16 relative), two-point `H` reproduces the
+  closed-form outlier `430/36` and overlap `287/387`, and
+  formed-matrix simulation at a spread two-point bulk matches the
+  predicted locations/overlaps within the calibrated bands
+  (sub-threshold spikes stick to the bulk edge). `spikeVariance`
+  is unchanged: it remains the identity-bulk (Paul) formula, with
+  no general-`H` method.
 
 - `BetaLaguerre` now covers the singular case `n < p`: the
   constructor accepts any `n >= 1`, and `rand` returns the full
