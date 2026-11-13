@@ -86,16 +86,29 @@ user triggers Registrator.
   builder). Non-singular draws are unchanged, and
   `E[sum λᵢ] = n p` holds in both cases.
 
+- `randElliptic` now supports the endpoint `r = -1` (perfect
+  anticorrelation) exactly. The NORTA / bivariate-normal construction
+  is singular there, so the matrix is built directly: upper triangle
+  drawn from the entry law, lower triangle its negation, diagonal
+  zero — exactly antisymmetric (`max|A + Aᵀ| = 0` in calibration, pair
+  correlation exactly −1). This is realizable only when the entry law
+  is symmetric about 0 (a negated draw must have the same law), checked
+  on the support and a quantile grid; any other law throws
+  `ArgumentError`. The spectrum is purely imaginary (max |Re λ| at
+  rounding level, ~6e-16 at n = 800) with the imaginary parts
+  semicircular of radius `2σ` under `norm = true` (moments m₂ = σ²,
+  m₄ = 2σ⁴ verified for Gaussian, uniform and discrete entry laws).
+
 ### Fixed
 
 - `randElliptic` now validates the pair correlation at entry: `r` must
-  be finite and lie in `(-1, 1]` (`r = 1` is the Hermitian case), and
-  anything else throws `ArgumentError` naming the valid range.
+  be finite and lie in `[-1, 1]` (`r = 1` is the Hermitian case,
+  `r = -1` the exactly antisymmetric one), and anything else throws
+  `ArgumentError` naming the valid range.
   Previously `r = -1`, `|r| > 1` and non-finite `r` leaked a
   `PosDefException` from the bivariate-normal construction inside
   `preNORTA`, with no indication that `r` was the problem. Behavior
-  for every valid `r` is unchanged; `r = -1` (perfect anticorrelation)
-  remains unsupported, as the construction is singular there.
+  for every previously valid `r` is unchanged.
 
 ## [0.12.0] - 2026-11-10
 

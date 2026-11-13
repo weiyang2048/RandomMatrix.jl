@@ -1,5 +1,5 @@
 using RandomMatrix
-using Distributions: Normal, Semicircle, cdf, Gamma
+using Distributions: Normal, Semicircle, cdf, Gamma, Poisson, Uniform, DiscreteUniform
 using LinearAlgebra
 using Random
 using Test
@@ -66,16 +66,40 @@ end
     @test size(A) == (6, 6)
     E = randElliptic(4)
     @test size(E) == (4, 4)
-    # r is a pair correlation: the valid range is (-1, 1] (r = 1 is the
-    # Hermitian case). Outside it the call used to leak a PosDefException
-    # from the bivariate-normal construction inside preNORTA.
+    # r is a pair correlation: the valid range is [-1, 1]. Outside it the
+    # call used to leak a PosDefException from the bivariate-normal
+    # construction inside preNORTA. The endpoints are exact: r = 1 is the
+    # Hermitian case, r = -1 the exactly antisymmetric one.
     @test size(randElliptic(4, r=1.0)) == (4, 4)
     @test size(randElliptic(4, r=-0.999)) == (4, 4)
-    @test_throws ArgumentError randElliptic(4, r=-1.0)
     @test_throws ArgumentError randElliptic(4, r=1.5)
     @test_throws ArgumentError randElliptic(4, r=-2.0)
     @test_throws ArgumentError randElliptic(4, r=NaN)
     @test_throws ArgumentError randElliptic(4, r=Inf)
+    # r = -1: exactly antisymmetric by construction, with a zero diagonal,
+    # and realizable only for entry laws symmetric about 0 (a negated draw
+    # must have the same law as a draw).
+    Am = randElliptic(50, r=-1.0)
+    @test iszero(Am + transpose(Am))
+    @test iszero(diag(Am))
+    Au = randElliptic(Uniform(-2, 2), 50, r=-1.0)
+    @test iszero(Au + transpose(Au))
+    Ad = randElliptic(DiscreteUniform(-1, 1), 20, r=-1.0)
+    @test iszero(Ad + transpose(Ad))
+    @test_throws ArgumentError randElliptic(Poisson(10), 4, r=-1.0)
+    @test_throws ArgumentError randElliptic(Normal(1, 1), 4, r=-1.0)
+    @test_throws ArgumentError randElliptic(Uniform(0, 1), 4, r=-1.0)
+    # Spectrum at r = -1: purely imaginary eigenvalues in +- pairs, the
+    # imaginary parts semicircular with radius 2*sigma (sigma = 1 here:
+    # m2 = 1, m4 = 2). Bands from calibration (n = 800, 30 reps pooled:
+    # max|Re lambda| = 5.6e-16, pairing deviation 0, m2 = 0.9986,
+    # m4 = 1.9956), widened for a single draw.
+    ev = eigvals(randElliptic(400, r=-1.0, norm=true))
+    @test maximum(abs.(real.(ev))) < 1e-8
+    sim = sort(imag.(ev))
+    @test maximum(abs.(sim .+ reverse(sim))) < 1e-8
+    @test abs(sum(sim .^ 2) / length(sim) - 1) < 0.1
+    @test abs(sum(sim .^ 4) / length(sim) - 2) < 0.3
 end
 
 @testset "Scalar distributions" begin
