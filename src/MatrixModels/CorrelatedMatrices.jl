@@ -116,13 +116,20 @@ function randElliptic(d::D, n::Int; r = 0.5::Float64, diag=d::D, norm = false::B
 end
 
 """
-(This is a old typo)
-See [`randElliptic`](#randElliptic) for more details.
+    randElliptic(n::Int; r=0.5, norm=false)
+
+Convenience method: equivalent to `randElliptic(Normal(), n; r=r, norm=norm)`.
 """
 function randElliptic(n::Int; r=0.5::Float64, norm = false::Bool)
     return randElliptic(Normal(),n, r=r, norm=norm)
 end
 
+"""
+    randEllipic
+
+Legacy misspelling of [`randElliptic`](@ref) (a old typo), kept as an alias
+for backwards compatibility. Prefer `randElliptic`.
+"""
 const  randEllipic = randElliptic
 
 """
