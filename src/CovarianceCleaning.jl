@@ -25,7 +25,7 @@
 
 export fitMarchenkoPastur, clipEigenvalues, rieEigenvalues,
     cleanCovariance, cleanCorrelation,
-    ledoitWolf, ledoitWolfShrinkage, oas, oasShrinkage
+    ledoitWolf, ledoitWolfShrinkage, oas, oasShrinkage, lssTest
 
 _mp_edges(γ::Real, σ2::Real) = (σ2 * (1 - sqrt(γ))^2, σ2 * (1 + sqrt(γ))^2)
 
@@ -525,3 +525,131 @@ every intensity then gives the same estimator and `rho = 1`, the
 continuous limit, is returned.
 """
 oasShrinkage(X::AbstractMatrix{<:Real}) = _oas(X)[3]
+
+# Bai-Silverstein CLT for linear spectral statistics (LSS).
+#
+# For S = (1/n) X X' with i.i.d. standardized entries and gamma_n = p/n,
+# the centered statistic G_n(f) = sum_i f(lambda_i) - p * int f dMP
+# is asymptotically normal (Bai & Silverstein 2004). The mean and
+# variance below are the closed forms of Bai-Silverstein /
+# Bai-Wang-Zhou, obtained from the contour formulas and verified
+# against exact Wishart trace identities, the corrected-LRT anchor and
+# simulation in the companion study (workspace research:
+# bai-silverstein-clt). Notation: kappa2 = mu4 - 3 is the excess
+# fourth-moment parameter of the real case (0 for Gaussian entries);
+# on monomials the kappa2 mean operator coincides with the kappa1
+# operator, so the mean scales by (mu4 - 2); for log x the kappa2
+# coefficients are instead -gamma/2 (mean) and gamma (variance),
+# from the boundary quadrature of the general formula.
+
+_lss_center(f::Symbol, γ::Float64) =
+    f === :x ? 1.0 :
+    f === :x2 ? 1 + γ :
+    f === :x3 ? 1 + 3γ + γ^2 :
+    ((γ - 1) / γ) * log(1 - γ) - 1          # int log x dMP_gamma, gamma < 1
+
+function _lss_mean_var(f::Symbol, γ::Float64, beta::Real, mu4::Union{Nothing,Real})
+    κ2 = mu4 === nothing ? 0.0 : float(mu4) - 3.0
+    if f === :x
+        m, v, v2 = 0.0, 2γ, γ
+    elseif f === :x2
+        m, v, v2 = γ, 8γ + 20γ^2 + 8γ^3, 4γ * (1 + γ)^2
+    elseif f === :x3
+        m, v, v2 = (3γ * (1 + γ),
+                    18γ + 144γ^2 + 276γ^3 + 144γ^4 + 18γ^5,
+                    9γ + 54γ^2 + 99γ^3 + 54γ^4 + 9γ^5)
+    else # :log
+        m, v, v2 = 0.5 * log(1 - γ), -2 * log(1 - γ), γ
+    end
+    if beta == 2
+        return 0.0, v / 2
+    elseif f === :log
+        # kappa2 coefficients for log x are -gamma/2 (mean) and
+        # gamma (variance), not the monomial identity.
+        return m - κ2 * γ / 2, v + κ2 * v2
+    else
+        # Monomials: mean = (1 + kappa2) * M(f) = (mu4 - 2) * M(f).
+        return (1 + κ2) * m, v + κ2 * v2
+    end
+end
+
+"""
+    lssTest(evals, n; f=:x2, beta=1, mu4=nothing, sigma2=1.0)
+
+Bai–Silverstein central limit test of a covariance spectrum: is the
+spectrum `evals` of the sample covariance `S = (1/n) X X'` consistent
+with the Marčenko–Pastur null `MP(gamma, sigma2)`, `gamma = p/n` with
+`p = length(evals)`? Where [`twTest`](@ref) looks only at the largest
+eigenvalue, this test uses the whole bulk through the linear spectral
+statistic
+
+    G = sum_i f(lambda_i / sigma2) - p * int f dMP_gamma
+
+for a test function `f` in `:x`, `:x2`, `:x3`, `:log`. By the
+Bai–Silverstein CLT, `G` is asymptotically normal with the mean and
+variance returned here in closed form, and the function returns a
+NamedTuple `(statistic, pvalue, G, mean, var)` with
+`statistic = (G - mean) / sqrt(var)` and the two-sided normal
+p-value. The centering is at the finite ratio `gamma = p/n`,
+matching how [`fitMarchenkoPastur`](@ref) reports `gamma`; if `S`
+was built from centered data, pass `n` as the centered sample size.
+
+`beta = 1` (default) is for real data, `beta = 2` for complex data
+(the mean is then 0 and the variance halved). The test is **not**
+distribution-free: for real non-Gaussian entries pass the entry
+fourth moment `mu4 = E[x^4]` (entries standardized, so the Gaussian
+value is 3) to apply the fourth-moment corrections — monomial means
+scale by `(mu4 - 2)`, variances gain `(mu4 - 3)` times a
+function-specific term, and `f = :log` has its own coefficients.
+Ignoring a non-Gaussian `mu4` can collapse the size entirely (for
+Rademacher entries the Gaussian-parameter test on `f = :x2` rejects
+at rate ≈ 0 instead of 0.05). `mu4` applies to the real case only.
+
+`f = :log` requires `gamma < 1` (for `gamma >= 1` the MP law has an
+atom at 0 and the log statistic is undefined) and strictly positive
+eigenvalues; both throw `ArgumentError`, as do invalid `beta`, `f`,
+`sigma2` or `mu4`.
+
+References: Bai & Silverstein, "CLT for linear spectral statistics
+of large-dimensional sample covariance matrices", Ann. Probab.
+32(1A), 2004, DOI 10.1214/009117904000000547; Bai, Wang & Zhou,
+"Asymptotic theory for large dimensional factor models", 2010
+(functional form and fourth-moment terms); Lytova & Pastur, Ann.
+Probab. 37(5), 2009, DOI 10.1214/09-AOP452 (universality).
+"""
+function lssTest(evals::AbstractVector{<:Real}, n::Integer;
+                 f::Symbol=:x2, beta::Real=1, mu4::Union{Nothing,Real}=nothing,
+                 sigma2::Real=1.0)
+    (beta == 1 || beta == 2) || throw(ArgumentError(
+        "beta must be 1 (real data) or 2 (complex data)"))
+    (f === :x || f === :x2 || f === :x3 || f === :log) || throw(ArgumentError(
+        "f must be one of :x, :x2, :x3, :log"))
+    n >= 2 || throw(ArgumentError("lssTest requires n >= 2 observations"))
+    p = length(evals)
+    p >= 1 || throw(ArgumentError("lssTest requires a nonempty spectrum"))
+    (isfinite(sigma2) && sigma2 > 0) || throw(ArgumentError(
+        "sigma2 must be positive and finite"))
+    if mu4 !== nothing
+        beta == 1 || throw(ArgumentError(
+            "mu4 applies to the real case (beta = 1) only"))
+        (isfinite(mu4) && mu4 >= 1) || throw(ArgumentError(
+            "mu4 is the fourth moment of standardized entries and must be >= 1"))
+    end
+    λ = collect(float.(evals)) ./ float(sigma2)
+    all(isfinite, λ) || throw(ArgumentError("eigenvalues must be finite"))
+    γ = p / n
+    if f === :log
+        γ < 1 || throw(ArgumentError(
+            "f = :log requires gamma = p/n < 1 (the MP law has an atom " *
+            "at 0 for gamma >= 1); got gamma = $γ"))
+        all(>(0), λ) || throw(ArgumentError(
+            "f = :log requires strictly positive eigenvalues"))
+    end
+    g = f === :x ? λ :
+        f === :x2 ? λ .^ 2 :
+        f === :x3 ? λ .^ 3 : log.(λ)
+    G = sum(g) - p * _lss_center(f, γ)
+    μ, v = _lss_mean_var(f, γ, beta, mu4)
+    z = (G - μ) / sqrt(v)
+    return (statistic=z, pvalue=2 * ccdf(Normal(), abs(z)), G=G, mean=μ, var=v)
+end
