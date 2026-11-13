@@ -1053,6 +1053,193 @@ end
     @test_throws ArgumentError silversteinLaw(Float64[], Float64[], 0.5)
 end
 
+@testset "Brown measure (Haagerup-Larsen / single ring)" begin
+    # Anchors are the worked examples of Haagerup & Larsen, J.
+    # Funct. Anal. 176 (2000), verified against the primary text;
+    # bands are ~3x the errors measured in calibration
+    # (brown_proto.jl / brown_calib.jl, 2026-11-13) before the
+    # tests were written. The radial moment identity tested below
+    # is int |z|^{2k} dmu = int_0^1 S_nu(u-1)^{-k} du -- NOT the
+    # *-moments of nu (for the circular element the two sides are
+    # 1/(k+1) vs the Catalan numbers).
+    radmoment(bm, k) = sum(0.5 * (bm.radius[i]^(2k) + bm.radius[i + 1]^(2k)) *
+                           (bm.cdf[i + 1] - bm.cdf[i])
+                           for i in 1:length(bm.radius) - 1)
+    # Endpoint-corrected trapezoid of S_nu(u-1)^{-k} over [0, 1]
+    # through the package's independent sTransform path.
+    function sint(μ, bm, k; npts=4001)
+        us = range(0.0, 1.0; length=npts)
+        vals = [u == 0 ? bm.inner^(2k) : u == 1 ? bm.outer^(2k) :
+                real(sTransform(μ, u - 1))^(-k) for u in us]
+        return sum((vals[i] + vals[i + 1]) / 2 * (us[i + 1] - us[i])
+                   for i in 1:npts - 1)
+    end
+
+    # Singular cases: nu = delta_c is the uniform circle law
+    # (Haagerup-Larsen Prop. 4.6(i)); nu = delta_0 is delta_0.
+    bm = brownMeasure([1.0], [1.0])
+    @test bm.inner == bm.outer == 1.0 && bm.atom0 == 0.0
+    @test isempty(bm.density) && isnan(brownDensity(bm, 1.0))
+    @test radialCDF(bm, 0.999) == 0.0 && radialCDF(bm, 1.0) == 1.0
+    @test brownMeasure([4.0], [1.0]).outer == 2.0
+    bm = brownMeasure([0.0], [1.0])
+    @test bm.atom0 == 1.0 && bm.outer == 0.0 && radialCDF(bm, 0.0) == 1.0
+
+    # Circular element (HL Ex. 5.1): nu = MP_1, uniform unit disk.
+    # (The freePoissonLaw grid carries a node at 0, weight 8e-4:
+    # atom0 is that artifact, and the density is asserted on the
+    # bulk, away from the grid's near-0 discreteness.)
+    bm = brownMeasure(freePoissonLaw(1.0))
+    @test bm.atom0 <= 1e-3 && bm.inner == 0.0
+    @test bm.outer ≈ 1.0 atol = 1e-9
+    for r in (0.25, 0.5, 0.75, 0.9)
+        @test radialCDF(bm, r) ≈ r^2 atol = 1e-6
+        @test brownDensity(bm, r) ≈ 1 / pi atol = 1e-9
+    end
+    for k in 1:3
+        @test radmoment(bm, k) ≈ 1 / (k + 1) atol = 1e-5
+    end
+    @test all(isfinite, bm.density) && all(>=(0), bm.density)
+    @test brownDensity(bm, 1.5) == 0.0 && radialCDF(bm, -1.0) == 0.0
+    @test brownDensity(bm, 0.3 + 0.4im) ≈ brownDensity(bm, 0.5)
+
+    # HL Ex. 5.2: free Poisson nu_c. c = 2: density 1/pi on the
+    # annulus [1, sqrt(2)], radial CDF r^2 - 1. c = 0.5: atom 1/2
+    # at 0 plus density 1/pi on the disk of radius sqrt(0.5).
+    bm = brownMeasure(freePoissonLaw(0.5; scale=2.0))
+    @test bm.inner ≈ 1.0 atol = 1e-9
+    @test bm.outer ≈ sqrt(2) atol = 1e-9
+    @test radialCDF(bm, 1.2) ≈ 0.44 atol = 1e-6
+    @test brownDensity(bm, 1.2) ≈ 1 / pi atol = 1e-9
+    bm = brownMeasure(freePoissonLaw(2.0; scale=0.5))
+    @test bm.atom0 ≈ 0.5 atol = 1e-9
+    @test bm.inner == 0.0
+    @test bm.outer ≈ sqrt(0.5) atol = 1e-9
+    @test radialCDF(bm, 0.4) ≈ 0.66 atol = 1e-6
+    @test brownDensity(bm, 0.4) ≈ 1 / pi atol = 1e-9
+
+    # HL Ex. 5.3: Bernoulli nu = 0.5 delta_0 + 0.5 delta_1: atom
+    # 1/2 at 0, radial CDF 0.5/(1 - r^2), density
+    # 0.5/(pi (1 - r^2)^2) on the disk of radius sqrt(0.5).
+    bm = brownMeasure([0.0, 1.0], [0.5, 0.5])
+    @test bm.atom0 == 0.5 && bm.inner == 0.0
+    @test bm.outer ≈ sqrt(0.5) atol = 1e-12
+    for r in (0.2, 0.4, 0.6)
+        @test radialCDF(bm, r) ≈ 0.5 / (1 - r^2) atol = 1e-6
+        @test brownDensity(bm, r) ≈ 0.5 / (pi * (1 - r^2)^2) atol = 1e-6
+    end
+    @test radialCDF(bm, 0.0) == 0.5
+
+    # Two-point nu: exact radii sqrt(1.6), sqrt(2.5); median radius
+    # exactly sqrt(2); the CDF maps onto the mass coordinate (u at
+    # the sTransform radii); moment identity to ~1e-4 calibrated,
+    # measured 4e-7 worst at k = 3.
+    bm = brownMeasure([1.0, 4.0], [0.5, 0.5])
+    @test bm.inner ≈ sqrt(1.6) atol = 1e-10
+    @test bm.outer ≈ sqrt(2.5) atol = 1e-10
+    @test radialCDF(bm, sqrt(2.0)) ≈ 0.5 atol = 1e-9
+    @test radialCDF(bm, bm.inner) == 0.0 && radialCDF(bm, bm.outer) == 1.0
+    μ2 = discreteLaw([1.0, 4.0], [0.5, 0.5])
+    for u in (0.1, 0.3, 0.5, 0.7, 0.9)
+        r = sqrt(1 / real(sTransform(μ2, u - 1)))
+        @test radialCDF(bm, r) ≈ u atol = 1e-6
+    end
+    for k in 1:3
+        @test radmoment(bm, k) ≈ sint(μ2, bm, k) atol = 1e-5
+    end
+
+    # Distribution input (quantile grid): Gamma(2, 1.5) has
+    # E[T] = 3, E[1/T] = 2/3 exactly; grid errors measured at
+    # hpoints = 401 (outer 4e-4, inner 1.3e-2); moment identity
+    # holds against the same grid's S-transform.
+    using Distributions: quantile
+    bm = brownMeasure(Gamma(2, 1.5))
+    @test bm.outer ≈ sqrt(3) atol = 0.005
+    @test bm.inner ≈ sqrt(1.5) atol = 0.02
+    qs = [(i - 0.5) / 401 for i in 1:401]
+    μg = discreteLaw(quantile.(Ref(Gamma(2, 1.5)), qs), fill(1.0, 401))
+    @test radmoment(bm, 1) ≈ sint(μg, bm, 1) atol = 1e-5
+
+    # Validation.
+    @test_throws ArgumentError brownMeasure(Float64[], Float64[])
+    @test_throws ArgumentError brownMeasure([-1.0, 2.0], [0.5, 0.5])
+    @test_throws ArgumentError brownMeasure([1.0], [-1.0])
+    @test_throws ArgumentError brownMeasure([1.0], [0.0])
+
+    # Formed-matrix simulation (GKZ single ring): A = U P, U Haar,
+    # P = diag(1 x250, 2 x250) for the two-point nu. Calibrated at
+    # this seed/size: pooled KS 0.031 (deviation in the finite-n
+    # edge layers), interior point deviations <= 6e-3, extremes
+    # overshoot the outer radius by ~2.3% on average.
+    Random.seed!(20261113)
+    n = 500
+    bm = brownMeasure([1.0, 4.0], [0.5, 0.5])
+    allmod = Float64[]; allang = ComplexF64[]
+    maxmod = Float64[]; minmod = Float64[]
+    for rep in 1:10
+        U = randUnitary(n)
+        P = Diagonal(vcat(fill(1.0, n ÷ 2), fill(2.0, n - n ÷ 2)))
+        ev = eigvals(U * P)
+        m = abs.(ev)
+        append!(allmod, m); append!(allang, ev ./ m)
+        push!(maxmod, maximum(m)); push!(minmod, minimum(m))
+    end
+    sort!(allmod)
+    Ntot = length(allmod)
+    ks = 0.0
+    for (i, x) in enumerate(allmod)
+        F = radialCDF(bm, x)
+        ks = max(ks, abs(F - i / Ntot), abs(F - (i - 1) / Ntot))
+    end
+    @test ks <= 0.06
+    ecdf(r) = count(x -> x <= r, allmod) / Ntot
+    for r in (1.35, 1.42, 1.50)
+        @test abs(ecdf(r) - radialCDF(bm, r)) <= 0.02
+    end
+    @test 1.0 <= mean(maxmod) / bm.outer <= 1.08
+    @test 0.90 <= mean(minmod) / bm.inner <= 1.02
+    @test mean(allmod .< 0.97 * bm.inner) + mean(allmod .> 1.03 * bm.outer) <= 0.002
+    @test abs(mean(allang)) <= 0.05 && abs(mean(allang .^ 2)) <= 0.05
+
+    # Ginibre end-to-end (the circular law by simulation).
+    Random.seed!(20261114)
+    allmod = Float64[]; maxmod = Float64[]
+    for rep in 1:10
+        G = randn(ComplexF64, n, n) ./ sqrt(n)
+        m = abs.(eigvals(G))
+        append!(allmod, m); push!(maxmod, maximum(m))
+    end
+    sort!(allmod)
+    ks = 0.0
+    for (i, x) in enumerate(allmod)
+        F = min(x^2, 1.0)
+        ks = max(ks, abs(F - i / Ntot), abs(F - (i - 1) / Ntot))
+    end
+    @test ks <= 0.06
+    @test 0.98 <= mean(maxmod) <= 1.08
+
+    # Bernoulli simulation: the atom is exact in finite matrices
+    # (250 eigenvalues at 0), the rest follow the law.
+    Random.seed!(20261116)
+    bm = brownMeasure([0.0, 1.0], [0.5, 0.5])
+    allmod = Float64[]
+    for rep in 1:8
+        U = randUnitary(n)
+        P = Diagonal(vcat(fill(1.0, n ÷ 2), fill(0.0, n - n ÷ 2)))
+        append!(allmod, abs.(eigvals(U * P)))
+    end
+    @test mean(allmod .< 1e-8) ≈ 0.5 atol = 0.005
+    nz = filter(x -> x > 1e-6, allmod)
+    sort!(nz)
+    Nnz = length(nz)
+    ks = 0.0
+    for (i, x) in enumerate(nz)
+        F = (radialCDF(bm, x) - 0.5) / 0.5
+        ks = max(ks, abs(F - i / Nnz), abs(F - (i - 1) / Nnz))
+    end
+    @test ks <= 0.06
+end
+
 @testset "RIE finite-size bias (characterized)" begin
     # Seeded characterization of the bias documented in rieEigenvalues:
     # at the default broadening eta = p^(-1/2) the mean cleaned eigenvalue

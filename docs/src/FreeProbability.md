@@ -7,7 +7,9 @@ probability measure; the Cauchy, R and S transforms are then exact
 rational functions, and the convolutions are evaluated by the
 subordination fixed point (additive case) and the S-transform product
 rule (multiplicative case). Atoms of a convolution follow the exact
-Bercovici–Voiculescu rules.
+Bercovici–Voiculescu rules. The page also covers the package's first
+non-Hermitian limiting law, the Brown measure of an R-diagonal
+element, computed from the same S-transform machinery.
 
 ## Accuracy notes
 
@@ -103,6 +105,60 @@ sg2 = silversteinLaw([1.0, 4.0], [0.5, 0.5], 0.1)
 round.(freeDensity(sg2, [0.9, 1.95, 4.0]), digits = 3)
 ```
 
+## Non-Hermitian: the Brown measure (single ring law)
+
+For an R-diagonal element ``a`` — equivalently ``a = up`` with ``u``
+a Haar unitary free from a positive ``p`` — the Brown measure
+``\mu_a`` is the two-dimensional limiting eigenvalue distribution.
+It is rotation invariant, so a radial law determines it, and
+Haagerup & Larsen compute that law from ``\nu``, the distribution
+of ``a^*a``, through its S-transform (J. Funct. Anal. 176 (2000),
+331–367, Thm. 4.4, Cor. 4.5):
+``\mu_a(B(0, S_\nu(t-1)^{-1/2})) = t`` for
+``t \in (\nu(\{0\}), 1]``. The support is the annulus (the *single
+ring*) with exact radii ``\sqrt{\int t\,d\nu}`` (outer) and
+``\sqrt{1/\int t^{-1}\,d\nu}`` (inner, 0 when ``\nu`` has an atom
+at 0 or ``\int t^{-1} d\nu = \infty``), and ``\mu_a`` carries an
+atom at 0 of mass exactly ``\nu(\{0\})``. Guionnet, Krishnapur &
+Zeitouni prove that the eigenvalues of ``A = UTV`` (``U, V`` Haar
+unitary, ``T`` deterministic diagonal with ``T^2``'s spectral law
+converging to ``\nu``, ``\|T\|`` bounded, no singular-value mass
+escaping to 0) converge to this measure (Ann. of Math. 174(2)
+(2011), 1189–1217).
+
+`brownMeasure` takes ``\nu`` in the same three forms as
+`silversteinLaw` and returns a `BrownMeasure` — the radii, the
+atom at 0, and the radial CDF and planar density
+``\rho(z) = \Phi'(|z|)/(2\pi|z|)`` on a grid — since a real-line
+`FreeMeasure` cannot represent a planar law. Read it with
+`radialCDF` and `brownDensity`. Boundary cases are exact:
+``\nu = \delta_c`` gives the uniform measure on the circle of
+radius ``\sqrt c`` (singular: the density grid is empty), and an
+atom of ``\nu`` at 0 reappears as the atom at 0.
+
+```@example freeprob
+bm = brownMeasure([1.0, 4.0], [0.5, 0.5])
+(round(bm.inner, digits = 4), round(bm.outer, digits = 4), radialCDF(bm, sqrt(2.0)))
+```
+
+The radii are ``\sqrt{1.6}`` and ``\sqrt{2.5}``, and the median
+radius is exactly ``\sqrt 2``. Haagerup & Larsen's Bernoulli
+example, ``\nu = \tfrac12\delta_0 + \tfrac12\delta_1``, has radial
+CDF ``\tfrac12/(1-r^2)`` and density ``\tfrac12/(\pi(1-r^2)^2)``
+on the disk of radius ``\sqrt{1/2}``:
+
+```@example freeprob
+bb = brownMeasure([0.0, 1.0], [0.5, 0.5])
+(bb.atom0, round(radialCDF(bb, 0.4), digits = 4), round(brownDensity(bb, 0.4), digits = 4))
+```
+
+The circular element (``\nu = ``MP``_1``, via
+`brownMeasure(freePoissonLaw(1.0))`) is the uniform unit disk:
+radial CDF ``r^2`` to about ``10^{-7}`` and density ``1/\pi`` on
+the bulk of the disk. Formed-matrix simulation (``A = UP`` at
+``n = 500``) matches the radial CDF with pooled KS distance about
+``0.03``, the deviation sitting in the finite-``n`` edge layers.
+
 ```@docs
 FreeMeasure
 semicircleLaw
@@ -117,6 +173,10 @@ freeAdd
 freeMul
 freeCompress
 silversteinLaw
+BrownMeasure
+brownMeasure
+radialCDF
+brownDensity
 freeDensity
 freeAtoms
 freeMean
