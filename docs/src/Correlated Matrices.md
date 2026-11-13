@@ -15,6 +15,7 @@ randSymmetric
 ## Elliptic Matrices
 ```@docs
 randElliptic
+randEllipic
 ```
 
 ## RMT: Semicircle Law

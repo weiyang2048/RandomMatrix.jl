@@ -10,6 +10,20 @@ user triggers Registrator.
 
 ## [Unreleased]
 
+### Fixed
+
+- Docs/exports drift (sweep finding RM-1): the exported legacy typo
+  alias `randEllipic` is now documented as an alias of `randElliptic`
+  (its docstring had been attached to the `randElliptic(n)` convenience
+  method, which now carries a correct docstring of its own). An
+  automated exports-vs-`@docs` check now closes at zero unexplained
+  mismatches; the intentional exceptions are the re-exported upstream
+  generics `mean`/`var`/`pdf`/`rand` (documented upstream) and the
+  unexported bindings `preNORTA`/`qresolvent`, which are documented
+  under qualified names (`RandomMatrix.preNORTA`,
+  `RandomMatrix.qresolvent`). No binding was added, removed, or
+  renamed.
+
 ### Added
 
 - `silversteinLaw(points, masses, gamma)` (also from a `FreeMeasure`
