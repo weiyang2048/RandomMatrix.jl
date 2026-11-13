@@ -1075,6 +1075,116 @@ end
     @test rieEigenvalues(ev, γ; eta=p^(-2 / 3)) == ξ23
 end
 
+@testset "Variance-profile Wigner law (QVE)" begin
+    # Anchors calibrated before the bands below were set
+    # (hidden_files/qve_proto.jl + qve_calib1-5.jl): the constant
+    # profile reproduces the semicircle (grid second moment to
+    # 2.5e-5 at sigma = 1; freeDensity carries its own eps = 0.01
+    # smoothing, deviations <= 1.6e-3), the block-diagonal mixture is
+    # exact with fraction-weighted radii 2 sqrt(b p) (moments to
+    # 1e-4), the two-block law matches formed-matrix simulation
+    # (pooled sup CDF distance 0.001 at n = 400, edge 2.156 approached
+    # from below), and solver residuals are <= 2e-10 across constant,
+    # block, band, and fully inhomogeneous profiles.
+    # Constant profile = semicircleLaw.
+    for σ in (1.0, 1.7)
+        mu = profileWignerLaw(fill(σ^2, 30, 30))
+        @test freeMean(mu) ≈ 0.0 atol = 1e-8
+        @test freeVar(mu) ≈ σ^2 rtol = 5e-4
+        for x in (-1.0, 0.0, 0.7)
+            @test freeDensity(mu, [x])[1] ≈ pdf(Semicircle(2σ), x) atol = 0.004
+        end
+        # Outside the support the density vanishes.
+        @test freeDensity(mu, [2.5σ])[1] < 0.005
+    end
+    # Block-diagonal profile: exact mixture, block b on fraction p
+    # contributing a semicircle of radius 2 sqrt(b p) with weight p:
+    # 0.6 * SC(sqrt(1.35)) + 0.4 * SC(sqrt(0.256)).
+    mu = profileWignerLaw([60, 40], [2.25 0.0; 0.0 0.64])
+    @test freeMean(mu) ≈ 0.0 atol = 1e-8
+    @test freeVar(mu) ≈ 0.6 * 1.35 + 0.4 * 0.256 atol = 5e-4
+    mix(x) = 0.6 * pdf(Semicircle(2 * sqrt(1.35)), x) +
+             0.4 * pdf(Semicircle(2 * sqrt(0.256)), x)
+    for x in (0.0, 0.5, 2.0)
+        @test freeDensity(mu, [x])[1] ≈ mix(x) atol = 0.008
+    end
+    # Block form and matrix form are the same computation.
+    Sb = zeros(20, 20)
+    Sb[1:12, 1:12] .= 2.0; Sb[13:20, 13:20] .= 1.0
+    Sb[1:12, 13:20] .= 0.3; Sb[13:20, 1:12] .= 0.3
+    mb = profileWignerLaw([12, 8], [2.0 0.3; 0.3 1.0])
+    @test mb.nodes == profileWignerLaw(Sb).nodes
+    @test mb.weights == profileWignerLaw(Sb).weights
+    # Two-block profile vs formed-matrix simulation (seeded): pooled
+    # moments and CDF against the law, largest eigenvalue below the
+    # predicted edge 2.156 at the shallow-edge TW scale.
+    Random.seed!(20261113)
+    mu2 = profileWignerLaw([150, 150], [2.0 0.5; 0.5 1.0])
+    @test freeVar(mu2) ≈ 1.0 atol = 5e-4
+    S300 = zeros(300, 300)
+    S300[1:150, 1:150] .= 2.0; S300[151:300, 151:300] .= 1.0
+    S300[1:150, 151:300] .= 0.5; S300[151:300, 1:150] .= 0.5
+    allex = Float64[]
+    lmax = Float64[]
+    for r in 1:15
+        ev = eigvals(randProfileWigner(S300))
+        append!(allex, ev)
+        push!(lmax, ev[end])
+    end
+    @test abs(mean(allex .^ 2) - 1.0) < 0.012
+    supd = 0.0
+    for x in range(-2.3, 2.3; length=47)
+        ecdf = count(v -> v <= x, allex) / length(allex)
+        lcdf = sum(w for (nd, w) in zip(mu2.nodes, mu2.weights) if nd <= x)
+        supd = max(supd, abs(ecdf - lcdf))
+    end
+    @test supd < 0.01
+    @test 2.0 < mean(lmax) < 2.2
+    # Band profile: second moment is exactly mean(S); the Anderson
+    # solver path (200 groups) lands on it.
+    n = 200
+    Sband = [abs(i - j) <= 20 ? 1.0 : 0.0 for i in 1:n, j in 1:n]
+    @test freeVar(profileWignerLaw(Sband)) ≈ sum(Sband) / n^2 atol = 5e-4
+    # Fully inhomogeneous profile (Anderson path): moments and sanity.
+    Random.seed!(20261114)
+    n = 60
+    Sr = 0.5 .+ rand(n, n)
+    Sr = (Sr + Sr') / 2
+    mr = profileWignerLaw(Sr)
+    @test freeMean(mr) ≈ 0.0 atol = 1e-6
+    @test freeVar(mr) ≈ sum(Sr) / n^2 atol = 5e-4
+    @test all(isfinite, mr.nodes) && all(w -> w >= 0, mr.weights)
+    # Zero rows: exact atom at 0, rest of the law untouched.
+    Sz = fill(1.0, 30, 30)
+    Sz[7, :] .= 0.0
+    Sz[:, 7] .= 0.0
+    mz = profileWignerLaw(Sz)
+    @test freeAtoms(mz) == [0.0 => 1 / 30]
+    @test freeVar(mz) ≈ sum(Sz) / 900 atol = 5e-4
+    @test profileWignerLaw(zeros(4, 4)).nodes == [0.0]
+    # Sampler: types, symmetry, and entry variances (seeded).
+    @test randProfileWigner(fill(1.0, 40, 40)) isa Symmetric
+    @test randProfileWigner(fill(1.0, 40, 40); complex=true) isa Hermitian
+    Random.seed!(20261115)
+    S60 = zeros(60, 60)
+    S60[1:30, 1:30] .= 2.0; S60[31:60, 31:60] .= 1.0
+    S60[1:30, 31:60] .= 0.5; S60[31:60, 1:30] .= 0.5
+    acc = 0.0
+    for r in 1:400
+        acc += randProfileWigner(S60)[1, 31]^2
+    end
+    @test 0.0055 < acc / 400 < 0.0115
+    # Validation.
+    @test_throws ArgumentError profileWignerLaw(ones(3, 4))
+    @test_throws ArgumentError profileWignerLaw([1.0 -0.5; -0.5 1.0])
+    @test_throws ArgumentError profileWignerLaw([1.0 0.9; 0.1 1.0])
+    @test_throws ArgumentError profileWignerLaw([1.0 NaN; NaN 1.0])
+    @test_throws ArgumentError profileWignerLaw([10, 10], [1.0 0.0 0.0])
+    @test_throws ArgumentError profileWignerLaw([0, 10], [1.0 0.0; 0.0 1.0])
+    @test_throws ArgumentError profileWignerLaw([10, 10], [1.0 -0.5; -0.5 1.0])
+    @test_throws ArgumentError randProfileWigner([1.0 -1.0; -1.0 1.0])
+end
+
 @testset "Aqua quality checks" begin
     # Ambiguities, unbound type parameters, undefined exports, stale and
     # compat-bounded dependencies, type piracy, persistent tasks, and a

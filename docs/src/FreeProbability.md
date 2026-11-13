@@ -103,6 +103,53 @@ sg2 = silversteinLaw([1.0, 4.0], [0.5, 0.5], 0.1)
 round.(freeDensity(sg2, [0.9, 1.95, 4.0]), digits = 3)
 ```
 
+## Variance profiles: the quadratic vector equation
+
+For a Wigner matrix whose entry variances vary across the matrix,
+``\mathbb{E}|X_{ij}|^2 = S_{ij}/n`` for a deterministic profile
+``S``, the limiting Stieltjes transform is no longer a scalar: the
+vector ``m(z)`` solves the quadratic vector equation
+``-1/m_i = z + \frac{1}{n}\sum_j S_{ij} m_j`` on the upper half
+plane, and the limiting density is the average of the component
+densities (Ajanki–Erdős–Krüger). `profileWignerLaw` solves the QVE
+and returns the law as a `FreeMeasure`; `randProfileWigner` samples
+the ensemble. The constant profile is the semicircle; structured
+profiles give laws no single classical object covers. Two
+communities with within-variances `2` and `1` and cross-variance
+`0.5` form a single cluster whose variance is the mean profile
+entry, `(2 + 1 + 2\cdot 0.5)/4 = 1`:
+
+```@example freeprob
+mu = profileWignerLaw([100, 100], [2.0 0.5; 0.5 1.0])
+round(freeVar(mu), digits = 4)
+```
+
+```@example freeprob
+round.(freeDensity(mu, [-1.0, 0.0, 1.0]), digits = 3)
+```
+
+A block-diagonal profile is an exact mixture of semicircles, with
+the full-size normalization folding the block fraction into the
+radius: a block of variance `b` on a fraction `p` of the coordinates
+contributes radius `2\sqrt{bp}` with weight `p`. Here
+``0.6\,\mathrm{SC}(\sqrt{1.35}) + 0.4\,\mathrm{SC}(\sqrt{0.256})``:
+
+```@example freeprob
+mix = profileWignerLaw([60, 40], [2.25 0.0; 0.0 0.64])
+round.(freeDensity(mix, [0.0, 0.5, 2.0]), digits = 3)
+```
+
+A coordinate with an identically zero profile row is an exact zero
+eigenvalue of every realization; such rows leave the solve and come
+back as an exact atom at `0`:
+
+```@example freeprob
+Sz = fill(1.0, 30, 30)
+Sz[7, :] .= 0.0
+Sz[:, 7] .= 0.0
+freeAtoms(profileWignerLaw(Sz))
+```
+
 ```@docs
 FreeMeasure
 semicircleLaw
@@ -117,6 +164,8 @@ freeAdd
 freeMul
 freeCompress
 silversteinLaw
+profileWignerLaw
+randProfileWigner
 freeDensity
 freeAtoms
 freeMean

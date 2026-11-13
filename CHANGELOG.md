@@ -12,6 +12,32 @@ user triggers Registrator.
 
 ### Added
 
+- `profileWignerLaw(S)` (also in block form
+  `profileWignerLaw(sizes, B)`): the limiting spectral distribution
+  of a Wigner matrix with variance profile `S`
+  (`E|X_ij|^2 = S_ij / n`), computed from the quadratic vector
+  equation `-1/m_i = z + (1/n) sum_j S_ij m_j` (Ajanki, Erdős &
+  Krüger, Probab. Theory Related Fields 170 (2018);
+  arXiv:1506.05095) and returned as a `FreeMeasure`, like
+  `silversteinLaw` — the law is defined only implicitly. Identical
+  profile rows share an `m` value, so block-constant profiles solve
+  on the block system exactly (Newton for small group counts,
+  Anderson-accelerated fixed-point iteration above that); a
+  coordinate with an identically zero profile row is an exact atom
+  at 0 of mass `(zero rows)/n`, and the all-zero profile is
+  `diracLaw(0)`. The constant profile collapses exactly to
+  `semicircleLaw`; a block-diagonal profile is the exact mixture of
+  block semicircles of radius `2 sqrt(b p)` (block variance `b`,
+  coordinate fraction `p`); the exact second moment is the mean
+  profile entry. `randProfileWigner([rng,] S; complex)` samples the
+  ensemble (GOE/GUE diagonal conventions). Calibrated against the
+  exact anchors and formed-matrix simulation before the test bands
+  were set: semicircle density to `1.7e-5` in the interior and
+  second moment to `2.5e-5` at the default resolution, block-mixture
+  moments to `1e-4`, two-block CDF within `0.001` of simulation at
+  `n = 400` with the support edge approached from below at the
+  shallow-edge Tracy–Widom scale, solver residuals `<= 2e-10`.
+
 - `silversteinLaw(points, masses, gamma)` (also from a `FreeMeasure`
   or a `Distributions` law): the limiting spectral distribution of a
   sample covariance `(1/n) T^{1/2} X X' T^{1/2}` with a general
