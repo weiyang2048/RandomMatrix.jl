@@ -72,6 +72,8 @@ include("SpikedCovarianceGeneral.jl")
 
 include("VarianceProfile.jl")
 
+include("RandomFeatures.jl")
+
 include("Spacing.jl")
 
 include("SpectralFormFactor.jl")
