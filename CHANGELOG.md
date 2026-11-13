@@ -35,6 +35,35 @@ user triggers Registrator.
   and the two-mass support-splitting transition matches
   formed-matrix simulation (no eigenvalues in the predicted gap).
 
+- `randomFeaturesLaw(mu0, mu1, muStar, psi, phi)` (also from an
+  activation `Function`, or the presets `:linear`, `:relu`, `:erf`,
+  `:quadratic`) and `hermiteCoefficients(sigma)`: the limiting
+  spectral distribution of the random-features covariance
+  `(1/n) Phi Phi'` for `Phi = sigma.(W X / sqrt(d))` with `W`
+  (`m x d`) and `X` (`d x n`) i.i.d. Gaussian — the Mei & Montanari
+  model, with `psi = n/d` and `phi = m/d`. The activation enters
+  only through its Hermite coefficients for `Z ~ N(0,1)`: the bulk
+  law is `silversteinLaw` with the affine Marchenko-Pastur
+  population `H = law(mu1^2 * T + muStar^2)`, `T ~ MP_{m/d}`, at
+  aspect `m/n` — equivalently the solution of the Pennington &
+  Worah (2017) quartic self-consistent equation (Benigni & Peche
+  2021; Schroeder & Piccolo 2021, Thm. 2.2, whose `theta_1`,
+  `theta_2` are `mu1^2 + muStar^2`, `mu1^2`). Reduces exactly to
+  scaled `MarchenkoPastur` when `mu1 = 0` and to the product-Wishart
+  law `MP_{m/d} ⊠ MP_{m/n}` for a linear activation; `mu0` leaves
+  the bulk unchanged and produces a single outlier at
+  `mu0^2 * m (1 + o(1))`. Returned as a `FreeMeasure`.
+  `hermiteCoefficients` evaluates `(mu0, mu1, muStar)` by
+  Gauss-Hermite quadrature (Golub-Welsch). Calibrated before the
+  test bands were set: the `mu1 = 0` reduction matches
+  `MarchenkoPastur` (mean to ~5e-4, interior density to <= 2e-3);
+  the composed law's moments carry a <= 1.5% positive bias at the
+  default Stieltjes regularization (0.1% at `eps = 5e-5`);
+  formed-matrix simulations at `(d, n, m) = (300, 450, 375)` match
+  the ReLU/erf bulk moments within simulation error (bulk CDF
+  distance ~0.01) and put the ReLU outlier at 1.014--1.019 times
+  `mu0^2 * m`.
+
 - `BetaLaguerre` now covers the singular case `n < p`: the
   constructor accepts any `n >= 1`, and `rand` returns the full
   `p`-eigenvalue spectrum of the singular Gram matrix — `p - n`

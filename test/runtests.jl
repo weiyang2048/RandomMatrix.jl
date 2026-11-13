@@ -1053,6 +1053,131 @@ end
     @test_throws ArgumentError silversteinLaw(Float64[], Float64[], 0.5)
 end
 
+@testset "Random features law (Mei-Montanari)" begin
+    # Anchors calibrated before the bands below were set
+    # (/tmp/rf_proto.jl + rf_proto2.jl, 2026-11-13): the mu1 = 0
+    # reduction reproduces MarchenkoPastur to ~5e-4 on the mean and
+    # <= 2e-3 on the interior density; the composed law's first two
+    # moments carry a positive solver bias of 0.6--1.5% at the default
+    # eps (0.1% at eps = 5e-5); formed-matrix simulations at
+    # (d, n, m) = (300, 450, 375) match the ReLU/erf bulk moments to
+    # within rep-to-rep sd and put the ReLU outlier at 1.014--1.019
+    # times mu0^2 * m. (The quadratic activation (x^2-1)/sqrt(2) is
+    # NOT simulated in this testset: its entry kurtosis is 15, and its
+    # empirical moments are still biased ~9% high on m2 at d = 300 --
+    # a finite-size effect, not the limit; the mu1 = 0 case is
+    # anchored on the exact Marchenko-Pastur reduction instead.)
+    μ0r, μ1r, μsr = 1 / sqrt(2π), 0.5, sqrt(0.25 - 1 / (2π))
+    μ1e, μse = 2 / sqrt(3π), sqrt((2 / π) * asin(2 / 3) - 4 / (3π))
+    θ1r, θ1e = μ1r^2 + μsr^2, μ1e^2 + μse^2
+
+    # Hermite quadrature: polynomials and smooth activations are
+    # spectral; ReLU converges like 1/K in mu0/muStar (mu1 exact).
+    c = hermiteCoefficients(identity)
+    @test c[1] ≈ 0.0 atol = 1e-12
+    @test c[2] ≈ 1.0 atol = 1e-12
+    @test c[3] ≈ 0.0 atol = 1e-12
+    c = hermiteCoefficients(x -> (x^2 - 1) / sqrt(2))
+    @test c[1] ≈ 0.0 atol = 1e-12
+    @test c[2] ≈ 0.0 atol = 1e-12
+    @test c[3] ≈ 1.0 atol = 1e-12
+    c = hermiteCoefficients(x -> max(x, zero(x)))
+    @test c[1] ≈ μ0r atol = 2e-3
+    @test c[2] ≈ μ1r atol = 1e-12
+    @test c[3] ≈ μsr atol = 2e-3
+    c = hermiteCoefficients(x -> max(x, zero(x)); npoints=1024)
+    @test c[1] ≈ μ0r atol = 2.5e-4
+    erffun = x -> 2 * cdf(Normal(), x * sqrt(2)) - 1
+    c = hermiteCoefficients(erffun)
+    @test c[1] ≈ 0.0 atol = 1e-10
+    @test c[2] ≈ μ1e atol = 1e-10
+    @test c[3] ≈ μse atol = 1e-10
+    ct64 = hermiteCoefficients(tanh; npoints=64)
+    ct256 = hermiteCoefficients(tanh; npoints=256)
+    @test all(abs.(collect(ct64) .- collect(ct256)) .< 1e-7)
+    @test_throws ArgumentError hermiteCoefficients(tanh; npoints=1)
+
+    # mu1 = 0: exactly MarchenkoPastur(gamma, sqrt(nu)) (mu0 inert).
+    F = randomFeaturesLaw(0.3, 0.0, sqrt(0.7), 1.5, 1.25)
+    @test freeMean(F) ≈ 0.7 atol = 0.005
+    @test freeVar(F) ≈ 0.49 * (5 / 6) atol = 0.005
+    for x in (0.389, 1.283, 2.178)
+        @test freeDensity(F, [x])[1] ≈ pdf(MarchenkoPastur(5 / 6, sqrt(0.7)), x) atol = 0.005
+    end
+    F = randomFeaturesLaw(0.0, 0.0, sqrt(1.3), 0.8, 2.0)   # gamma = 2.5
+    @test freeAtoms(F) == [0.0 => 0.6]
+    @test freeMean(F) ≈ 1.3 atol = 0.005
+
+    # Exact moment formulas for the composed law (bands cover the
+    # calibrated 0.6-1.5% solver bias at the default eps).
+    F = randomFeaturesLaw(μ0r, μ1r, μsr, 1.5, 1.25)
+    m2r = μ1r^4 * 2.25 + 2 * μ1r^2 * μsr^2 + μsr^4 + (5 / 6) * θ1r^2
+    @test freeMean(F) ≈ θ1r atol = 0.02 * θ1r
+    @test sum(F.weights .* F.nodes .^ 2) ≈ m2r atol = 0.04 * m2r
+    # eps refinement removes most of the bias (erf parameters).
+    Fe = randomFeaturesLaw(0.0, μ1e, μse, 1.5, 1.25; eps=5e-5)
+    m2e = μ1e^4 * 2.25 + 2 * μ1e^2 * μse^2 + μse^4 + (5 / 6) * θ1e^2
+    @test freeMean(Fe) ≈ θ1e atol = 0.0015
+    @test sum(Fe.weights .* Fe.nodes .^ 2) ≈ m2e atol = 0.003
+
+    # Linear activation: product Wishart MP_phi (x) MP_gamma, exact
+    # moments m1 = 1, m2 = 1 + phi + gamma; atom rules from both
+    # rectangles (population atom when phi > 1, sampling atom when
+    # gamma > 1, whichever is larger).
+    F = randomFeaturesLaw(0.0, 1.0, 0.0, 1.5, 1.25)
+    @test freeMean(F) ≈ 1.0 atol = 0.02
+    @test sum(F.weights .* F.nodes .^ 2) ≈ 1 + 1.25 + 5 / 6 atol = 0.12
+    @test freeAtoms(randomFeaturesLaw(0.0, 1.0, 0.0, 2.0, 2.5)) == [0.0 => 0.6]
+    @test freeAtoms(randomFeaturesLaw(0.0, 1.0, 0.0, 0.5, 0.75)) == [0.0 => 1 - 1 / 1.5]
+
+    # mu0 never enters the construction; presets and the function
+    # method land on the coefficient law.
+    Fa = randomFeaturesLaw(0.0, μ1r, μsr, 1.5, 1.25)
+    Fb = randomFeaturesLaw(0.7, μ1r, μsr, 1.5, 1.25)
+    @test Fa.nodes == Fb.nodes && Fa.weights == Fb.weights
+    @test freeMean(randomFeaturesLaw(:relu, 1.5, 1.25)) ≈ freeMean(Fa) atol = 1e-12
+    @test freeMean(randomFeaturesLaw(x -> max(x, zero(x)), 1.5, 1.25)) ≈
+        freeMean(Fa) atol = 0.005
+    @test freeMean(randomFeaturesLaw(:erf, 1.5, 1.25)) ≈ θ1e atol = 0.02 * θ1e
+    # Constant activation: bulk collapses to delta_0.
+    @test randomFeaturesLaw(1.0, 0.0, 0.0, 1.5, 1.25).nodes == [0.0]
+
+    # Formed-matrix simulation (seeded): ReLU bulk moments with the
+    # mu0 outlier dropped, the outlier itself, and erf bulk moments
+    # against the exact formulas. (d, n, m) = (200, 300, 250).
+    Random.seed!(20261113)
+    d2, n2, m2 = 200, 300, 250
+    reps = 8
+    relu = x -> max(x, zero(x))
+    bmean, bm2, spikes = 0.0, 0.0, Float64[]
+    emean, em2 = 0.0, 0.0
+    for _ in 1:reps
+        X = randn(d2, n2); W = randn(m2, d2)
+        Φ = relu.((W * X) ./ sqrt(d2))
+        ev = eigvals(Symmetric((Φ * Φ') ./ n2))
+        push!(spikes, ev[end])
+        bulk = ev[1:end-1]
+        bmean += sum(bulk) / m2
+        bm2 += sum(bulk .^ 2) / m2
+        Φe = erffun.((W * X) ./ sqrt(d2))
+        eve = eigvals(Symmetric((Φe * Φe') ./ n2))
+        emean += sum(eve) / m2
+        em2 += sum(eve .^ 2) / m2
+    end
+    @test bmean / reps ≈ θ1r atol = 0.02
+    @test bm2 / reps ≈ m2r atol = 0.03
+    @test 1.0 < mean(spikes) / (μ0r^2 * m2) < 1.05
+    @test emean / reps ≈ θ1e atol = 0.01
+    @test em2 / reps ≈ m2e atol = 0.03
+
+    # Validation.
+    @test_throws ArgumentError randomFeaturesLaw(0.0, 0.5, 0.3, 0.0, 1.25)
+    @test_throws ArgumentError randomFeaturesLaw(0.0, 0.5, 0.3, 1.5, -1.0)
+    @test_throws ArgumentError randomFeaturesLaw(0.0, 0.5, -0.3, 1.5, 1.25)
+    @test_throws ArgumentError randomFeaturesLaw(0.0, NaN, 0.3, 1.5, 1.25)
+    @test_throws ArgumentError randomFeaturesLaw(:bogus, 1.5, 1.25)
+end
+
 @testset "RIE finite-size bias (characterized)" begin
     # Seeded characterization of the bias documented in rieEigenvalues:
     # at the default broadening eta = p^(-1/2) the mean cleaned eigenvalue

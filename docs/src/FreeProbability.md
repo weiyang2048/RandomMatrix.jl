@@ -103,6 +103,30 @@ sg2 = silversteinLaw([1.0, 4.0], [0.5, 0.5], 0.1)
 round.(freeDensity(sg2, [0.9, 1.95, 4.0]), digits = 3)
 ```
 
+## Random features (Mei–Montanari)
+
+For a random-features map ``\Phi = \sigma(W X / \sqrt d)`` with
+``W`` (``m \times d``) and ``X`` (``d \times n``) i.i.d. Gaussian,
+`randomFeaturesLaw` computes the limiting spectral law of the
+feature covariance ``\Phi \Phi' / n``. The activation enters only
+through its Hermite coefficients ``(\mu_0, \mu_1, \mu_\star)`` for
+``Z \sim N(0,1)`` (`hermiteCoefficients`): the bulk law is the
+Silverstein law above, with the affine Marchenko–Pastur population
+``H = \mathrm{law}(\mu_1^2 T + \mu_\star^2)``, ``T \sim MP_{m/d}``,
+at aspect ``\gamma = m/n`` — equivalently, the solution of the
+Pennington–Worah quartic self-consistent equation. It reduces
+exactly to a scaled Marchenko–Pastur law when ``\mu_1 = 0``, and to
+the product-Wishart law ``MP_{m/d} \boxtimes MP_{m/n}`` for a linear
+activation. ``\mu_0`` does not enter the bulk; it produces a single
+outlier at ``\mu_0^2 m (1 + o(1))``. For ReLU features at ``n/d =
+1.5``, ``m/d = 1.25`` the mean is ``\mu_1^2 + \mu_\star^2 = 0.3408``
+(the solver lands ~0.6% above it at the default regularization):
+
+```@example freeprob
+F = randomFeaturesLaw(:relu, 1.5, 1.25)
+(mean = round(freeMean(F), digits = 3), var = round(freeVar(F), digits = 3))
+```
+
 ```@docs
 FreeMeasure
 semicircleLaw
@@ -117,6 +141,8 @@ freeAdd
 freeMul
 freeCompress
 silversteinLaw
+randomFeaturesLaw
+hermiteCoefficients
 freeDensity
 freeAtoms
 freeMean
