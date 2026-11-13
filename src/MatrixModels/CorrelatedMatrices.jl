@@ -47,11 +47,23 @@ randElliptic(n; r, norm)
 ```
 - `d` : default `Normal()`, entry distribution
 - `n`  : dimensions 
-- `r` : default `0.5`, the correlation of ``H_{ij},H_{ji}`` pairs; must lie in ``(-1, 1]``
-  (`r = 1` gives a Hermitian matrix; `r = -1` is not supported — the NORTA / bivariate-normal
-  construction below is singular there)
+- `r` : default `0.5`, the correlation of ``H_{ij},H_{ji}`` pairs; must lie in ``[-1, 1]``
+  (`r = 1` gives a Hermitian matrix; `r = -1` is the exact antisymmetric case below)
 - `norm` : default `false`, if `norm` set to `true`, then the matrix will be normalized with ``n^{-1/2}``.  
 - `diag` : default `diag=d`, the distribution for diagonal entries.
+
+The endpoint `r = -1` (perfect anticorrelation) cannot come from the
+NORTA / bivariate-normal construction, which is singular there, so it is
+built exactly instead: the upper triangle is drawn from `d`, the lower
+triangle is its negation, and the diagonal is zero — the matrix is
+exactly antisymmetric, ``A + A^{\\top} = 0``. That requires `d` to be
+symmetric about 0 (a negated draw must have the same law as a draw:
+centred `Normal`, `Rademacher`, `Uniform(-a, a)`, …); any other entry
+law throws `ArgumentError`, since the anticorrelation is not realizable
+with it. `diag` plays no role at `r = -1`: antisymmetry forces a zero
+diagonal. The eigenvalues are purely imaginary, and with `norm = true`
+their imaginary parts follow the semicircle law on ``[-2\\sigma, 2\\sigma]``,
+where ``\\sigma^2`` is the variance of `d`.
 
 # Examples
 Generate a random elliptic matrix, with entries from ``\\mathscr{N}(0,1)`` and ``\\rho(H_{ij},H_{ji})=0.5`` 
@@ -89,15 +101,24 @@ randElliptic(Poisson(10),500, r=0.1 , norm=true)
 ```
 """
 function randElliptic(d::D, n::Int; r = 0.5::Float64, diag=d::D, norm = false::Bool) where  D<:S
-    # r is a correlation, and the construction below needs the bivariate
-    # normal with correlation rhohat to be positive definite: validate at
-    # the boundary instead of leaking a PosDefException from inside
-    # preNORTA / MvNormal (which is what r = -1, |r| > 1 and non-finite r
-    # produced before). r = -1 remains unsupported (singular limit).
-    (isfinite(r) && -1 < r <= 1) ||
-        throw(ArgumentError("randElliptic requires the pair correlation r in (-1, 1], got r = $r"))
+    # r is a correlation, and the NORTA construction below needs the
+    # bivariate normal with correlation rhohat to be positive definite:
+    # validate at the boundary instead of leaking a PosDefException from
+    # inside preNORTA / MvNormal (which is what |r| > 1 and non-finite r
+    # produced before). The two endpoints are exact comparisons, the
+    # same idiom as the r == 1 Hermitian branch: r = 1 delegates, and
+    # r = -1 takes the exact antisymmetric construction below, because
+    # the bivariate normal is singular at perfect anticorrelation. A
+    # tolerance band around -1 would be wrong here: r slightly above -1
+    # is a valid (if near-degenerate) NORTA input and must keep that
+    # ensemble, not be silently rerouted to the exact one.
+    (isfinite(r) && -1 <= r <= 1) ||
+        throw(ArgumentError("randElliptic requires the pair correlation r in [-1, 1], got r = $r"))
     if r==1
         return randHermitian(d,n,diag=diag,norm=norm)
+    end
+    if r==-1
+        return _randEllipticAntisymmetric(d,n,norm=norm)
     end
 
     r = preNORTA(d,r).ρhat
@@ -106,6 +127,46 @@ function randElliptic(d::D, n::Int; r = 0.5::Float64, diag=d::D, norm = false::B
         M[i,i] = rand(diag)
         for j in i+1:n
             M[i,j],M[j,i] = rand(MvNormal([1 r;r 1]))
+        end
+    end
+
+    if norm
+        M /= sqrt(n)
+    end
+    return M
+end
+
+# A law is symmetric about 0 when a negated draw has the same law as a
+# draw. Checked on the support endpoints and a deterministic quantile
+# grid (p = 0.5 excluded: for a discrete symmetric law such as
+# Rademacher the 0.5-quantile sits on an atom and is not itself 0).
+# Exact for the standard symmetric laws — centred Normal / Laplace /
+# Cauchy / Student-t, Rademacher, Uniform(-a, a) — and it rejects
+# shifted or one-sided laws (Poisson, Exponential, Normal(mu != 0), ...).
+function _issymmetric_about_zero(d::Distribution)
+    lo, hi = minimum(d), maximum(d)
+    lo == -hi || return false
+    for p in (0.001, 0.01, 0.05, 0.25, 0.4)
+        qlo, qhi = quantile(d, p), quantile(d, 1 - p)
+        abs(qlo + qhi) <= 1e-8 * max(1.0, abs(qlo), abs(qhi)) || return false
+    end
+    return true
+end
+_issymmetric_about_zero(d) = false
+
+# The exact r = -1 case of randElliptic: upper triangle drawn from d,
+# lower triangle its negation, diagonal zero. The pair (A_ij, A_ji) =
+# (X, -X) has correlation exactly -1 and both marginals equal d, which
+# is realizable only when d is symmetric about 0.
+function _randEllipticAntisymmetric(d, n::Int; norm = false::Bool)
+    _issymmetric_about_zero(d) ||
+        throw(ArgumentError("randElliptic with r = -1 requires an entry distribution " *
+            "symmetric about 0 (a negated draw must have the same law as a draw); got $d"))
+    M = zeros(n,n)
+    for i in 1:n
+        for j in i+1:n
+            M[i,j] = rand(d)
+            M[j,i] = -M[i,j]
         end
     end
 
