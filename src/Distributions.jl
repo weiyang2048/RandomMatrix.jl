@@ -1,5 +1,5 @@
 export ComplexNormal, Gaussian, Circular, Elliptic, MarchenkoPastur,
-    Wachter, fitWachter, stieltjes
+    Wachter, fitWachter, KestenMcKay, stieltjes
 # re-export    
 export mean, var, pdf, rand
 
@@ -321,6 +321,133 @@ function fitWachter(evals::AbstractVector{<:Real})
         "on {0, 1} alone and no Wachter law matches it"))
     s = v / (m * (1 - m))^2
     return (γ₁ = (1 - m) * s, γ₂ = m * s)
+end
+
+"""
+    KestenMcKay(d)
+    KestenMcKay()
+
+The Kesten–McKay law: the limiting spectral distribution of the
+adjacency matrix of a random ``d``-regular graph (equivalently, the
+spectral measure of the infinite ``d``-regular tree). It is supported
+on ``[-2\\sqrt{d-1}, \\, 2\\sqrt{d-1}]`` with density
+
+```math
+\\rho(x) = \\frac{d}{2\\pi} \\,
+\\frac{\\sqrt{4(d-1) - x^2}}{d^2 - x^2}.
+```
+
+The degree ``d \\ge 2`` is an integer; the default is ``d = 3``. The
+law is symmetric with mean ``0`` and variance ``d``; its even moments
+are the closed-walk counts on the ``d``-regular tree
+(``m_2 = d``, ``m_4 = 2d^2 - d``, ``m_6 = 5d^3 - 6d^2 + 2d`` for
+``d \\ge 3``). Two limiting cases frame the family: ``d = 2`` is the
+arcsine law on ``[-2, 2]`` (a 2-regular graph is a disjoint union of
+cycles), with the density diverging like ``(4 - x^2)^{-1/2}`` at the
+edges — `pdf` returns `Inf` there, the [`Wachter`](@ref) convention —
+and under the scaling ``x \\mapsto \\sqrt{d} \\, x`` the law converges
+to the semicircle law on ``[-2, 2]`` as ``d \\to \\infty``.
+
+For a finite ``d``-regular graph on ``n`` vertices the eigenvalue
+``d`` itself (the trivial eigenvalue, one per connected component)
+sits outside the support for ``d \\ge 3`` as an atom of mass ``1/n``
+per component; the remaining ``n - 1`` eigenvalues — the bulk — are
+the ones the law describes. [`randRegularGraph`](@ref) samples the
+graphs themselves.
+
+`cdf` integrates the density in the variable ``x = 2\\sqrt{d-1}
+\\sin\\theta`` (Simpson's rule), in which it is smooth; `rand` is
+exact rejection sampling in the same variable, where the density is
+bounded by its value at ``\\theta = 0``.
+
+# Examples
+
+```julia
+d = KestenMcKay(3)
+(mean(d), var(d))          # (0.0, 3.0)
+pdf(d, 0.0)                # sqrt(2) / (3 pi) = 0.150052...
+cdf(d, 1.0)                # 0.652594...
+rand(d)                    # a draw in [-2 sqrt(2), 2 sqrt(2)]
+```
+
+References: McKay, "The expected eigenvalue distribution of a large
+regular graph", Linear Algebra Appl. 40, 1981, 203–216; Kesten,
+"Symmetric random walks on groups", Trans. Amer. Math. Soc. 92,
+1959, 336–354; Huang, McKenzie & Yau, "Ramanujan property and edge
+universality of random regular graphs", arXiv:2412.20263, 2024.
+"""
+struct KestenMcKay <: ContinuousUnivariateDistribution
+    d::Int
+    function KestenMcKay(d::Integer=3)
+        d >= 2 || throw(ArgumentError(
+            "KestenMcKay requires an integer degree d >= 2, got d = $d"))
+        new(Int(d))
+    end
+end
+
+# Support edge 2 sqrt(d - 1).
+_km_edge(d::Integer) = 2 * sqrt(d - 1)
+_km_edge(d::KestenMcKay) = _km_edge(d.d)
+
+mean(d::KestenMcKay) = 0.0
+var(d::KestenMcKay) = Float64(d.d)
+
+Distributions.minimum(d::KestenMcKay) = -_km_edge(d)
+Distributions.maximum(d::KestenMcKay) = _km_edge(d)
+
+function Distributions.pdf(d::KestenMcKay, x::Real)
+    a = _km_edge(d)
+    abs(x) > a && return 0.0
+    if abs(x) == a
+        # The density vanishes at the edges for d > 2; for d = 2 it is
+        # the arcsine density, diverging like (4 - x^2)^(-1/2).
+        return d.d == 2 ? Inf : 0.0
+    end
+    return d.d * sqrt(a^2 - x^2) / (2π * (d.d^2 - x^2))
+end
+
+# Integrand of the Kesten-McKay density after x = a sin(theta),
+# a = 2 sqrt(d - 1): rho(x) dx/dtheta, a smooth function of theta on
+# [-pi/2, pi/2]. At the endpoints the expression is 0/0 only for
+# d = 2, where its constant limit is 1/pi (the arcsine density is
+# uniform in theta); for d > 2 the limit is 0, which the formula
+# already returns up to rounding.
+function _km_theta_density(d::Int, θ::Float64)
+    a² = 4 * (d - 1)
+    den = d^2 - a² * sin(θ)^2
+    den == 0.0 && return 1 / π
+    return (d * a² / (2π)) * cos(θ)^2 / den
+end
+
+function Distributions.cdf(d::KestenMcKay, x::Real)
+    a = _km_edge(d)
+    x <= -a && return 0.0
+    x >= a && return 1.0
+    θx = asin(x / a)
+    n = 2000  # Simpson intervals
+    h = (θx + π / 2) / n
+    s = 0.0
+    for i in 0:n
+        w = (i == 0 || i == n) ? 1.0 : (isodd(i) ? 4.0 : 2.0)
+        s += w * _km_theta_density(d.d, -π / 2 + i * h)
+    end
+    return s * h / 3
+end
+
+function Base.rand(rng::AbstractRNG, d::KestenMcKay)
+    dd = d.d
+    a = _km_edge(d)
+    a² = a^2
+    # Rejection sampling in theta (x = a sin(theta), theta uniform on
+    # [-pi/2, pi/2]): the transformed density is maximal at theta = 0,
+    # with acceptance probability dd^2 (1 - u) / (dd^2 - a^2 u),
+    # u = sin^2(theta), which is <= 1 since a^2 <= dd^2. For d = 2 the
+    # acceptance probability is identically 1.
+    while true
+        θ = π * (rand(rng) - 0.5)
+        u = sin(θ)^2
+        rand(rng) * (dd^2 - a² * u) <= dd^2 * (1 - u) && return a * sin(θ)
+    end
 end
 
 """

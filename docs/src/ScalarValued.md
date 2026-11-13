@@ -53,6 +53,37 @@ d = Wachter(1.5, 0.5)
 (pdf(d, 0), mean(d), round(cdf(d, 0.999), digits = 6)) # atom 1/3 at 0; no atom at 1
 ```
 
+## Kesten–McKay Law
+
+```@docs
+KestenMcKay
+```
+
+### Worked example
+
+The bulk spectrum of a random regular graph against the law: for a
+seeded 3-regular graph on 300 vertices the top eigenvalue is the
+trivial eigenvalue ``d = 3`` exactly, and the remaining 299
+eigenvalues have empirical moments already close to the law's
+``m_2 = d = 3`` and ``m_4 = 2d^2 - d = 15`` (the finite-``n`` bulk
+moments sit slightly below the tree values):
+
+```@example
+using RandomMatrix, Random, LinearAlgebra
+A = randRegularGraph(Random.Xoshiro(20261113), 300, 3)
+ev = eigvals(Symmetric(A))
+bulk = ev[1:end-1]
+(m2 = round(sum(bulk .^ 2) / length(bulk), digits = 3),
+ m4 = round(sum(bulk .^ 4) / length(bulk), digits = 3),
+ lam_max = round(ev[end], digits = 6))
+```
+
+```@example
+using RandomMatrix, Distributions
+d = KestenMcKay(3)
+(mean(d), var(d), round(cdf(d, 1.0), digits = 6))
+```
+
 ## Circular Law
 
 ```@docs
