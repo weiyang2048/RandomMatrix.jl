@@ -74,6 +74,8 @@ include("VarianceProfile.jl")
 
 include("RandomFeatures.jl")
 
+include("BrownMeasure.jl")
+
 include("Spacing.jl")
 
 include("SpectralFormFactor.jl")

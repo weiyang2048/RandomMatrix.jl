@@ -73,6 +73,35 @@ user triggers Registrator.
   moments to `1e-4`, two-block CDF within `0.001` of simulation at
   `n = 400` with the support edge approached from below at the
   shallow-edge Tracy–Widom scale, solver residuals `<= 2e-10`.
+- `brownMeasure(points, masses)` (also from a `FreeMeasure` or a
+  `Distributions` law): the Brown measure of an R-diagonal element
+  `a` whose `a* a` has law `nu` — the package's first non-Hermitian
+  limiting law, and the limit of the eigenvalues of `A = U P` (or
+  `U T V`) in the single ring theorem. By Haagerup & Larsen
+  (J. Funct. Anal. 176 (2000), 331–367, Thm. 4.4, Cor. 4.5;
+  formula re-verified against the primary text before
+  implementation), the rotation-invariant measure is determined by
+  `mu(B(0, S_nu(t-1)^{-1/2})) = t`, with exact radii
+  `outer = sqrt(int t dnu)`, `inner = sqrt(1 / int t^{-1} dnu)`
+  (0 when `nu` has an atom at 0), an atom at 0 of mass `nu({0})`,
+  and planar density `Phi'(r)/(2 pi r)`; the matrix convergence is
+  Guionnet–Krishnapur–Zeitouni (Ann. of Math. 174(2), 2011,
+  1189–1217). Returned as a new `BrownMeasure` struct (radii, atom,
+  radial CDF and density grids), read with `radialCDF` /
+  `brownDensity`, since a real-line `FreeMeasure` cannot represent
+  a planar law; `nu = delta_c` gives the singular uniform circle
+  law of radius `sqrt(c)`. The computation parametrizes the
+  Haagerup–Larsen relation through the moment transform of the
+  discrete `nu` and differentiates it in closed form. Calibrated
+  against the primary sources' own examples before test bands were
+  set: the circular element returns `Phi(r) = r^2`, density `1/pi`
+  (Haagerup–Larsen Ex. 5.1), the free Poisson family its exact
+  `1/pi` annulus/disk densities (Ex. 5.2), the Bernoulli law its
+  closed-form CDF and density (Ex. 5.3), a two-point `nu` the exact
+  radii and the S-transform radial-moment identity
+  `int |z|^{2k} dmu = int_0^1 S_nu(u-1)^{-k} du` to ~1e-4, and
+  formed-matrix simulation matches the radial CDF to pooled KS
+  ~0.03 at `n = 500` (finite-`n` edge layers).
 
 - `silversteinLaw(points, masses, gamma)` (also from a `FreeMeasure`
   or a `Distributions` law): the limiting spectral distribution of a
