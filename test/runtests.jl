@@ -1127,7 +1127,14 @@ end
     F = randomFeaturesLaw(0.0, 1.0, 0.0, 1.5, 1.25)
     @test freeMean(F) ≈ 1.0 atol = 0.02
     @test sum(F.weights .* F.nodes .^ 2) ≈ 1 + 1.25 + 5 / 6 atol = 0.12
-    @test freeAtoms(randomFeaturesLaw(0.0, 1.0, 0.0, 2.0, 2.5)) == [0.0 => 0.6]
+    # (Atom mass compared to 1e-12, not ==: the composed population
+    # path accumulates a 1-ulp normalization rounding that differs
+    # between Julia 1.10 and 1.13 -- 0.6000000000000001 vs 0.6.)
+    let a = freeAtoms(randomFeaturesLaw(0.0, 1.0, 0.0, 2.0, 2.5))
+        @test length(a) == 1
+        @test a[1].first == 0.0
+        @test a[1].second ≈ 0.6 atol = 1e-12
+    end
     @test freeAtoms(randomFeaturesLaw(0.0, 1.0, 0.0, 0.5, 0.75)) == [0.0 => 1 - 1 / 1.5]
 
     # mu0 never enters the construction; presets and the function
