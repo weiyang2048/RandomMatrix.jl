@@ -14,4 +14,6 @@ plotEigStats
 randSampling
 
 randErdosRenyi
+
+randRegularGraph
 ```

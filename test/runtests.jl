@@ -220,6 +220,118 @@ end
     @test_throws ArgumentError fitWachter([0.5, NaN])
 end
 
+@testset "Kesten-McKay law and regular graphs" begin
+    @test_throws ArgumentError KestenMcKay(0)
+    @test_throws ArgumentError KestenMcKay(1)
+    @test_throws ArgumentError KestenMcKay(-3)
+    @test KestenMcKay() == KestenMcKay(3)
+
+    for d in 2:5
+        law = KestenMcKay(d)
+        @test mean(law) == 0.0
+        @test var(law) == Float64(d)
+        @test minimum(law) == -2 * sqrt(d - 1)
+        @test maximum(law) == 2 * sqrt(d - 1)
+        @test pdf(law, 0.0) ≈ sqrt(d - 1) / (π * d) atol = 1e-14
+        @test pdf(law, 3.0 * sqrt(d - 1)) == 0.0
+        @test cdf(law, 0.0) ≈ 0.5 atol = 1e-12
+        @test cdf(law, -3.0 * sqrt(d - 1)) == 0.0
+        @test cdf(law, 3.0 * sqrt(d - 1)) == 1.0
+    end
+    @test pdf(KestenMcKay(3), 0.0) ≈ sqrt(2) / (3π) atol = 1e-15
+    @test cdf(KestenMcKay(3), 1.0) ≈ 0.6525935483 atol = 1e-9
+    @test cdf(KestenMcKay(5), 1.0) ≈ 0.6276913953 atol = 1e-9
+
+    # Moments of the density are the closed-walk counts on the
+    # d-regular tree; checked by Simpson quadrature in x = a sin(theta)
+    # against the density itself (calibration: errors <= 1.4e-12).
+    function pdf_moment(d, k; n = 40_000)
+        a = 2 * sqrt(d - 1)
+        h = π / n
+        s = 0.0
+        for i in 0:n
+            θ = -π / 2 + i * h
+            x = a * sin(θ)
+            w = (i == 0 || i == n) ? 1.0 : (isodd(i) ? 4.0 : 2.0)
+            s += w * x^k * pdf(KestenMcKay(d), x) * a * cos(θ)
+        end
+        return s * h / 3
+    end
+    for d in 3:5
+        @test pdf_moment(d, 2) ≈ d atol = 1e-8
+        @test pdf_moment(d, 4) ≈ 2 * d^2 - d atol = 1e-8
+        @test pdf_moment(d, 6) ≈ 5 * d^3 - 6 * d^2 + 2 * d atol = 1e-8
+    end
+
+    # d = 2 is the arcsine law on [-2, 2].
+    for x in (-1.5, -0.7, 0.0, 0.3, 1.2, 1.9)
+        @test pdf(KestenMcKay(2), x) ≈ 1 / (π * sqrt(4 - x^2)) atol = 1e-14
+    end
+    @test cdf(KestenMcKay(2), 1.0) ≈ 2 / 3 atol = 1e-11
+    @test cdf(KestenMcKay(2), 0.5) ≈ 0.5 + asin(0.25) / π atol = 1e-11
+    @test pdf(KestenMcKay(2), 2.0) == Inf
+    @test pdf(KestenMcKay(2), -2.0) == Inf
+    @test pdf(KestenMcKay(3), 2 * sqrt(2)) == 0.0
+    @test pdf(KestenMcKay(3), -2 * sqrt(2)) == 0.0
+
+    # Large d: sqrt(d) * rho_d(sqrt(d) x) -> semicircle density.
+    let d = 1000
+        xs = range(-1.9, 1.9, length = 761)
+        superr = maximum(abs(sqrt(d) * pdf(KestenMcKay(d), sqrt(d) * x) -
+                             sqrt(4 - x^2) / (2π)) for x in xs)
+        @test superr < 1e-3  # calibration: 2.3e-4
+    end
+
+    # rand from the law (seeded; calibration mean +0.0007, var 2.9815).
+    xs = rand(Random.Xoshiro(20261113), KestenMcKay(3), 20_000)
+    @test all(abs.(xs) .<= 2 * sqrt(2))
+    @test abs(mean(xs)) < 0.05
+    @test abs(var(xs; corrected = false) - 3) < 0.15
+
+    # randRegularGraph: exact regularity and the exact trivial
+    # eigenvalue d, for the shipped (seeded) draws.
+    for (n, d) in ((30, 2), (60, 3), (40, 4))
+        A = randRegularGraph(Random.Xoshiro(7), n, d)
+        @test issymmetric(A)
+        @test all(diag(A) .== 0)
+        @test all(x -> x in (0, 1), A)
+        @test all(sum(A, dims = 2) .== d)
+        @test eigmax(Symmetric(A)) ≈ d atol = 1e-8
+    end
+    @test_throws ArgumentError randRegularGraph(5, 3)   # n * d odd
+    @test_throws ArgumentError randRegularGraph(4, 4)   # d > n - 1
+    @test_throws ArgumentError randRegularGraph(4, -1)
+    @test randRegularGraph(6, 0) == zeros(Int, 6, 6)
+    @test all(sum(randRegularGraph(Random.Xoshiro(3), 10, 1), dims = 2) .== 1)
+
+    # Bulk spectrum vs the law: pool the non-trivial eigenvalues
+    # (lambda = d removed, one per graph here) over seeded graphs.
+    # Bands set from calibration runs of exactly these configurations:
+    # (200, 3): m2 dev -0.030, m4 dev -0.263, sup CDF distance 0.0053;
+    # (120, 4): m2 dev -0.101, m4 dev -1.219, sup CDF distance 0.0117.
+    for (n, d, R, seed, tol2, tol4, tolcdf) in (
+            (200, 3, 25, 20261113, 0.15, 1.0, 0.02),
+            (120, 4, 25, 20261114, 0.30, 3.0, 0.03))
+        rng = Random.Xoshiro(seed)
+        pooled = Float64[]
+        for _ in 1:R
+            A = randRegularGraph(rng, n, d)
+            ev = eigvals(Symmetric(A))
+            k = count(x -> abs(x - d) < 1e-6, ev)
+            @test k >= 1
+            append!(pooled, ev[1:end-k])
+        end
+        sort!(pooled)
+        m = length(pooled)
+        @test abs(mean(pooled .^ 2) - d) < tol2
+        @test abs(mean(pooled .^ 4) - (2 * d^2 - d)) < tol4
+        grid = range(-2 * sqrt(d - 1), 2 * sqrt(d - 1), length = 41)
+        supdist = maximum(abs(count(y -> y <= x, pooled) / m -
+                              cdf(KestenMcKay(d), x)) for x in grid)
+        @test supdist < tolcdf
+    end
+end
+
 @testset "Spacing and transformations" begin
     @test wignersurmise(2) ≈ 0.1357605281502967
     @test wignersurmise(2, beta=2) ≈ 0.07962814352725955

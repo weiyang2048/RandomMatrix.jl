@@ -99,6 +99,27 @@ user triggers Registrator.
   (sub-threshold spikes stick to the bulk edge). `spikeVariance`
   is unchanged: it remains the identity-bulk (Paul) formula, with
   no general-`H` method.
+- `KestenMcKay(d)` (default `d = 3`): the Kesten–McKay law, the
+  limiting spectral distribution of a random `d`-regular graph's
+  adjacency matrix (McKay, Linear Algebra Appl. 40, 1981), as a
+  `Distributions` law with `pdf`/`cdf`/`mean`/`var`/`rand` in the
+  `Wachter` idiom (Simpson `cdf` and exact rejection `rand`, both in
+  the variable `x = 2 sqrt(d - 1) sin(theta)`). Support
+  `[-2 sqrt(d - 1), 2 sqrt(d - 1)]`, mean 0, variance `d`; `d = 2`
+  is the arcsine law, and the `sqrt(d)`-scaled law tends to the
+  semicircle law as `d -> infinity`. Companion sampler
+  `randRegularGraph([rng,] n, d)`: exactly uniform simple
+  `d`-regular graphs via the configuration (pairing) model
+  conditioned on simplicity (restart on loops/multiple edges;
+  expected attempts about `exp((d^2 - 1) / 4)`, so practical for
+  `d <= 5`). Calibrated before the test bands were set: density
+  moments match the closed-walk counts on the `d`-regular tree
+  (`m2 = d`, `m4 = 2d^2 - d`, `m6 = 5d^3 - 6d^2 + 2d`) to ~1e-12 by
+  quadrature, `d = 2` reproduces the arcsine `pdf`/`cdf` to
+  ~1e-11, the semicircle limit at `d = 1000` is within 2.3e-4, and
+  pooled bulk spectra of seeded graphs (trivial eigenvalue `d`
+  removed) match the law's moments and `cdf` (sup distance 0.005
+  at `n = 200, d = 3`).
 
 - `BetaLaguerre` now covers the singular case `n < p`: the
   constructor accepts any `n >= 1`, and `rand` returns the full
