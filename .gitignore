@@ -7,3 +7,4 @@ docs/build/
 */desktop.ini
 **/desktop.ini
 *.orig
+Manifest-v*.toml
