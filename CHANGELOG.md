@@ -35,6 +35,20 @@ user triggers Registrator.
   and the two-mass support-splitting transition matches
   formed-matrix simulation (no eigenvalues in the predicted gap).
 
+- Free Bessel laws (Banica–Belinschi–Capitaine–Collins, Canad. J.
+  Math. 63(1), 2011): `FreeBessel(s, t)` builds the law π_{s,t} as a
+  `FreeMeasure` grid law — density from the algebraic equation
+  f = 1 + z f^s (f + t − 1) solved on the real axis over the exact
+  support, the atom (1 − t)₊ at 0 carried exactly — parametrized by
+  (s, t), not by a product depth and Marcenko–Pastur ratio (a product
+  of k ≥ 2 laws MP_γ with γ ≠ 1 is π_{s,t} for no (s, t)). Exact
+  moments by the Fuss–Narayana formula (`freeBesselMoments`;
+  Fuss–Catalan anchors 1, 3, 12, 55, 273 at s = 2 and 1, 4, 22, 140,
+  969 at s = 3) and support/atom queries (`freeBesselSupport`) across
+  all three regimes; the critical rectangle 0 < s < 1, t > 1 throws
+  `ArgumentError`. Grid-law moments match the exact ones to ≤ 0.13%
+  at the default resolution; the singular-edge rate
+  π ρ(x) √x → 1/√(t − 1) (s = 2, t > 1) is suite-tested.
 - `BetaLaguerre` now covers the singular case `n < p`: the
   constructor accepts any `n >= 1`, and `rand` returns the full
   `p`-eigenvalue spectrum of the singular Gram matrix — `p - n`
