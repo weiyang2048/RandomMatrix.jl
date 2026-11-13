@@ -15,6 +15,7 @@ spikeOverlap
 estimateSpike
 spikeVariance
 randSpikedCovariance
+dTransform
 ```
 
 ## Worked example
@@ -41,6 +42,52 @@ using Random, LinearAlgebra # hide
 Random.seed!(20261030) # hide
 S = randSpikedCovariance(200, 400, [4.0])
 round(eigmax(S), digits = 2)
+```
+
+## The general population case
+
+The bulk need not sit at a single point. When the population
+eigenvalues have a general limiting distribution ``H`` (the setting
+of [`silversteinLaw`](@ref)), Baik & Silverstein (2006) give the
+transition through the *D-transform*
+``\mathcal D(\ell) = \ell \left(1 + \gamma \int t \, / \, (\ell - t) \, dH(t)\right)``:
+a spike ``\ell`` produces an outlier at ``\mathcal D(\ell)`` exactly
+when ``\ell`` exceeds the unique minimizer of ``\mathcal D`` — the
+generalized `bbpThreshold` — and the squared eigenvector overlap is
+``\ell \mathcal D'(\ell) / \mathcal D(\ell)``. The four functions
+above accept `H` in the same three input forms as `silversteinLaw`:
+discrete points/masses, a `FreeMeasure`, or a `Distributions` law.
+At ``H = \delta_{\sigma^2}`` they reduce exactly to the scalar
+formulas of the previous section.
+
+For a population split evenly between ``1`` and ``4`` at
+``\gamma = 0.5``, the threshold is ``\ell_c \approx 6.01`` — a spike
+must clear not just the population bulk (top at ``4``) but the
+D-transform minimum — and a spike of ``10`` separates to
+``11.94``, while a spike of ``2`` is absorbed at the bulk edge
+``9.30`` (the upper edge of `silversteinLaw` for this ``H``):
+
+```@example spiked
+Hp, Hm = [1.0, 4.0], [0.5, 0.5]
+(threshold = round(bbpThreshold(Hp, Hm, gamma), digits = 3),
+ loc = round(spikeLocation(10.0, Hp, Hm, gamma), digits = 3),
+ overlap = round(spikeOverlap(10.0, Hp, Hm, gamma), digits = 3),
+ recovered = round(estimateSpike(spikeLocation(10.0, Hp, Hm, gamma), Hp, Hm, gamma), digits = 6),
+ stuck = round(spikeLocation(2.0, Hp, Hm, gamma), digits = 3))
+```
+
+A seeded simulation with a formed population covariance (bulk
+eigenvalues ``1`` and ``4``, one spike of ``10``) agrees:
+
+```@example spiked
+using Random, LinearAlgebra # hide
+Random.seed!(20261113) # hide
+p, n = 400, 800
+evals = vcat(fill(1.0, 200), fill(4.0, 199), [10.0])
+Q = Matrix(qr(randn(p, p)).Q)
+A = Q * Diagonal(sqrt.(evals)) * Q'
+X = A * randn(p, n) / sqrt(n)
+round(eigmax(Symmetric(X * X')), digits = 2)
 ```
 
 ## The rectangular case

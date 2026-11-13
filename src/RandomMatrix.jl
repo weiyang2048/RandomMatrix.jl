@@ -66,6 +66,8 @@ include("BetaEnsembles.jl")
 
 include("FreeProbability.jl")
 
+include("SpikedCovarianceGeneral.jl")
+
 include("Spacing.jl")
 
 include("SpectralFormFactor.jl")

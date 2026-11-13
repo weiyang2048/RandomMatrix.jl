@@ -169,3 +169,11 @@ function randSpikedCovariance(p::Integer, n::Integer, spikes::AbstractVector{<:R
     X = A * randn(p, n) / sqrt(n)
     return Symmetric(X * X')
 end
+
+# The generalization of this layer to an arbitrary population spectral
+# distribution H (bbpThreshold / spikeLocation / spikeOverlap /
+# estimateSpike methods on (points, masses), FreeMeasure and
+# Distributions inputs, plus dTransform) lives in
+# SpikedCovarianceGeneral.jl, included after FreeProbability.jl since
+# those methods dispatch on FreeMeasure and consume its Silverstein
+# machinery.
