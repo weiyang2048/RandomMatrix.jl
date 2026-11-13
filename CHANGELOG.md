@@ -12,6 +12,20 @@ user triggers Registrator.
 
 ### Added
 
+- `lssTest(evals, n; f=:x2, beta=1, mu4=nothing, sigma2=1.0)` — the
+  Bai–Silverstein CLT test of a covariance spectrum against the
+  Marčenko–Pastur null, the bulk companion of `twTest`: the centered
+  linear spectral statistic `G = Σ f(λᵢ/σ²) − p∫f dMP_γ` for
+  `f ∈ (:x, :x2, :x3, :log)` is asymptotically normal with closed-form
+  mean/variance (real case with fourth-moment `mu4` corrections —
+  monomial means scale by `(mu4 − 2)`, `log x` carries its own
+  coefficients `−γ/2` / `γ`; complex case mean 0, variance halved),
+  returning `(statistic, pvalue, G, mean, var)`. Anchored on the
+  exact identities `E G(x²) = γ`, `E G(x³) = 3γ(1+γ) + 4γ/n`, the
+  corrected-LRT values for `x − 1 − log x`, the Rademacher witness
+  (variance of `G(x²)` collapses 10 → 1 at `γ = 0.5`), and a seeded
+  Wishart size check at `p = 200`.
+
 - `BetaLaguerre` now covers the singular case `n < p`: the
   constructor accepts any `n >= 1`, and `rand` returns the full
   `p`-eigenvalue spectrum of the singular Gram matrix — `p - n`

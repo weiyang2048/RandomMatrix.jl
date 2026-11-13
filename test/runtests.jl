@@ -1004,3 +1004,5 @@ end
 include("test_spectralformfactor.jl")
 
 include("test_jacobitwcorrection.jl")
+
+include("test_lsstest.jl")

@@ -48,6 +48,7 @@ accurate trace matters more than minimum loss, in particular at
 
 ```@docs
 fitMarchenkoPastur
+lssTest
 clipEigenvalues
 rieEigenvalues
 cleanCovariance
@@ -90,6 +91,43 @@ rie = rieEigenvalues(ev, gamma)
 The RIE mean above 1 is the finite-size broadening bias quantified in
 the previous section (about ``1.09`` expected at ``\gamma = 0.5``;
 here ``\gamma = 0.25`` and the spike also contributes).
+
+## Testing a spectrum against the MP null
+
+`fitMarchenkoPastur` estimates the noise level; `lssTest` answers the
+companion question — is this spectrum consistent with
+``\mathrm{MP}(\gamma, \sigma^2)`` at all? It forms the linear spectral
+statistic ``G = \sum_i f(\lambda_i/\sigma^2) - p \int f\,d\mathrm{MP}_\gamma``
+for ``f \in \{x, x^2, x^3, \log x\}``, which by the Bai–Silverstein CLT
+is asymptotically normal with a closed-form mean and variance, and
+returns the two-sided z-test. Unlike `twTest`, which interrogates only
+the largest eigenvalue, the bulk statistics see global departures: a
+single spike at ``\ell = 4`` already moves ``f = x^2`` decisively,
+while a pure-noise spectrum sits well inside the null.
+
+```@example cleaning
+using RandomMatrix, Random, LinearAlgebra
+Random.seed!(20261113)
+p, n = 100, 400
+X = randn(p, n)
+ev = eigvals(Symmetric((X * X') ./ n))
+r = lssTest(ev, n; f = :x2)
+(statistic = round(r.statistic, digits = 3), pvalue = round(r.pvalue, digits = 3),
+ G = round(r.G, digits = 3), mean = r.mean, var = round(r.var, digits = 3))
+```
+
+```@example cleaning
+ev2 = eigvals(randSpikedCovariance(p, n, [4.0]))
+r2 = lssTest(ev2, n; f = :x2)
+(statistic = round(r2.statistic, digits = 2), pvalue = r2.pvalue)
+```
+
+The test is not distribution-free: for real non-Gaussian entries,
+pass `mu4` (the entries' fourth moment) to apply the Bai–Silverstein
+fourth-moment corrections — with Rademacher entries the
+Gaussian-parameter version on ``f = x^2`` rejects at rate ``\approx 0``
+instead of ``0.05``, because the true variance is ``1.0``, not ``10``,
+at ``\gamma = 0.5``.
 
 ## Linear shrinkage from the data matrix
 
