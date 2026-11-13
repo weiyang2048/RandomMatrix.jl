@@ -142,6 +142,26 @@ user triggers Registrator.
   rounding level, ~6e-16 at n = 800) with the imaginary parts
   semicircular of radius `2σ` under `norm = true` (moments m₂ = σ²,
   m₄ = 2σ⁴ verified for Gaussian, uniform and discrete entry laws).
+- Spiked Wigner layer (`src/SpikedWigner.jl`), the additive BBP
+  transition paralleling the spiked covariance and MANOVA layers:
+  `wignerThreshold`, `wignerSpikeLocation` (`theta + sigma^2 / theta`
+  above the threshold `|theta| > sigma`, sticking to the nearer
+  semicircle edge below it), `wignerSpikeOverlap`
+  (`1 - sigma^2 / theta^2`), `wignerEstimateSpike` (the inverse map),
+  `wignerSpikeVariance`, and the GOE-based sampler
+  `randSpikedWigner`. The noise scale is tied to the package's Wigner
+  normalization (`sigma * W / sqrt(n)`, bulk on `[-2 sigma, 2 sigma]`,
+  as in `rand(GOE(n), norm=true)` at `sigma = 1`). Fluctuations follow
+  Capitaine–Donati-Martin–Féral (Ann. Probab. 37(1), 2009): Gaussian
+  with variance `2 sigma^2 (1 - sigma^2 / theta^2) / n` (real; halved
+  for complex), and for a spike along a coordinate direction with
+  non-Gaussian entries the non-universal fourth-cumulant variance of
+  their Thm. 2.2 via the `m4` keyword (at the Gaussian fourth moment
+  it reduces exactly to the Gaussian formula). Calibrated against the
+  package's GOE/GUE samplers and against Rademacher-entry simulation
+  (coordinate-direction variance 1.184 empirical vs 1.219 predicted
+  and 1.500 Gaussian, at `theta = 2`, `n = 300`, 1000 reps) before the
+  test bands were set.
 
 ### Fixed
 

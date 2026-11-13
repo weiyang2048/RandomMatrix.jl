@@ -149,3 +149,62 @@ standard deviation ``\sqrt{\mathrm{manovaSpikeVariance}} \approx 0.0076``:
 ```@example manova
 round(sqrt(manovaSpikeVariance(6.0, 0.5, 0.5, 100)), digits = 4)
 ```
+
+## The spiked Wigner case
+
+The additive analogue: ``M = \sigma W/\sqrt{n} + A`` with ``W`` a
+Wigner matrix (bulk the semicircle law on ``[-2\sigma, 2\sigma]``) and
+``A`` a finite-rank deformation. A spike ``\theta`` of ``A`` produces
+an outlier eigenvalue only above the threshold ``|\theta| > \sigma``,
+at ``\theta + \sigma^2/\theta``, with eigenvector overlap
+``1 - \sigma^2/\theta^2`` (Capitaine, Donati-Martin & Féral,
+Ann. Probab. 37(1), 2009, Thm. 2.1). Below the threshold the spike
+sticks to the nearer semicircle edge.
+
+```@docs
+wignerThreshold
+wignerSpikeLocation
+wignerSpikeOverlap
+wignerEstimateSpike
+wignerSpikeVariance
+randSpikedWigner
+```
+
+### Worked example
+
+At ``\sigma = 1`` a spike of ``\theta = 2`` is above the threshold, so
+it appears as an outlier near `wignerSpikeLocation(2) = 2.5` with
+eigenvector overlap `0.75`; a spike of ``\theta = 0.7`` is below the
+threshold and sticks to the semicircle edge ``2``.
+
+```@example wigner
+using RandomMatrix
+(threshold = wignerThreshold(), loc = wignerSpikeLocation(2.0),
+ overlap = wignerSpikeOverlap(2.0),
+ recovered = wignerEstimateSpike(wignerSpikeLocation(2.0)),
+ stuck = wignerSpikeLocation(0.7))
+```
+
+A seeded simulation agrees, within the fluctuation scale
+`sqrt(wignerSpikeVariance(2, 400)) ≈ 0.061`:
+
+```@example wigner
+using Random, LinearAlgebra # hide
+Random.seed!(20261113) # hide
+M = randSpikedWigner(400, [2.0])
+round(eigmax(M), digits = 2)
+```
+
+The outlier's fluctuations are Gaussian at the ``1/\sqrt{n}`` scale
+with variance ``2\sigma^2(1 - \sigma^2/\theta^2)/n`` for real data —
+*unless* the spike points along a coordinate direction and the entries
+are non-Gaussian: the limiting law is then non-universal and acquires a
+fourth-cumulant term (Capitaine-Donati-Martin-Féral 2009, Thm. 2.2),
+exposed through the `m4` keyword of `wignerSpikeVariance`. For
+Rademacher entries (``m_4 = \sigma^4``) at ``\theta = 2`` the
+coordinate-direction variance is `1.21875 / n`, against the Gaussian
+`1.5 / n`:
+
+```@example wigner
+(gaussian = wignerSpikeVariance(2.0, 1), rademacher_e1 = wignerSpikeVariance(2.0, 1; m4 = 1.0))
+```

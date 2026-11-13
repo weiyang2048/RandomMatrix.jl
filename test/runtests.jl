@@ -546,6 +546,80 @@ end
     @test 0.45 < empvar(bots) / manovaSpikeVariance(0.1, γ₁, γ₂, p₂) < 2.0
 end
 
+@testset "Spiked Wigner / BBP" begin
+    # Exact algebra: threshold sigma, location theta + sigma^2/theta,
+    # overlap 1 - sigma^2/theta^2, estimator inverting the location map.
+    @test wignerThreshold() == 1.0
+    @test wignerThreshold(; σ=2.0) == 2.0
+    @test wignerSpikeLocation(2.0) ≈ 2.5
+    @test wignerSpikeLocation(-2.0) ≈ -2.5
+    @test wignerSpikeLocation(3.0; σ=2.0) ≈ 3 + 4 / 3
+    @test wignerSpikeOverlap(2.0) ≈ 0.75
+    @test wignerSpikeOverlap(-3.0) ≈ 1 - 1 / 9
+    @test wignerSpikeOverlap(2.0; σ=0.5) ≈ 1 - 0.25 / 4
+    for σ in (0.5, 1.0, 2.0), θ in (1.2σ, 1.5σ, 2σ, 3σ, 10σ, -1.5σ, -3σ)
+        @test wignerEstimateSpike(wignerSpikeLocation(θ; σ); σ) ≈ θ atol = 1e-12
+    end
+    # Continuity at the transition: the location map reaches the edge.
+    @test wignerSpikeLocation(1.0) == 2.0
+    @test wignerSpikeLocation(-1.0) == -2.0
+    @test wignerSpikeLocation(1.0 + 1e-9) ≈ 2.0 atol = 1e-6
+    @test wignerSpikeOverlap(1.0) == 0.0
+    # Subcritical spike: sticks to the nearer edge, zero overlap, the
+    # estimator returns the threshold, no Gaussian variance.
+    @test wignerSpikeLocation(0.7) == 2.0
+    @test wignerSpikeLocation(-0.7) == -2.0
+    @test wignerSpikeLocation(0.0) == 2.0
+    @test wignerSpikeOverlap(0.7) == 0.0
+    @test wignerEstimateSpike(1.9) == 1.0
+    @test wignerEstimateSpike(-1.9) == -1.0
+    @test wignerEstimateSpike(0.0) == 1.0
+    @test isnan(wignerSpikeVariance(0.7, 400))
+    @test isnan(wignerSpikeVariance(1.0, 400))
+    @test_throws ArgumentError wignerThreshold(; σ=0.0)
+    @test_throws ArgumentError wignerSpikeLocation(2.0; σ=-1.0)
+    @test_throws ArgumentError wignerSpikeVariance(2.0, 0)
+    @test_throws ArgumentError randSpikedWigner(3, [1.0, 2.0, 3.0])
+    # Fluctuation variance: Gaussian anchors (CDF 2009, Thm. 2.3):
+    # Var = c sigma^2 (1 - sigma^2/theta^2) / n, c = 2 real, 1 complex.
+    @test wignerSpikeVariance(2.0, 400) ≈ 2 * (1 - 1 / 4) / 400
+    @test wignerSpikeVariance(2.0, 400; real=false) ≈ (1 - 1 / 4) / 400
+    @test wignerSpikeVariance(3.0, 100; σ=2.0) ≈ 2 * 4 * (1 - 4 / 9) / 100
+    @test wignerSpikeVariance(-2.0, 400) ≈ wignerSpikeVariance(2.0, 400)
+    # The m4 (Thm. 2.2) path reduces exactly to the Gaussian formula at
+    # the Gaussian fourth moment, and separates from it for Rademacher
+    # entries (m4 = sigma^4): at theta = 2, sigma = 1 the coordinate-
+    # direction variance is 1.21875 / n against the Gaussian 1.5 / n,
+    # confirmed by simulation in calibration (empirical 1.184, n = 300,
+    # 1000 reps).
+    @test wignerSpikeVariance(2.0, 400; m4=3.0) ≈ wignerSpikeVariance(2.0, 400)
+    @test wignerSpikeVariance(2.0, 400; real=false, m4=2.0) ≈
+        wignerSpikeVariance(2.0, 400; real=false)
+    @test wignerSpikeVariance(2.0, 1; m4=1.0) ≈ 1.21875
+    @test wignerSpikeVariance(2.0, 1; m4=1.0) < wignerSpikeVariance(2.0, 1)
+    # Sampler shape and symmetry.
+    M = randSpikedWigner(50, [2.0])
+    @test M isa Symmetric
+    @test size(M) == (50, 50)
+    # Simulation (calibration 2026-11-13, seed 20261113: location biases
+    # <= 0.006 and overlaps within 0.01 at n = 400; bands are several
+    # fluctuation scales wide, in the style of the covariance testset).
+    S = randSpikedWigner(400, [2.0])
+    @test abs(eigmax(S) - wignerSpikeLocation(2.0)) < 3.5 * sqrt(wignerSpikeVariance(2.0, 400))
+    Sneg = randSpikedWigner(400, [-2.0])
+    @test abs(eigmin(Sneg) - wignerSpikeLocation(-2.0)) < 3.5 * sqrt(wignerSpikeVariance(-2.0, 400))
+    # Subcritical spike sticks to the edge within a few TW scales
+    # (calibration max over 200 reps at n = 400 was 2.041).
+    S2 = randSpikedWigner(400, [0.7])
+    @test eigmax(S2) < 2.0 + 0.15
+    # Empirical variance of the outlier against wignerSpikeVariance
+    # (band in the style of the MANOVA testset; calibration at n = 400,
+    # 300 reps gave the ratio 0.88).
+    wempvar(xs) = (m = sum(xs) / length(xs); sum((xs .- m) .^ 2) / (length(xs) - 1))
+    tops = [eigmax(randSpikedWigner(200, [2.0])) for _ in 1:120]
+    @test 0.45 < wempvar(tops) / wignerSpikeVariance(2.0, 200) < 2.0
+end
+
 using Statistics: mean, std
 
 @testset "Covariance cleaning" begin
