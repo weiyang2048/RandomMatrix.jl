@@ -1,5 +1,5 @@
 using RandomMatrix
-using Distributions: Normal, Semicircle, cdf
+using Distributions: Normal, Semicircle, cdf, Gamma
 using LinearAlgebra
 using Random
 using Test
@@ -969,6 +969,88 @@ end
     for k in 1:3
         @test mean(emp[:, k]) ≈ mom(cc, k) atol = (0.02, 0.03, 0.06)[k]
     end
+end
+
+@testset "Silverstein equation (general-population law)" begin
+    # Anchors calibrated before the bands below were set
+    # (hidden_files/silverstein_proto.jl + silverstein_calib.jl):
+    # H = delta_1 reproduces MarchenkoPastur (edges exact, density to
+    # ~1e-3 interior), the closed-form moments hold to <= 0.3% at the
+    # default resolution across all population shapes below (0.9% for
+    # the delta_1 mean at gamma = 1, whose density diverges at 0), and the
+    # two-mass support splitting matches formed-matrix simulation.
+    # H = delta_1 is MarchenkoPastur: moments gamma-exact.
+    for γ in (0.25, 0.5, 1.0, 2.0)
+        F = silversteinLaw([1.0], [1.0], γ)
+        @test freeMean(F) ≈ 1.0 atol = 0.02
+        @test freeVar(F) ≈ γ atol = 0.03 * γ + 0.01
+    end
+    # Density against the closed form (freeDensity's own smoothing
+    # included; the largest deviation sits at the lower edge).
+    F = silversteinLaw([1.0], [1.0], 0.5)
+    for x in (0.5, 1.0, 1.5, 2.0, 2.5)
+        @test freeDensity(F, [x])[1] ≈ pdf(MarchenkoPastur(0.5), x) atol = 0.008
+    end
+    # Outside the support the density vanishes (MP edges 0.0858, 2.914).
+    @test freeDensity(F, [3.5])[1] < 0.005
+    # Exact atom rule: max(H({0}), 1 - 1/gamma).
+    @test freeAtoms(silversteinLaw([1.0], [1.0], 2.0)) == [0.0 => 0.5]
+    @test isempty(freeAtoms(silversteinLaw([1.0], [1.0], 0.5)))
+    @test freeAtoms(silversteinLaw([0.0, 2.0], [0.3, 0.7], 0.5)) == [0.0 => 0.3]
+    @test freeAtoms(silversteinLaw([0.0, 2.0], [0.3, 0.7], 3.0)) ==
+        [0.0 => 1 - 1 / 3]
+    # Closed-form moments for multi-mass populations:
+    # m1 = E_H[t], m2 = E_H[t^2] + gamma (E_H[t])^2.
+    for (pts, ms, γ) in (([1.0, 4.0], [0.5, 0.5], 0.1),
+                         ([1.0, 4.0], [0.5, 0.5], 1.5),
+                         ([0.5, 2.0, 5.0], [0.3, 0.4, 0.3], 0.8),
+                         ([0.0, 2.0], [0.3, 0.7], 0.5))
+        F = silversteinLaw(pts, ms, γ)
+        μ1 = sum(ms .* pts)
+        μ2 = sum(ms .* pts .^ 2) + γ * μ1^2
+        @test freeMean(F) ≈ μ1 atol = 0.04 * μ1
+        @test freeVar(F) ≈ μ2 - μ1^2 atol = 0.04 * (μ2 - μ1^2)
+    end
+    # Two-mass support splitting: at gamma = 0.1 the inverse-map
+    # edges are [0.555, 1.408] U [2.485, 6.052] -- the gap midpoint
+    # carries only the smoothing tails, the cluster interiors do not.
+    F2 = silversteinLaw([1.0, 4.0], [0.5, 0.5], 0.1)
+    @test freeDensity(F2, [1.95])[1] < 0.02
+    @test freeDensity(F2, [0.9])[1] > 0.3
+    @test freeDensity(F2, [4.0])[1] > 0.08
+    # Formed-matrix check of the splitting (seeded): no eigenvalues
+    # in the predicted gap, extremes at the predicted outer edges.
+    Random.seed!(20261113)
+    p, γ = 300, 0.1
+    n = round(Int, p / γ)
+    sq = sqrt.(vcat(fill(1.0, p ÷ 2), fill(4.0, p - p ÷ 2)))
+    X = randn(p, n) ./ sqrt(n)
+    ev = eigvals(Symmetric((sq .* X) * (sq .* X)'))
+    @test count(x -> 1.55 < x < 2.35, ev) / p < 0.01
+    @test 0.35 < ev[1] < 0.75
+    @test 5.6 < ev[end] < 6.5
+    # At gamma = 0.5 the same population has a single interval:
+    # the former gap is populated.
+    @test freeDensity(silversteinLaw([1.0, 4.0], [0.5, 0.5], 0.5), [1.95])[1] > 0.05
+    # FreeMeasure entry point: H the Marcenko-Pastur grid law itself
+    # (E_H[t] = 1, E_H[t^2] = 1.5), gamma = 0.4: m1 = 1, var = 0.9.
+    F3 = silversteinLaw(freePoissonLaw(0.5), 0.4)
+    @test freeMean(F3) ≈ 1.0 atol = 0.02
+    @test freeVar(F3) ≈ 0.9 atol = 0.03
+    # Distributions entry point: H = Gamma(2, 1.5) (mean 3,
+    # E[t^2] = 13.5), gamma = 0.5: m1 = 3, var = 18 - 9 = 9. The
+    # bands include the quantile-discretization error of the
+    # unbounded population (measured 3.006 / 9.006 at hpoints = 401).
+    F4 = silversteinLaw(Gamma(2, 1.5), 0.5)
+    @test freeMean(F4) ≈ 3.0 atol = 0.1
+    @test freeVar(F4) ≈ 9.0 atol = 0.45
+    # Degenerate population and validation.
+    @test silversteinLaw([0.0], [1.0], 0.5).nodes == [0.0]
+    @test_throws ArgumentError silversteinLaw([1.0], [1.0], 0.0)
+    @test_throws ArgumentError silversteinLaw([1.0], [1.0], -1.0)
+    @test_throws ArgumentError silversteinLaw([-1.0, 2.0], [0.5, 0.5], 0.5)
+    @test_throws ArgumentError silversteinLaw([1.0], [-1.0], 0.5)
+    @test_throws ArgumentError silversteinLaw(Float64[], Float64[], 0.5)
 end
 
 @testset "RIE finite-size bias (characterized)" begin

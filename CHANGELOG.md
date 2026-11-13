@@ -12,6 +12,29 @@ user triggers Registrator.
 
 ### Added
 
+- `silversteinLaw(points, masses, gamma)` (also from a `FreeMeasure`
+  or a `Distributions` law): the limiting spectral distribution of a
+  sample covariance `(1/n) T^{1/2} X X' T^{1/2}` with a general
+  population spectral distribution `H` and aspect `gamma = p/n` —
+  the general-population law of which `MarchenkoPastur` is the
+  `H = delta_1` case. The law is computed from the Silverstein
+  equation (Silverstein & Choi, J. Multivariate Anal. 54(2), 1995,
+  Eq. (1.3); Bai & Silverstein, 2010, Ch. 4): Newton solution of the
+  companion Stieltjes transform with the exact conversion
+  `munderline = -(1 - gamma)/z + gamma * m_F`, density by Stieltjes
+  inversion on a grid, support edges from the critical values of the
+  inverse map `z(m)`, and the exact atom at 0 of mass
+  `max(H({0}), 1 - 1/gamma)`. Returned as a `FreeMeasure`, since the
+  law is defined only implicitly (no closed-form density, cdf, or
+  sampler); a `Distributions` population is discretized on an
+  equal-weight quantile grid first. Calibrated against the exact
+  anchors before the test bands were set: `H = delta_1` reproduces
+  `MarchenkoPastur` (edges exact, density to ~1e-3 in the interior),
+  the closed-form first two moments hold to <= 0.3% at the default
+  resolution (0.9% for the mean at the edge-singular `gamma = 1`),
+  and the two-mass support-splitting transition matches
+  formed-matrix simulation (no eigenvalues in the predicted gap).
+
 - `BetaLaguerre` now covers the singular case `n < p`: the
   constructor accepts any `n >= 1`, and `rand` returns the full
   `p`-eigenvalue spectrum of the singular Gram matrix — `p - n`

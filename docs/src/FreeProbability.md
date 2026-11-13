@@ -72,6 +72,37 @@ comp = freeCompress(freePoissonLaw(0.5), 0.5)
 (mean = round(freeMean(comp), digits = 3), var = round(freeVar(comp), digits = 3))
 ```
 
+## General populations: the Silverstein equation
+
+For a sample covariance ``(1/n) T^{1/2} X X' T^{1/2}`` whose
+population spectral distribution ``H`` is not a point mass,
+`silversteinLaw` computes the limiting law ``F`` from the
+Silverstein equation — the companion Stieltjes transform
+``\underline m`` is the unique upper-half-plane solution of
+``\underline m = -(z - \gamma \int t/(1 + t\underline m)\, dH(t))^{-1}``,
+with ``\underline m(z) = -(1-\gamma)/z + \gamma m_F(z)`` recovering
+the transform of ``F`` itself. The exact moments are
+``\int x\,dF = \int t\,dH`` and ``\int x^2 dF = \int t^2 dH +
+\gamma(\int t\,dH)^2``; below, a two-point population with mean
+``2.5`` and second moment ``8.5`` at ``\gamma = 0.5`` has exact
+(mean, variance) ``(2.5,\ 8.5 + 0.5 \cdot 2.5^2 - 2.5^2) =
+(2.5,\ 5.375)``, and the solver lands within its calibrated ~0.3%
+of both:
+
+```@example freeprob
+sg = silversteinLaw([1.0, 4.0], [0.5, 0.5], 0.5)
+(mean = round(freeMean(sg), digits = 3), var = round(freeVar(sg), digits = 3))
+```
+
+At ``\gamma = 0.1`` the same population's support splits into two
+clusters (the density at the former gap midpoint ``x = 1.95`` is
+essentially zero, against ``0.74`` inside the first cluster):
+
+```@example freeprob
+sg2 = silversteinLaw([1.0, 4.0], [0.5, 0.5], 0.1)
+round.(freeDensity(sg2, [0.9, 1.95, 4.0]), digits = 3)
+```
+
 ```@docs
 FreeMeasure
 semicircleLaw
@@ -85,6 +116,7 @@ sTransform
 freeAdd
 freeMul
 freeCompress
+silversteinLaw
 freeDensity
 freeAtoms
 freeMean
