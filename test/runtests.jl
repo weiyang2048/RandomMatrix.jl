@@ -870,7 +870,7 @@ end
     @test cdf(d2, quantile(d2, 0.3)) ≈ 0.3 atol = 1e-3
     xs = -6:0.005:3
     @test sum(pdf.(d2, xs)) * 0.005 ≈ 1.0 atol = 0.01
-    @test_throws ArgumentError cdf(TracyWidom(3), 0.0)
+    @test 0 < cdf(TracyWidom(3), 0.0) < 1
     @test isfinite(rand(TracyWidom(3)))
     μ, σ = twScaling(400, 200)
     @test μ ≈ (sqrt(399) + sqrt(200))^2 / 400
@@ -925,6 +925,63 @@ end
     xs4 = [RandomMatrix._tw_tridiagonal_sample(rng4, 4; N=1000) for _ in 1:4000]
     @test -2.306884893241 - 0.08 < mean(xs4) < -2.306884893241 + 0.08
     @test 0.5177237207726 - 0.10 < var(xs4) < 0.5177237207726 + 0.10
+end
+
+@testset "Tracy-Widom general beta" begin
+    using Distributions: cdf, pdf, quantile
+    # The Bloemendal solver against the analytic laws at beta = 1, 2
+    # and, under the 2^(1/6) SAO -> classic rescaling, at beta = 4
+    # (the pdf picks up the Jacobian factor 2^(1/6)). Bands are set
+    # from the calibration runs: at beta = 2 (the most accurate
+    # reference) the solver agrees to 2.4e-6 in the cdf; at beta = 1
+    # and 4 the shipped analytic tables' own accuracy (~7e-5 and
+    # ~5e-5, attained in the tails) sets the floor.
+    for (β, tolF, tolf) in ((1.0, 2e-4, 5e-4), (2.0, 1e-5, 1e-5),
+                            (4.0, 1.5e-4, 1.5e-4))
+        s, F, f = RandomMatrix._tw_beta_solve(β)
+        d = TracyWidom(Int(β))
+        sc = β == 4.0 ? 2^(1 / 6) : 1.0
+        @test maximum(abs.(F .- cdf.(d, sc .* s))) < tolF
+        @test maximum(abs.(f .- sc .* pdf.(d, sc .* s))) < tolf
+    end
+    # Solver moments against the analytic constants at beta = 1, 2.
+    t1 = RandomMatrix._tw_gen_table(1.0)
+    @test t1.mean ≈ -1.2065335745820 atol = 1e-3
+    @test t1.var ≈ 1.607781034581 atol = 1e-3
+    t2 = RandomMatrix._tw_gen_table(2.0)
+    @test t2.mean ≈ -1.771086807411 atol = 1e-3
+    @test t2.var ≈ 0.8131947928329 atol = 1e-3
+    # General-beta moments, calibrated against Dumitriu-Edelman Monte
+    # Carlo (finite-N bias accounted) before the bands were set.
+    @test mean(TracyWidom(0.5)) ≈ -0.10500 atol = 0.01
+    @test var(TracyWidom(0.5)) ≈ 3.19670 atol = 0.02
+    @test mean(TracyWidom(3)) ≈ -1.96050 atol = 0.01
+    @test var(TracyWidom(3)) ≈ 0.54569 atol = 0.01
+    @test mean(TracyWidom(6)) ≈ -2.14979 atol = 0.01
+    @test var(TracyWidom(6)) ≈ 0.27520 atol = 0.01
+    # Large beta: the law concentrates at the first Airy zero
+    # -2.338107, with published asymptotics mean ~ -2.33811 + 1.12/beta
+    # and var ~ 1.6697/beta.
+    @test -2.338107 < mean(TracyWidom(20)) < mean(TracyWidom(10)) <
+          mean(TracyWidom(3))
+    @test mean(TracyWidom(20)) ≈ -2.338107 + 1.12 / 20 atol = 0.005
+    @test var(TracyWidom(20)) ≈ 1.6697 / 20 atol = 0.005
+    # cdf/pdf/quantile coherence at a general beta.
+    d3 = TracyWidom(3)
+    for p in (0.05, 0.25, 0.5, 0.75, 0.95)
+        @test cdf(d3, quantile(d3, p)) ≈ p atol = 2e-3
+    end
+    xs3 = -7:0.005:3
+    @test sum(pdf.(d3, xs3)) * 0.005 ≈ 1.0 atol = 0.01
+    @test all(>=(0), pdf.(d3, xs3))
+    # The Dumitriu-Edelman sampler and the computed law describe the
+    # same distribution (seeded; bands carry the sampler's finite-N
+    # bias at N = 250 and Monte Carlo error at 4000 reps).
+    rng = MersenneTwister(20261113)
+    xs = [rand(rng, d3) for _ in 1:4000]
+    @test mean(xs) ≈ mean(d3) atol = 0.06
+    @test var(xs) ≈ var(d3) atol = 0.06
+    @test maximum(abs.(cdf.(d3, sort(xs)) .- (1:4000) ./ 4000)) < 0.045
 end
 
 @testset "MANOVA Tracy-Widom test" begin
