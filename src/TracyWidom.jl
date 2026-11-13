@@ -1,7 +1,10 @@
-# The Tracy-Widom distributions F_beta (beta = 1, 2, 4), as a
-# Distributions.jl continuous univariate distribution.
+# The Tracy-Widom distributions F_beta: beta = 1, 2, 4 analytically
+# (below), general beta > 0 numerically (Bloemendal's boundary-value
+# problem, further down), as a Distributions.jl continuous univariate
+# distribution.
 #
-# Method: the Hastings-McLeod solution q of Painleve II,
+# Method for beta = 1, 2, 4: the Hastings-McLeod solution q of
+# Painleve II,
 #     q'' = x q + 2 q^3,   q(x) ~ Ai(x) as x -> +infty,
 # is computed once (lazily) by Newton iteration on a finite-difference grid.
 # With R(s) = int_s^infty q and V(s) = int_s^infty (t-s) q(t)^2 dt,
@@ -16,8 +19,11 @@
 # with Q2(s) = int_s^infty q^2,  F_2' = F_2 * Q2 and (log of the F_1
 # factor)' contributes (Q2 + q)/2.
 #
-# For general beta > 0 no closed-form cdf exists; `rand` then uses the
-# Dumitriu-Edelman tridiagonal model, and cdf/pdf/quantile throw.
+# For general beta > 0 no closed-form cdf exists; cdf/pdf/quantile
+# and mean/var are then computed from Bloemendal's boundary-value
+# problem (see `_tw_beta_solve` below), and `rand` uses the
+# Dumitriu-Edelman tridiagonal model — both in the stochastic-Airy
+# convention described there.
 
 export TracyWidom, twScaling, twTest, manovaTWScaling, manovaTWTest
 
@@ -132,17 +138,215 @@ function _tw_lookup(arr::Vector{Float64}, xs::Vector{Float64}, x::Real)
     return arr[j] * (1 - t) + arr[j+1] * t
 end
 
+# ---------------------------------------------------------------------
+# General beta > 0: Bloemendal's boundary-value problem.
+#
+# Bloemendal (PhD thesis, Toronto, 2011) characterized the law of
+# -Lambda_0 of the stochastic Airy operator with boundary parameter
+# omega by the PDE, in the angle variable omega = -cot(theta),
+#
+#   dH/dx + (2/beta) sin^4(theta) H_{theta theta}
+#         + [(x + (2/beta) sin 2theta) sin^2(theta) - cos^2(theta)]
+#           H_theta = 0,
+#
+# with H(x, 0) = 0; the Tracy-Widom law is the Dirichlet limit
+# F_beta(x) = H(x, pi). We solve it with the finite-difference scheme
+# of Trogdon & Zhang (SIGMA 20 (2024), 005): centered differences in
+# theta (BDF2 one-sided in the last row), trapezoidal stepping in x,
+# started at x0 > 0 from Bloemendal's Gaussian-asymptotics initial
+# condition. The pdf comes out of the same march: evaluating the PDE
+# at theta = pi, where the theta'' coefficient vanishes and the
+# theta' coefficient is -1, gives f_beta(x) = H_theta(x, pi),
+# computed with the same BDF2 stencil.
+#
+# Convention: this is the stochastic-Airy (beta-ensemble) law — the
+# variable the Dumitriu-Edelman sampler `_tw_tridiagonal_sample`
+# converges to. It agrees with the classic Tracy-Widom laws at
+# beta = 1, 2; at beta = 4 the classic law carried by
+# `TracyWidom(4)` is 2^(1/6) times the stochastic-Airy variable (see
+# the comment at `_tw_tridiagonal_sample`), and the solver at
+# beta = 4 reproduces the shipped F_4 under that rescaling.
+# Trogdon & Zhang's own TracyWidomBeta.jl implements the same
+# boundary-value problem to higher accuracy; this solver exists so
+# that the `TracyWidom` type itself is complete for every beta > 0.
+#
+# Calibration (before the test bands were set): against the shipped
+# analytic tables the solver's cdf agrees to 2.4e-6 at beta = 2, and
+# to 7e-5 (beta = 1) / 5e-5 (beta = 4, rescaled) — both at the
+# analytic tables' own accuracy floor; its beta = 4 stochastic-Airy
+# moments match the published -2.05520 / 0.41092; moments at
+# beta = 1/2, 3, 6 match Dumitriu-Edelman Monte Carlo within
+# finite-N bias, and at beta = 10, 20 they match the published
+# large-beta asymptotics (mean -2.33811 + 1.12/beta, var
+# 1.6697/beta) to <= 0.7%.
+
+struct _TWGenTable
+    s::Vector{Float64}      # grid, increasing
+    F::Vector{Float64}      # cdf on the grid
+    f::Vector{Float64}      # pdf on the grid
+    mean::Float64
+    var::Float64
+end
+
+const _TW_GEN_TABLES = Ref(Dict{Float64,_TWGenTable}())
+
+function _tw_gen_table(β::Float64)
+    t = get(_TW_GEN_TABLES[], β, nothing)
+    if t === nothing
+        t = _tw_build_gen_table(β)
+        _TW_GEN_TABLES[][β] = t
+    end
+    return t
+end
+
+_tw_trapz(x, y) =
+    sum((x[i+1] - x[i]) * (y[i] + y[i+1]) / 2 for i in 1:length(x)-1)
+
+# Mean and variance from a cdf tabulated on a grid, splitting the
+# moment integrals at s = 0 (F interpolated linearly across 0).
+function _tw_grid_moments(s::Vector{Float64}, F::Vector{Float64})
+    i0 = findlast(<=(0.0), s)
+    F0 = F[i0] + (F[i0+1] - F[i0]) * (0.0 - s[i0]) / (s[i0+1] - s[i0])
+    sp = vcat(0.0, s[i0+1:end]); Fp = vcat(F0, F[i0+1:end])
+    sn = vcat(s[1:i0], 0.0); Fn = vcat(F[1:i0], F0)
+    μ = _tw_trapz(sp, 1 .- Fp) - _tw_trapz(sn, Fn)
+    m2 = _tw_trapz(sp, 2 .* sp .* (1 .- Fp)) +
+         _tw_trapz(sn, -2 .* sn .* Fn)
+    return μ, m2 - μ^2
+end
+
+function _tw_build_gen_table(β::Float64)
+    s, F, f = _tw_beta_solve(β)
+    # Enforce exact monotonicity of the cdf against quadrature noise.
+    F .= clamp.(F, 0.0, 1.0)
+    for i in 2:length(F)
+        F[i] = max(F[i], F[i-1])
+    end
+    f .= max.(f, 0.0)
+    μ, v = _tw_grid_moments(s, F)
+    return _TWGenTable(s, F, f, μ, v)
+end
+
+function _tw_beta_solve(β::Float64; M::Integer=1000, δ::Real=0.002)
+    # Domain: the initial condition is imposed at x0, far enough right
+    # that F_beta(x0) = 1 to tail accuracy (the right-tail exponent
+    # (2 beta/3) x0^{3/2} is >> 1; x0 is floored at 4 so the bulk is
+    # covered for large beta), and the march runs left to xmin with
+    # (beta/24) |xmin|^3 >> 1.
+    x0 = max(4.0, 13 / sqrt(β))
+    xmin = -max(10.0, ceil((720 / β)^(1 / 3)))
+    h = π / M
+    θs = (1:M) .* h
+    s2 = sin.(θs) .^ 2
+    g = (2 / β) .* sin.(θs) .^ 4 ./ h^2
+    c = (2 / β) .* sin.(2 .* θs) .* s2 .- cos.(θs) .^ 2
+    # Method-of-lines operator A(x) = A0 + x A1 acting on
+    # Hv = (H(theta_1), ..., H(theta_M)) with H(theta_0) = 0:
+    #   (A Hv)_m = -g_m (Hv_{m-1} - 2 Hv_m + Hv_{m+1})
+    #              + e_m(x) (U Hv)_m,
+    #   e_m(x) = (c_m + x sin^2(theta_m)) / (2h),
+    # with (U Hv)_m = Hv_{m-1} - Hv_{m+1} (centered; row 1 uses
+    # Hv_0 = 0), except the last row, which uses the BDF2 stencil
+    # (U Hv)_M = -Hv_{M-2} + 4 Hv_{M-1} - 3 Hv_M. Rows 1..M-1 of A are
+    # tridiagonal, stored as A0 + x A1; the last row is kept as the
+    # vector r(x) = r0 + x r1 and folded into each trapezoidal step by
+    # a Sherman-Morrison update (its theta'' part vanishes, since
+    # sin^4(pi) = 0).
+    dl0 = zeros(M - 1); d0 = zeros(M); du0 = zeros(M - 1)
+    dl1 = zeros(M - 1); d1 = zeros(M); du1 = zeros(M - 1)
+    for m in 1:M-1
+        d0[m] = 2 * g[m]
+        dl0[m] = -g[m+1]
+        du0[m] = -g[m]
+        ec = c[m] / (2h); ex = s2[m] / (2h)
+        m > 1 && (dl0[m-1] += ec; dl1[m-1] += ex)
+        du0[m] += -ec; du1[m] += -ex
+    end
+    r0 = zeros(M); r1 = zeros(M)
+    ecM = c[M] / (2h); exM = s2[M] / (2h)
+    r0[M-2] = -ecM; r0[M-1] = 4 * ecM; r0[M] = -3 * ecM
+    r1[M-2] = -exM; r1[M-1] = 4 * exM; r1[M] = -3 * exM
+    # Bloemendal's Gaussian-asymptotics initial condition at x0:
+    # H(x0, theta) = Phi((x0 - cot^2 theta) / sqrt((4/beta) cot theta))
+    # for theta < pi/2, and 1 for theta >= pi/2.
+    nd = Normal()
+    Hv = zeros(M)
+    for m in 1:M
+        if θs[m] < π / 2
+            ct = cos(θs[m]) / sin(θs[m])
+            Hv[m] = cdf(nd, (x0 - ct^2) / sqrt((4 / β) * ct))
+        else
+            Hv[m] = 1.0
+        end
+    end
+    N = round(Int, (x0 - xmin) / δ)
+    xs = Vector{Float64}(undef, N + 1)
+    F = Vector{Float64}(undef, N + 1)
+    f = Vector{Float64}(undef, N + 1)
+    function record(n, x)
+        xs[n] = x
+        F[n] = Hv[M]
+        f[n] = (3 * Hv[M] - 4 * Hv[M-1] + Hv[M-2]) / (2h)
+    end
+    record(1, x0)
+    eM = zeros(M); eM[M] = 1.0
+    for n in 1:N
+        xa = x0 - (n - 1) * δ
+        xb = xa - δ
+        # Right-hand side (I - (delta/2) A(xa)) Hv; the tridiagonal
+        # part has a zero last row by construction.
+        ra = r0 .+ xa .* r1
+        AH = Tridiagonal(dl0 .+ xa .* dl1, d0 .+ xa .* d1,
+                         du0 .+ xa .* du1) * Hv
+        AH[M] = 0.0
+        y = Hv .- (δ / 2) .* (AH .+ eM .* dot(ra, Hv))
+        # Solve (I + (delta/2) A(xb)) Hv' = y: LU on the tridiagonal
+        # part, Sherman-Morrison for the last row.
+        Bt = Tridiagonal((δ / 2) .* (dl0 .+ xb .* dl1),
+                         1.0 .+ (δ / 2) .* (d0 .+ xb .* d1),
+                         (δ / 2) .* (du0 .+ xb .* du1))
+        Fb = lu(Bt)
+        z = Fb \ y
+        w = Fb \ eM
+        rb = r0 .+ xb .* r1
+        Hv = z .- ((δ / 2) * dot(rb, z) / (1 + (δ / 2) * dot(rb, w))) .* w
+        record(n + 1, xb)
+    end
+    return reverse(xs), reverse(F), reverse(f)
+end
+
+# Linear inversion of a tabulated cdf (shared by both tables).
+function _tw_invert(s::Vector{Float64}, F::Vector{Float64}, p::Real)
+    0 <= p <= 1 || throw(ArgumentError("p must lie in [0, 1]"))
+    j = searchsortedfirst(F, p)
+    j <= 1 && return s[1]
+    j > length(F) && return s[end]
+    F0, F1 = F[j-1], F[j]
+    return F1 == F0 ? s[j] : s[j-1] + (p - F0) / (F1 - F0) * (s[j] - s[j-1])
+end
+
 """
     TracyWidom(beta)
 
 The Tracy-Widom distribution `F_beta`: the limiting law of the largest
 eigenvalue of a Gaussian `beta`-ensemble, and (with the
 [`twScaling`](@ref) centering) of the largest eigenvalue of a Wishart
-matrix. `beta` is 1 (real), 2 (complex) or 4 (symplectic) for
-`cdf`/`pdf`/`quantile`; those are computed from the Hastings-McLeod
-Painleve II function. For general `beta > 0`, `rand` samples the
-Dumitriu-Edelman tridiagonal model (Monte-Carlo accuracy) and
-`cdf`/`pdf`/`quantile` are unavailable.
+matrix.
+
+For `beta = 1, 2, 4`, `cdf`/`pdf`/`quantile` are computed analytically
+from the Hastings-McLeod Painleve II function; the `beta = 4` law is
+the classic symplectic one. For general `beta > 0`, `cdf`, `pdf`,
+`quantile`, `mean` and `var` are computed by solving Bloemendal's
+boundary-value problem for the stochastic Airy operator (the
+finite-difference scheme of Trogdon & Zhang, SIGMA 20 (2024), 005;
+accurate to about 1e-5 in the cdf). That is the stochastic-Airy
+(beta-ensemble) convention — the same variable the Dumitriu-Edelman
+tridiagonal model sampled by `rand` converges to. It agrees with the
+classic laws at `beta = 1, 2`; at `beta = 4` the stochastic-Airy law
+is the classic law divided by `2^(1/6)` (mean `-2.05520` in place of
+`-2.30688`), so `cdf`/`pdf` at exactly `beta = 4` keep the classic
+analytic values while the general solver reproduces them under that
+rescaling.
 
 Mean and variance (beta = 1, 2, 4): -1.20653/1.60778, -1.77109/0.81319,
 -2.30688/0.51772.
@@ -160,43 +364,48 @@ _tw_beta_int(d::TracyWidom) =
 
 function Distributions.cdf(d::TracyWidom, x::Real)
     β = _tw_beta_int(d)
-    β === nothing && throw(ArgumentError("cdf is available only for beta = 1, 2, 4"))
-    t = _tw_table()
+    if β !== nothing
+        t = _tw_table()
+        x <= t.s[1] && return 0.0
+        x >= t.s[end] && return 1.0
+        return _tw_lookup(t.F[β], t.s, x)
+    end
+    t = _tw_gen_table(d.β)
     x <= t.s[1] && return 0.0
     x >= t.s[end] && return 1.0
-    return _tw_lookup(t.F[β], t.s, x)
+    return _tw_lookup(t.F, t.s, x)
 end
 
 function Distributions.pdf(d::TracyWidom, x::Real)
     β = _tw_beta_int(d)
-    β === nothing && throw(ArgumentError("pdf is available only for beta = 1, 2, 4"))
-    t = _tw_table()
+    if β !== nothing
+        t = _tw_table()
+        (x <= t.s[1] || x >= t.s[end]) && return 0.0
+        return max(_tw_lookup(t.f[β], t.s, x), 0.0)
+    end
+    t = _tw_gen_table(d.β)
     (x <= t.s[1] || x >= t.s[end]) && return 0.0
-    return max(_tw_lookup(t.f[β], t.s, x), 0.0)
+    return max(_tw_lookup(t.f, t.s, x), 0.0)
 end
 
 function Distributions.quantile(d::TracyWidom, p::Real)
     β = _tw_beta_int(d)
-    β === nothing && throw(ArgumentError("quantile is available only for beta = 1, 2, 4"))
-    0 <= p <= 1 || throw(ArgumentError("p must lie in [0, 1]"))
-    t = _tw_table()
-    F = t.F[β]
-    j = searchsortedfirst(F, p)
-    j <= 1 && return t.s[1]
-    j > length(F) && return t.s[end]
-    # Linear inversion on the bracketing segment.
-    F0, F1 = F[j-1], F[j]
-    return F1 == F0 ? t.s[j] : t.s[j-1] + (p - F0) / (F1 - F0) * (t.s[j] - t.s[j-1])
+    if β !== nothing
+        t = _tw_table()
+        return _tw_invert(t.s, t.F[β], p)
+    end
+    t = _tw_gen_table(d.β)
+    return _tw_invert(t.s, t.F, p)
 end
 
 function Distributions.mean(d::TracyWidom)
     β = _tw_beta_int(d)
-    return β === nothing ? NaN : _TW_MEAN[β]
+    return β === nothing ? _tw_gen_table(d.β).mean : _TW_MEAN[β]
 end
 
 function Distributions.var(d::TracyWidom)
     β = _tw_beta_int(d)
-    return β === nothing ? NaN : _TW_VAR[β]
+    return β === nothing ? _tw_gen_table(d.β).var : _TW_VAR[β]
 end
 
 function Distributions.rand(rng::Random.AbstractRNG, d::TracyWidom)

@@ -3,9 +3,12 @@
 The Tracy–Widom law ``F_\beta`` is the limiting distribution of the
 largest eigenvalue of a Gaussian ``\beta``-ensemble, and — after the
 [`twScaling`](@ref) centering — of the largest eigenvalue of a Wishart
-matrix. The distribution is computed from the Hastings–McLeod solution
-of Painlevé II; published means are ``-1.20653`` (``\beta = 1``),
-``-1.77109`` (``\beta = 2``) and ``-2.30688`` (``\beta = 4``).
+matrix. For ``\beta = 1, 2, 4`` the distribution is computed from the
+Hastings–McLeod solution of Painlevé II; published means are
+``-1.20653`` (``\beta = 1``), ``-1.77109`` (``\beta = 2``) and
+``-2.30688`` (``\beta = 4``). For general ``\beta > 0`` it is computed
+numerically from Bloemendal's boundary-value problem — see the
+General β section below.
 
 ```@docs
 TracyWidom
@@ -38,6 +41,42 @@ scaling to apply to the largest eigenvalue before comparing with
 (mu, sigma) = twScaling(400, 100)
 (mu = round(mu, digits = 3), sigma = round(sigma, digits = 4))
 ```
+
+## General β
+
+For ``\beta \notin \{1, 2, 4\}`` there is no closed form, but
+``F_\beta`` is still fully available: `cdf`, `pdf`, `quantile`,
+`mean` and `var` are computed by solving Bloemendal's boundary-value
+problem for the stochastic Airy operator (Bloemendal, PhD thesis,
+Toronto, 2011) with the finite-difference scheme of Trogdon & Zhang
+(SIGMA 20 (2024), 005) — accurate to about ``10^{-5}`` in the cdf at
+the solver's default resolution. As ``\beta`` grows the law
+concentrates toward the first Airy zero ``-2.33811``; at
+``\beta = 3`` it sits between ``F_2`` and ``F_4``:
+
+```@example tw
+d3 = TracyWidom(3)
+(mean = round(mean(d3), digits = 5), var = round(var(d3), digits = 5),
+ cdf_at_0 = round(cdf(d3, 0.0), digits = 4),
+ q95 = round(quantile(d3, 0.95), digits = 3))
+```
+
+The convention matters. The general-``\beta`` law is the
+*stochastic-Airy* (β-ensemble) law — the limit of the
+Dumitriu–Edelman tridiagonal model that `rand` samples, and of the
+[`BetaHermite`](@ref) edge. It coincides with the classic laws at
+``\beta = 1, 2``, but at ``\beta = 4`` the classic symplectic law
+carried by `TracyWidom(4)` is ``2^{1/6}`` times the stochastic-Airy
+variable (mean ``-2.30688`` against ``-2.05520``). So at exactly
+``\beta = 4`` the package keeps the classic analytic values, while
+the general solver at ``\beta = 4`` reproduces them under that
+rescaling — the same convention the sampler already used. A
+dedicated, higher-accuracy implementation of the same
+boundary-value problem exists as Trogdon & Zhang's
+TracyWidomBeta.jl; the solver here exists so that the `TracyWidom`
+type itself is complete for every ``\beta > 0`` — in particular the
+test machinery below is no longer tied to ``\beta \in \{1, 2, 4\}``
+by the distribution object.
 
 ## Testing the largest eigenvalue
 

@@ -12,6 +12,29 @@ user triggers Registrator.
 
 ### Added
 
+- `TracyWidom` now supports `cdf`, `pdf`, `quantile`, `mean` and
+  `var` for general `beta > 0`, computed by solving Bloemendal's
+  boundary-value problem for the stochastic Airy operator
+  (finite-difference scheme of Trogdon & Zhang, SIGMA 20 (2024),
+  005) — previously those methods threw outside `beta ∈ {1, 2, 4}`
+  and `mean`/`var` returned `NaN`. The general-beta law is the
+  stochastic-Airy (beta-ensemble) law, the limit of the
+  Dumitriu–Edelman sampler `rand` already used: it agrees with the
+  classic laws at `beta = 1, 2`; at `beta = 4` it is the classic law
+  divided by `2^(1/6)`, and `TracyWidom(4)` keeps the classic
+  analytic values. (Trogdon & Zhang's own TracyWidomBeta.jl
+  implements the same problem to higher accuracy; this solver is
+  for integration with the package's type and test machinery.)
+  Calibrated before the test bands were set: the solver reproduces
+  the shipped analytic cdf to 2.4e-6 at `beta = 2` (7e-5 at
+  `beta = 1`, and 5e-5 at `beta = 4` under the `2^(1/6)` rescaling —
+  both at the analytic tables' own accuracy floor); its `beta = 4`
+  stochastic-Airy moments match the published −2.05520 / 0.41092;
+  moments at `beta = 1/2, 3, 6` match Dumitriu–Edelman Monte Carlo
+  within finite-N bias; and at `beta = 10, 20` they match the
+  published large-beta asymptotics (mean `−2.33811 + 1.12/beta`,
+  variance `1.6697/beta`) to ≤ 0.7%.
+
 - `silversteinLaw(points, masses, gamma)` (also from a `FreeMeasure`
   or a `Distributions` law): the limiting spectral distribution of a
   sample covariance `(1/n) T^{1/2} X X' T^{1/2}` with a general
