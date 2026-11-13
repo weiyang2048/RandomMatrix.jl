@@ -56,6 +56,8 @@ include("SpikedCovariance.jl")
 
 include("SpikedManova.jl")
 
+include("SpikedWigner.jl")
+
 include("CovarianceCleaning.jl")
 
 include("TracyWidom.jl")
