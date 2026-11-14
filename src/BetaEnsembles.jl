@@ -40,8 +40,13 @@ function _beta_laguerre_tridiagonal(rng::Random.AbstractRNG, β::Real,
     d = [sqrt(rand(rng, Chisq(β * (n - i + 1)))) / sqrt(β) for i in 1:p]
     e = [sqrt(rand(rng, Chisq(β * (p - i + 1)))) / sqrt(β) for i in 2:p]
     # T = B'B for the lower bidiagonal B with diagonal d, subdiagonal e
-    # (e[i] is B[i+1, i]): T_ii = d_i^2 + e_{i-1}^2, T_{i,i+1} = e_i d_i+1.
-    td = d .^ 2 .+ vcat(0.0, e .^ 2)
+    # (e[i] is B[i+1, i]): T_ii = d_i^2 + e_i^2 (with e_p := 0) and
+    # T_{i,i+1} = e_i d_{i+1}. Both pieces must come from the SAME Gram
+    # matrix: pairing this diagonal with the BB' diagonal
+    # d_i^2 + e_{i-1}^2 instead assembles a matrix that is neither B'B
+    # nor BB' and corrupts the hard edge (negative eigenvalues at
+    # beta = 1, E[n lambda_min] inflated ~30x at beta = 2).
+    td = d .^ 2 .+ vcat(e .^ 2, 0.0)
     te = e .* d[2:end]
     return SymTridiagonal(td, te)
 end

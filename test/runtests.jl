@@ -1150,6 +1150,50 @@ end
         @test 0.97 < mean(mean, pos) / 200 < 1.03
         @test 1.18 < mean(mean(abs2, μ) for μ in pos) / 200^2 < 1.32
     end
+    # Hard-edge regression tests (2026-11-14). The bidiagonal builder
+    # once paired the BB' diagonal with the B'B off-diagonal, so the
+    # assembled tridiagonal was neither Gram matrix: invisible in the
+    # bulk and at the soft edge (every test above passed), but at the
+    # square hard edge it produced negative eigenvalues at beta = 1
+    # and an E[n lambda_min] inflated ~30x at beta = 2. These tests
+    # look at the hard edge directly.
+    using Distributions: Chisq
+    # (i) Spectra are nonnegative at every beta and shape, singular
+    # shapes included (their zeros are the exact structural ones).
+    rngn = MersenneTwister(20261117)
+    for (β, n, p) in ((1, 100, 100), (2, 100, 100), (4, 100, 100),
+                      (1, 30, 60), (2, 50, 200), (0.5, 80, 80))
+        @test all(λ -> minimum(λ) >= -1e-10,
+                  (rand(rngn, BetaLaguerre(β, n, p)) for _ in 1:100))
+    end
+    # (ii) Moment anchor at the square hard edge: E[n lambda_min] at
+    # n = p = 100 has finite-n mean 0.698 (beta = 1) / 1.001
+    # (beta = 2), calibrated from the corrected sampler at 20,000
+    # reps (se 0.007, sd ~1.0). The bands are +-0.15, about +-6.5
+    # standard errors at the 2,000 reps used here; on the pre-fix
+    # code the same statistics were -27 and +35.
+    rnghe = MersenneTwister(20261118)
+    @test 0.55 < mean(100 * minimum(rand(rnghe, BetaLaguerre(1, 100, 100)))
+                      for _ in 1:2000) < 0.85
+    @test 0.85 < mean(100 * minimum(rand(rnghe, BetaLaguerre(2, 100, 100)))
+                      for _ in 1:2000) < 1.15
+    # (iii) Same-draws consistency: on identical chi draws the
+    # builder's spectrum equals the spectrum of the explicitly formed
+    # Gram matrix B'B (whose spectrum in turn equals that of BB').
+    let β = 2.0, n = 60, p = 60
+        T = RandomMatrix._beta_laguerre_tridiagonal(Xoshiro(99), β, n, p)
+        rngd = Xoshiro(99)
+        d = [sqrt(rand(rngd, Chisq(β * (n - i + 1)))) / sqrt(β) for i in 1:p]
+        e = [sqrt(rand(rngd, Chisq(β * (p - i + 1)))) / sqrt(β) for i in 2:p]
+        B = zeros(p, p)
+        for i in 1:p
+            B[i, i] = d[i]
+        end
+        for k in 1:(p - 1)
+            B[k + 1, k] = e[k]
+        end
+        @test eigvals(T) ≈ eigvals(Hermitian(Matrix(B' * B))) atol = 1e-8
+    end
     # Laguerre edge vs Johnstone scaling at beta = 1 (calibration
     # mean -1.224 at (400, 100), 400 reps).
     μt, σt = twScaling(400, 100)

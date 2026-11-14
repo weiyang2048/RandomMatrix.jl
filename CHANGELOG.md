@@ -12,6 +12,19 @@ user triggers Registrator.
 
 ### Fixed
 
+- `BetaLaguerre` hard-edge fix: `_beta_laguerre_tridiagonal` paired
+  the BB' diagonal with the B'B off-diagonal, so the assembled
+  tridiagonal was neither Gram matrix. The bulk and the soft edge
+  were unaffected (the trace identity, bulk moments and soft-edge
+  calibrations all passed), but the hard edge was corrupted: draws
+  at beta = 1 contained negative eigenvalues, and E[n lambda_min]
+  at beta = 2 was inflated ~30x. The diagonal now comes from the
+  same Gram matrix (B'B) as the off-diagonal. Fixed-seed draws
+  change: the seed-to-spectrum map was wrong, so a given seed now
+  yields the correct (different) spectrum. New regression tests
+  cover nonnegativity at the hard edge, an E[n lambda_min] moment
+  anchor at beta = 1, 2, and same-draws consistency of the builder
+  against an explicitly formed Gram matrix.
 - Docs/exports drift (sweep finding RM-1): the exported legacy typo
   alias `randEllipic` is now documented as an alias of `randElliptic`
   (its docstring had been attached to the `randElliptic(n)` convenience
