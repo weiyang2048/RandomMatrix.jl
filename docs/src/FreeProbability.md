@@ -103,6 +103,8 @@ essentially zero, against ``0.74`` inside the first cluster):
 ```@example freeprob
 sg2 = silversteinLaw([1.0, 4.0], [0.5, 0.5], 0.1)
 round.(freeDensity(sg2, [0.9, 1.95, 4.0]), digits = 3)
+```
+
 ## Free Bessel laws
 
 `FreeBessel(s, t)` is the free Bessel law ``\pi_{s,t}`` of Banica,
