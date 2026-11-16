@@ -39,6 +39,12 @@
 # E[sum lam] = p n1 / (n1 + n2) holds at every beta (the matrix-Beta
 # mean at beta = 1, 2; the Aomoto integral for the joint density in
 # general), and the empirical law tends to Wachter(p/n1, p/n2).
+# For n_i < p the corresponding Wishart is singular: the spectrum
+# has p - n1 exact zeros and p - n2 exact ones, and the eigenvalues
+# in (0, 1) form a nonsingular ensemble of dual dimensions — the
+# Gram swap again, with the parameter exchange spelled out in the
+# BetaJacobi docstring. E[sum lam] = p n1 / (n1 + n2) survives in
+# every regime with n1 + n2 >= p.
 
 export BetaHermite, BetaLaguerre, BetaJacobi
 
@@ -240,14 +246,27 @@ so at `beta = 1` and `beta = 2` these are exactly the eigenvalues of
 ``(A + B)^{-1} A`` for real and complex Wishart matrices
 ``A \\sim W_p(I, n_1)``, ``B \\sim W_p(I, n_2)``. `rand` returns the
 `p` eigenvalues as a sorted vector; `rand(rng, d, k)` draws `k`
-spectra as the columns of a `p x k` matrix. Requires `n1 >= p` and
-`n2 >= p` (the nonsingular regime: for `n_i < p` the spectrum has
-atoms at `0` or `1`, which the Beta factors of the model do not
-reach — the same restriction `BetaLaguerre` originally carried).
+spectra as the columns of a `p x k` matrix. Requires `n1 >= 1`,
+`n2 >= 1` and `n1 + n2 >= p`.
+
+For `n_i < p` the corresponding Wishart is singular and the
+spectrum carries atoms: `p - n1` eigenvalues are exactly `0` and
+`p - n2` exactly `1` — the masses the [`Wachter`](@ref) law places
+at the endpoints when `p / n_i > 1`. The eigenvalues in `(0, 1)`
+follow a nonsingular `BetaJacobi` ensemble of dual dimensions, by
+the same Gram swap as in [`BetaLaguerre`](@ref): for
+`n1 < p <= n2` they are `BetaJacobi(beta, n1, p, n1 + n2 - p)`, for
+`n2 < p <= n1` the reflection of
+`BetaJacobi(beta, n2, p, n1 + n2 - p)`, and for `n1, n2 < p` they
+are `BetaJacobi(beta, n1 + n2 - p, n2, n1)`. For `n1 + n2 < p` the
+sum `A + B` is itself singular and ``(A + B)^{-1} A`` does not
+exist, so the constructor throws.
 
 The exact identity `E[sum λᵢ] = p * n1 / (n1 + n2)` holds at every
-`beta`, so `mean(d) = fill(n1 / (n1 + n2), p)`; the empirical
-distribution converges to [`Wachter`](@ref)`(p/n1, p/n2)`. Swapping
+`beta` (the atoms and the dual ensemble keep it exact in the
+singular regimes too), so `mean(d) = fill(n1 / (n1 + n2), p)`; the
+empirical distribution converges to
+[`Wachter`](@ref)`(p/n1, p/n2)`. Swapping
 `n1` and `n2` reflects the spectrum: `1 .- reverse(λ)` for
 `BetaJacobi(beta, p, n2, n1)` has the law of
 `BetaJacobi(beta, p, n1, n2)`. At `p = 1` the single eigenvalue is
@@ -277,10 +296,10 @@ struct BetaJacobi <: ContinuousMultivariateDistribution
         (isfinite(β) && β > 0) ||
             throw(ArgumentError("beta must be positive and finite, got β = $β"))
         p >= 1 || throw(ArgumentError("BetaJacobi requires p >= 1, got p = $p"))
-        n1 >= p || throw(ArgumentError(
-            "BetaJacobi requires n1 >= p (nonsingular numerator Wishart), got n1 = $n1, p = $p"))
-        n2 >= p || throw(ArgumentError(
-            "BetaJacobi requires n2 >= p (nonsingular denominator Wishart), got n2 = $n2, p = $p"))
+        n1 >= 1 || throw(ArgumentError("BetaJacobi requires n1 >= 1, got n1 = $n1"))
+        n2 >= 1 || throw(ArgumentError("BetaJacobi requires n2 >= 1, got n2 = $n2"))
+        n1 + n2 >= p || throw(ArgumentError(
+            "BetaJacobi requires n1 + n2 >= p (otherwise A + B is singular and (A + B)^{-1} A is undefined), got n1 + n2 = $(n1 + n2), p = $p"))
         new(float(β), Int(p), Int(n1), Int(n2))
     end
 end
@@ -294,6 +313,37 @@ Distributions.mean(d::BetaJacobi) = fill(d.n1 / (d.n1 + d.n2), d.p)
 
 function Distributions._rand!(rng::Random.AbstractRNG, d::BetaJacobi,
                               x::AbstractVector{<:Real})
-    x .= eigvals(_beta_jacobi_tridiagonal(rng, d.β, d.p, d.n1, d.n2))
+    β, p, n1, n2 = d.β, d.p, d.n1, d.n2
+    if n1 >= p && n2 >= p
+        x .= eigvals(_beta_jacobi_tridiagonal(rng, β, p, n1, n2))
+    elseif n1 < p && n2 >= p
+        # Singular numerator: p - n1 eigenvalues are exactly 0, and
+        # the n1 eigenvalues in (0, 1) are the nonsingular dual
+        # ensemble BetaJacobi(beta, n1, p, n1 + n2 - p) (Gram swap:
+        # the nonzero pencil eigenvalues agree with the dual
+        # problem's, exactly as for BetaLaguerre).
+        x[1:(p - n1)] .= 0.0
+        x[(p - n1 + 1):end] .=
+            eigvals(_beta_jacobi_tridiagonal(rng, β, n1, p, n1 + n2 - p))
+    elseif n2 < p && n1 >= p
+        # Singular denominator: p - n2 eigenvalues are exactly 1,
+        # and the n2 eigenvalues in (0, 1) are the reflection of the
+        # dual ensemble BetaJacobi(beta, n2, p, n1 + n2 - p).
+        x[1:n2] .= 1 .- reverse(
+            eigvals(_beta_jacobi_tridiagonal(rng, β, n2, p, n1 + n2 - p)))
+        x[(n2 + 1):end] .= 1.0
+    else
+        # Both singular (n1 + n2 >= p by construction): p - n1
+        # zeros, p - n2 ones, and the n1 + n2 - p eigenvalues in
+        # (0, 1) are the nonsingular ensemble
+        # BetaJacobi(beta, n1 + n2 - p, n2, n1).
+        q = n1 + n2 - p
+        x[1:(p - n1)] .= 0.0
+        if q > 0
+            x[(p - n1 + 1):n2] .=
+                eigvals(_beta_jacobi_tridiagonal(rng, β, q, n2, n1))
+        end
+        x[(n2 + 1):end] .= 1.0
+    end
     return x
 end

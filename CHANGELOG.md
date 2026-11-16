@@ -10,6 +10,23 @@ user triggers Registrator.
 
 ## [Unreleased]
 
+### Added
+
+- Singular `BetaJacobi` regimes: the sampler now covers `n_i < p`
+  (previously it required `n1, n2 >= p`). The spectrum is `p - n1`
+  exact zeros, `p - n2` exact ones, and the eigenvalues in `(0, 1)`
+  are a nonsingular dual ensemble reached by the Gram swap — the
+  same construction as singular `BetaLaguerre`: for `n1 < p <= n2`
+  the dual is `BetaJacobi(beta, n1, p, n1 + n2 - p)`, for
+  `n2 < p <= n1` its reflection, and for `n1, n2 < p` it is
+  `BetaJacobi(beta, n1 + n2 - p, n2, n1)`. The trace identity
+  `E[sum λᵢ] = p n1 / (n1 + n2)` holds in all regimes. The
+  constructor now requires only `n1, n2 >= 1` with `n1 + n2 >= p`;
+  below that `A + B` is singular and `(A + B)^{-1} A` is undefined,
+  so it throws `ArgumentError`. Calibrated against formed MANOVA
+  matrices at beta = 1, 2 (atom counts exact; interior moments
+  match the dual ensemble).
+
 ### Fixed
 
 - `BetaLaguerre` hard-edge fix: `_beta_laguerre_tridiagonal` paired

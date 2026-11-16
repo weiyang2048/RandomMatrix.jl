@@ -1217,13 +1217,15 @@ end
     @test size(rand(MersenneTwister(7), dj, 3)) == (40, 3)
     @test rand(MersenneTwister(7), dj) == λj0   # seeded reproducibility
     @test mean(dj) == fill(80 / 200, 40)
-    # Validation: the model covers the nonsingular regime n_i >= p.
+    # Validation: beta > 0, p >= 1, n_i >= 1, and n1 + n2 >= p
+    # (below that A + B is singular and (A + B)^{-1} A undefined).
     @test_throws ArgumentError BetaJacobi(0, 10, 20, 20)
     @test_throws ArgumentError BetaJacobi(-1, 10, 20, 20)
     @test_throws ArgumentError BetaJacobi(NaN, 10, 20, 20)
     @test_throws ArgumentError BetaJacobi(1, 0, 20, 20)
-    @test_throws ArgumentError BetaJacobi(1, 10, 9, 20)
-    @test_throws ArgumentError BetaJacobi(1, 10, 20, 9)
+    @test_throws ArgumentError BetaJacobi(1, 10, 0, 20)
+    @test_throws ArgumentError BetaJacobi(1, 10, 20, 0)
+    @test_throws ArgumentError BetaJacobi(1, 10, 4, 5)
     # p = 1: the single eigenvalue is Beta(beta n1/2, beta n2/2).
     rngj1 = MersenneTwister(20261125)
     x1 = [rand(rngj1, BetaJacobi(2, 1, 7, 11))[1] for _ in 1:4000]
@@ -1276,6 +1278,67 @@ end
     xb = reduce(vcat, [1 .- rand(rngjs, BetaJacobi(2, 20, 60, 40))
                         for _ in 1:300])
     @test abs(mean(xa .^ 2) - mean(xb .^ 2)) < 0.012
+    # Singular Jacobi regimes (n_i < p, n1 + n2 >= p): the spectrum
+    # is p - n1 exact zeros, p - n2 exact ones, and the eigenvalues
+    # in (0, 1) are a nonsingular dual ensemble (Gram swap).
+    # Calibration against formed MANOVA matrices at beta = 1, 2
+    # (400 reps): atom counts exact at every rep, and interior
+    # pooled mean/var/m3 matched the dual draws to ~0.004 at
+    # (30, 18, 45), (30, 45, 18) and (30, 20, 22).
+    # (a) n1 < p <= n2: the dual is BetaJacobi(beta, n1, p,
+    # n1 + n2 - p), drawn through the same builder, same stream.
+    dja = BetaJacobi(1, 30, 18, 45)
+    λa = rand(MersenneTwister(7), dja)
+    @test length(λa) == 30 && issorted(λa)
+    @test count(==(0.0), λa) == 12 && all(λ -> 0 < λ < 1, λa[13:end])
+    @test insupport(dja, λa)
+    @test size(rand(MersenneTwister(7), dja, 3)) == (30, 3)
+    @test rand(MersenneTwister(7), dja) == λa   # seeded reproducibility
+    @test λa[13:end] == rand(MersenneTwister(7), BetaJacobi(1, 18, 30, 33))
+    @test mean(dja) == fill(18 / 63, 30)
+    # (b) n2 < p <= n1: the reflection of the dual ensemble.
+    djb = BetaJacobi(2, 30, 45, 18)
+    λb = rand(MersenneTwister(7), djb)
+    @test count(==(1.0), λb) == 12 && all(λ -> 0 < λ < 1, λb[1:18])
+    @test λb[1:18] ==
+          1 .- reverse(rand(MersenneTwister(7), BetaJacobi(2, 18, 30, 33)))
+    # (c) Both singular: the dual is
+    # BetaJacobi(beta, n1 + n2 - p, n2, n1).
+    djc = BetaJacobi(1, 30, 20, 22)
+    λc = rand(MersenneTwister(7), djc)
+    @test count(==(0.0), λc) == 10 && count(==(1.0), λc) == 8
+    @test all(λ -> 0 < λ < 1, λc[11:22])
+    @test λc[11:22] == rand(MersenneTwister(7), BetaJacobi(1, 12, 22, 20))
+    # Boundary n1 + n2 == p: no interior eigenvalues at all.
+    λd = rand(MersenneTwister(7), BetaJacobi(1, 30, 14, 16))
+    @test count(==(0.0), λd) == 16 && count(==(1.0), λd) == 14
+    # Trace identity in the singular regimes, at every beta.
+    rngjsg = MersenneTwister(20261127)
+    for β in (0.5, 1.0, 2.0, 4.0, 3.7)
+        specs = [rand(rngjsg, BetaJacobi(β, 30, 18, 45)) for _ in 1:300]
+        @test all(s -> count(==(0.0), s) == 12, specs)
+        @test 0.98 < mean(sum, specs) / (30 * 18 / 63) < 1.02
+        specs = [rand(rngjsg, BetaJacobi(β, 30, 20, 22)) for _ in 1:300]
+        @test all(s -> count(==(0.0), s) == 10 &&
+                       count(==(1.0), s) == 8, specs)
+        @test 0.98 < mean(sum, specs) / (30 * 20 / 42) < 1.02
+    end
+    # Interior moments vs formed singular MANOVA matrices at
+    # beta = 1 (same comparison style as the nonsingular block
+    # above; formed interior pooled over the (0, 1) eigenvalues).
+    rngjf = MersenneTwister(20261129)
+    ys = reduce(vcat, [
+        begin
+            Am = let X = randn(rngjf, 18, 30); X' * X end
+            Bm = let X = randn(rngjf, 45, 30); X' * X end
+            filter(λ -> 1e-8 < λ < 1 - 1e-8,
+                   eigvals(Symmetric(Am), Symmetric(Am + Bm)))
+        end for _ in 1:300])
+    xs = reduce(vcat, [rand(rngjf, BetaJacobi(1, 30, 18, 45))[13:end]
+                       for _ in 1:300])
+    @test abs(mean(xs) - mean(ys)) < 0.008
+    @test abs(var(xs; corrected = false) - var(ys; corrected = false)) < 0.006
+    @test abs(mean(xs .^ 3) - mean(ys .^ 3)) < 0.010
     # Same-draws consistency: the tridiagonal assembly's spectrum
     # equals the spectrum of the explicitly formed M M' on identical
     # Killip-Nenciu factor draws.
