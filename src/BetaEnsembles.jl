@@ -45,8 +45,20 @@
 # Gram swap again, with the parameter exchange spelled out in the
 # BetaJacobi docstring. E[sum lam] = p n1 / (n1 + n2) survives in
 # every regime with n1 + n2 >= p.
+#
+# Circular: the Killip-Nenciu CMV model (same paper) assembles the
+# five-diagonal unitary C = L M from independent Verblunsky
+# coefficients alpha_k ~ Theta_{beta(n-k-1)+1} — the rotation-
+# invariant disk law with density proportional to
+# (1 - |z|^2)^{(beta(n-k-1)-2)/2}, the last coefficient uniform on
+# the circle — and the eigenvalues of C have joint density
+# prod_{j<k} |e^{i theta_j} - e^{i theta_k}|^beta on the circle:
+# the circular beta-ensemble. At beta = 2 these are the eigenangles
+# of a Haar unitary matrix, with E|tr C^k|^2 = min(k, n)
+# (Diaconis-Shahshahani); at every beta the one-point density is
+# uniform and E[tr C^k] = 0 for k >= 1.
 
-export BetaHermite, BetaLaguerre, BetaJacobi
+export BetaHermite, BetaLaguerre, BetaJacobi, BetaCircular
 
 function _beta_hermite_tridiagonal(rng::Random.AbstractRNG, β::Real, N::Integer)
     dv = sqrt(2 / β) .* randn(rng, N)
@@ -345,5 +357,127 @@ function Distributions._rand!(rng::Random.AbstractRNG, d::BetaJacobi,
         end
         x[(n2 + 1):end] .= 1.0
     end
+    return x
+end
+
+# The Killip-Nenciu Verblunsky coefficients of the circular
+# beta-ensemble: `alpha[j]` is KN's alpha_{j-1} (j = 1..n) and
+# `rho[j] = sqrt(1 - |alpha[j]|^2)`. For j < n, alpha[j] has the
+# Theta_{beta(n-j)+1} law of KN's Definition 1.1: |alpha[j]|^2 ~
+# Beta(1, beta(n-j)/2) with an independent uniform phase (rho[j]
+# is computed from the same Beta draw, not from |alpha[j]|^2, so
+# rounding cannot push it negative). alpha[n] is Theta_1, uniform
+# on the circle, and rho[n] = 0. Draw order is alpha[1], ...,
+# alpha[n], each as (radius, phase); tests rely on it.
+function _beta_circular_coefficients(rng::Random.AbstractRNG, β::Real,
+                                     n::Integer)
+    α = Vector{ComplexF64}(undef, n)
+    ρ = zeros(Float64, n)
+    for j in 1:(n - 1)
+        u = rand(rng, Beta(1, β * (n - j) / 2))
+        α[j] = sqrt(u) * cis(2π * rand(rng))
+        ρ[j] = sqrt(1 - u)
+    end
+    α[n] = cis(2π * rand(rng))
+    return α, ρ
+end
+
+# The CMV matrix C = L M of the coefficients above (KN Theorem 1),
+# with Theta(alpha) = [conj(alpha) rho; rho -alpha]: L is the
+# direct sum of Theta(alpha[1]), Theta(alpha[3]), ... on rows
+# (1, 2), (3, 4), ..., and M of [1], Theta(alpha[2]),
+# Theta(alpha[4]), ... on rows (2, 3), (4, 5), .... Since
+# rho[n] = 0, the Theta(alpha[n]) block decouples and collapses to
+# its (1, 1) entry conj(alpha[n]) at position (n, n) — of L when n
+# is odd, of M when n is even. C is unitary, so its eigenvalues
+# lie on the unit circle.
+function _beta_circular_cmv(rng::Random.AbstractRNG, β::Real, n::Integer)
+    α, ρ = _beta_circular_coefficients(rng, β, n)
+    L = zeros(ComplexF64, n, n)
+    M = zeros(ComplexF64, n, n)
+    for j in 1:2:n
+        if j < n
+            L[j, j] = conj(α[j])
+            L[j, j + 1] = ρ[j]
+            L[j + 1, j] = ρ[j]
+            L[j + 1, j + 1] = -α[j]
+        else
+            L[n, n] = conj(α[n])
+        end
+    end
+    M[1, 1] = 1.0
+    for j in 2:2:n
+        if j < n
+            M[j, j] = conj(α[j])
+            M[j, j + 1] = ρ[j]
+            M[j + 1, j] = ρ[j]
+            M[j + 1, j + 1] = -α[j]
+        else
+            M[n, n] = conj(α[n])
+        end
+    end
+    return L * M
+end
+
+"""
+    BetaCircular(beta, n)
+
+The circular `beta`-ensemble: `n` points on the unit circle with
+joint eigenangle density
+
+    prod_{j<k} |e^{iθⱼ} - e^{iθₖ}|^beta,
+
+sampled from the Killip–Nenciu CMV model. `rand` returns the `n`
+eigenangles as a sorted vector in `(-pi, pi]`; the eigenvalues are
+`exp.(im .* θ)`. It is a `Distributions` multivariate distribution,
+so `rand(rng, d, k)` draws `k` spectra as the columns of an
+`n x k` matrix. Any `beta > 0` is allowed; `beta = 1, 2, 4` are
+Dyson's classical circular ensembles — at `beta = 2` the
+eigenangles are exactly those of a Haar-distributed unitary
+matrix (the CUE), and at `beta = 1` those of a symmetric
+Haar-distributed unitary matrix (the COE).
+
+The sampler builds the CMV matrix `C = L M` from independent
+Verblunsky coefficients `αₖ ~ Θ_{beta(n-k-1)+1}`,
+`k = 0, ..., n - 1`, where `Θ_ν` is the rotation-invariant disk
+law with density proportional to `(1 - |z|^2)^((ν-3)/2)` —
+sampled as `|αₖ|² ~ Beta(1, beta(n-k-1)/2)` with uniform phase —
+and `Θ_1` is the uniform law on the circle, so `α_{n-1}` is a
+uniform phase. The eigenvalues of `C` are the ensemble's points.
+
+The one-point density is uniform on the circle at every `beta`:
+the mean count in an arc `A` is `n |A| / (2π)`, and rotation
+invariance gives `E[tr C^k] = 0` for every `k >= 1`. At
+`beta = 2`, `E|tr C^k|^2 = min(k, n)` exactly
+(Diaconis–Shahshahani), and at `n = 2` every `beta` has the
+exact anchor `E|tr C|^2 = 4 / (beta + 2)`.
+
+```julia
+rand(BetaCircular(2, 100))        # one CUE spectrum of 100 eigenangles
+rand(BetaCircular(0.5, 50), 200)  # 200 spectra as a 50 x 200 matrix
+```
+
+Reference: Killip & Nenciu, "Matrix models for circular
+ensembles", Int. Math. Res. Not. 2004(50), 2004, 2665–2701.
+"""
+struct BetaCircular <: ContinuousMultivariateDistribution
+    β::Float64
+    n::Int
+    function BetaCircular(β::Real, n::Integer)
+        (isfinite(β) && β > 0) ||
+            throw(ArgumentError("beta must be positive and finite, got β = $β"))
+        n >= 1 || throw(ArgumentError("BetaCircular requires n >= 1, got n = $n"))
+        new(float(β), Int(n))
+    end
+end
+
+Base.length(d::BetaCircular) = d.n
+
+Distributions.insupport(d::BetaCircular, x::AbstractVector) =
+    length(x) == d.n && issorted(x) && all(θ -> -π <= θ <= π, x)
+
+function Distributions._rand!(rng::Random.AbstractRNG, d::BetaCircular,
+                              x::AbstractVector{<:Real})
+    x .= sort!(angle.(eigvals(_beta_circular_cmv(rng, d.β, d.n))))
     return x
 end

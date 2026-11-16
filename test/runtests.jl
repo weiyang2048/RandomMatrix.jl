@@ -1367,6 +1367,104 @@ end
                         for _ in 1:300)]
         @test lo < mean(zj) < hi
     end
+    # Circular ensemble (Killip-Nenciu CMV model). Calibration ran
+    # before these bands were set (standalone pilot of the
+    # construction, then the shipped sampler on the seeds below):
+    # unitarity and |eigvals| = 1 to machine precision; coefficient
+    # means E|alpha_k|^2 matched 2/(2 + beta(n-k-1)); the n = 2
+    # anchor, the beta = 2 trace moments and the spacing E[s^2]
+    # below all matched their exact / Haar values (Haar spacing
+    # pilot 1.1809 at beta = 2).
+    dc = BetaCircular(2, 40)
+    @test length(dc) == 40
+    θ0 = rand(MersenneTwister(7), dc)
+    @test length(θ0) == 40 && issorted(θ0) && all(θ -> -π < θ <= π, θ0)
+    @test insupport(dc, θ0)
+    @test !insupport(dc, reverse(θ0))
+    @test size(rand(MersenneTwister(7), dc, 3)) == (40, 3)
+    @test rand(MersenneTwister(7), dc) == θ0   # seeded reproducibility
+    # Validation: beta > 0 (finite) and n >= 1.
+    @test_throws ArgumentError BetaCircular(0, 10)
+    @test_throws ArgumentError BetaCircular(-1, 10)
+    @test_throws ArgumentError BetaCircular(NaN, 10)
+    @test_throws ArgumentError BetaCircular(Inf, 10)
+    @test_throws ArgumentError BetaCircular(1, 0)
+    # n = 1: the single eigenangle is uniform on the circle
+    # (calibration means -0.0002 / -0.0091 at 4,000 reps).
+    rngc1 = MersenneTwister(20261130)
+    u1 = [rand(rngc1, BetaCircular(2, 1))[1] for _ in 1:4000]
+    @test abs(mean(cos, u1)) < 0.04 && abs(mean(sin, u1)) < 0.04
+    # Same-draws consistency + unitarity: the builder's CMV matrix
+    # is unitary with spectrum on the circle, and its eigenangles
+    # are exactly what rand returns on the same stream.
+    let β = 2.0, n = 25
+        C = RandomMatrix._beta_circular_cmv(Xoshiro(99), β, n)
+        @test C' * C ≈ I
+        @test all(λ -> abs(abs(λ) - 1) < 1e-10, eigvals(C))
+        @test sort(angle.(eigvals(C))) ≈
+              rand(Xoshiro(99), BetaCircular(β, n)) atol = 1e-8
+    end
+    # n = 2 exact anchor at every beta: E|tr C|^2 = 4/(beta + 2),
+    # from E cos(theta_1 - theta_2) = -beta/(beta + 2) under the
+    # |e^{iθ_1} - e^{iθ_2}|^beta density (calibration deviations
+    # <= 0.040 at 4,000 reps).
+    rngc2 = MersenneTwister(20261201)
+    for β in (0.5, 1.0, 2.0, 4.0, 3.7)
+        v = mean(abs2(sum(exp.(im .* rand(rngc2, BetaCircular(β, 2)))))
+                 for _ in 1:4000)
+        @test abs(v - 4 / (β + 2)) < 0.09
+    end
+    # Rotation invariance at every beta: E tr C = 0 (calibration
+    # |mean| <= 0.052 at 1,500 reps) and the mean count in a half
+    # circle is n/2 (uniform one-point density; calibration
+    # 19.98-20.05).
+    rngc3 = MersenneTwister(20261202)
+    for β in (0.5, 1.0, 2.0, 4.0)
+        specs = [rand(rngc3, BetaCircular(β, 40)) for _ in 1:1500]
+        @test abs(mean(sum(exp.(im .* θ)) for θ in specs)) < 0.55
+        @test 19.0 < mean(count(θ -> -π / 2 < θ < π / 2, s)
+                          for s in specs) < 21.0
+    end
+    # beta = 2 is the CUE: E|tr C^k|^2 = min(k, n) exactly
+    # (Diaconis-Shahshahani; calibration deviations <= 0.017 at
+    # 3,000 reps).
+    rngc4 = MersenneTwister(20261203)
+    specs = [rand(rngc4, BetaCircular(2, 30)) for _ in 1:3000]
+    for k in (1, 2, 3)
+        @test abs(mean(abs2(sum(exp.(im .* k .* θ))) for θ in specs) - k) < 0.18
+    end
+    # beta = 1 is the COE: E|tr C|^2 against formed symmetric
+    # unitary matrices V = U'U with U Haar (calibration 1.944 for
+    # the sampler vs 1.956 formed, 3,000 reps each).
+    rngc6 = MersenneTwister(20261206)
+    xs = mean(abs2(sum(exp.(im .* rand(rngc6, BetaCircular(1, 30)))))
+              for _ in 1:3000)
+    Random.seed!(20261206)
+    ys = mean(abs2(tr(begin
+                U = randUnitary(30)
+                transpose(U) * U
+            end)) for _ in 1:3000)
+    @test abs(xs - ys) < 0.12
+    # Spacing: unfolded cyclic gaps s have mean exactly 1, and
+    # E[s^2] decreases with beta as the repulsion strengthens
+    # (calibration at n = 60, 800 reps: 1.285 / 1.181 / 1.103 for
+    # beta = 1 / 2 / 4; the beta = 2 value matches Haar unitary
+    # spectra, pilot 1.1809).
+    rngc5 = MersenneTwister(20261205)
+    function gapm2(β)
+        acc = 0.0
+        cnt = 0
+        for _ in 1:800
+            θ = rand(rngc5, BetaCircular(β, 60))
+            gaps = diff(vcat(θ, θ[1] + 2π)) .* (60 / (2π))
+            acc += sum(abs2, gaps)
+            cnt += length(gaps)
+        end
+        return acc / cnt
+    end
+    @test 1.24 < gapm2(1.0) < 1.33
+    @test 1.14 < gapm2(2.0) < 1.22
+    @test 1.07 < gapm2(4.0) < 1.14
 end
 
 @testset "Free probability" begin

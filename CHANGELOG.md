@@ -12,6 +12,21 @@ user triggers Registrator.
 
 ### Added
 
+- `BetaCircular(beta, n)`: the circular beta-ensemble eigenangle
+  sampler, completing the classical beta families next to
+  `BetaHermite`, `BetaLaguerre` and `BetaJacobi`. The sampler
+  builds the Killip–Nenciu CMV matrix `C = L M` from independent
+  Verblunsky coefficients `α_k ~ Θ_{beta(n-k-1)+1}` (sampled as
+  `|α_k|² ~ Beta(1, beta(n-k-1)/2)` with uniform phase; the last
+  coefficient is uniform on the circle) and returns the sorted
+  eigenangles in `(-pi, pi]`; the eigenvalues are `exp.(im .* θ)`.
+  At beta = 2 the eigenangles are exactly those of a Haar unitary
+  matrix, at beta = 1 those of a symmetric Haar unitary (COE).
+  Calibrated before test bands: unitarity and `|λ| = 1` to machine
+  precision, the exact anchors `E|tr C|² = 4 / (beta + 2)` at
+  `n = 2` and `E|tr C^k|² = min(k, n)` at beta = 2, a formed-COE
+  comparison at beta = 1, and spacing `E[s²]` against Haar spectra.
+
 - Singular `BetaJacobi` regimes: the sampler now covers `n_i < p`
   (previously it required `n1, n2 >= p`). The spectrum is `p - n1`
   exact zeros, `p - n2` exact ones, and the eigenvalues in `(0, 1)`

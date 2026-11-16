@@ -17,6 +17,7 @@ twTest
 BetaHermite
 BetaLaguerre
 BetaJacobi
+BetaCircular
 ```
 
 ## Worked example
@@ -216,7 +217,7 @@ follow `MarchenkoPastur(p/n)` — here ``p/n = 1/4``, so the mean is
 (round(mean(μ), digits = 3), round(maximum(μ), digits = 2))
 ```
 
-[`BetaJacobi`](@ref) completes the family: it samples the full
+[`BetaJacobi`](@ref) samples the full
 MANOVA spectrum at any ``\beta > 0`` from the Killip–Nenciu
 bidiagonal model. At ``\beta = 1, 2`` its spectra are exactly the
 eigenvalues of ``(A + B)^{-1} A`` for real / complex Wisharts, and
@@ -228,4 +229,19 @@ following `Wachter(p/n_1, p/n_2)`:
 ν = rand(BetaJacobi(1, 100, 200, 300))
 (round(mean(ν), digits = 3), round(minimum(ν), digits = 3),
  round(maximum(ν), digits = 3))
+```
+
+[`BetaCircular`](@ref) is the circular member of the family: it
+samples the eigenangles of the circular ``\beta``-ensemble at any
+``\beta > 0`` from the Killip–Nenciu CMV model. At ``\beta = 2``
+the eigenangles are those of a Haar unitary matrix, so
+``\mathrm{tr}\, C = \sum_j e^{i\theta_j}`` has
+``E|\mathrm{tr}\, C|^2 = 1``; at every ``\beta`` the one-point
+density is uniform on the circle, so about half of the angles
+fall in any half circle:
+
+```@example tw
+θ = rand(BetaCircular(2, 400))
+(round(abs(sum(exp.(im .* θ))), digits = 1),
+ count(t -> -π / 2 < t < π / 2, θ))
 ```
