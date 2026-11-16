@@ -39,6 +39,28 @@ user triggers Registrator.
 
 ### Added
 
+- `BetaJacobi(beta, p, n1, n2)`: the Jacobi (MANOVA) beta-ensemble
+  spectrum sampler, completing the beta-ensemble family next to
+  `BetaHermite` / `BetaLaguerre`. `rand` returns the sorted
+  eigenvalues of `(A + B)^{-1} A` at any `beta > 0`, from the
+  Killip–Nenciu bidiagonal model (Killip & Nenciu, Int. Math. Res.
+  Not. 2004(50); bidiagonal statement as in Holcomb & Moreno
+  Flores, arXiv:1203.4170, Thm. 2): the joint density is
+  `prod lam^a (1 - lam)^b prod |lam_j - lam_k|^beta` with
+  `a = beta/2 (n1 - p + 1) - 1`, `b = beta/2 (n2 - p + 1) - 1`, so
+  at `beta = 1, 2` the spectra are exactly those of real / complex
+  Wishart MANOVA matrices. Requires `n1, n2 >= p` (the nonsingular
+  regime; spectra with atoms at 0 or 1 are not covered). The exact
+  identity `E[sum lam] = p n1 / (n1 + n2)` holds at every beta, the
+  empirical law tends to `Wachter(p/n1, p/n2)`, at `p = 1` the
+  single eigenvalue is `Beta(beta n1/2, beta n2/2)`, and swapping
+  `n1, n2` reflects the spectrum about 1/2. Calibrated before the
+  test bands were set: pooled moments against formed MANOVA
+  matrices match to ~0.003 with pooled KS 0.005 at beta = 1, 2;
+  the Wachter bulk moments and the `manovaTWScaling` edge means
+  match at the same accuracy; a same-draws test pins the
+  tridiagonal assembly against the explicitly formed `M M'`.
+
 - `TracyWidom` now supports `cdf`, `pdf`, `quantile`, `mean` and
   `var` for general `beta > 0`, computed by solving Bloemendal's
   boundary-value problem for the stochastic Airy operator

@@ -1201,6 +1201,109 @@ end
     z = [(maximum(rand(rngw, BetaLaguerre(1, 400, 100))) / 400 - μt) / σt
          for _ in 1:150]
     @test -1.55 < mean(z) < -0.9
+    # Jacobi ensemble (Killip-Nenciu model). Calibration ran before
+    # these bands were set (prototype with the dense formed M, then
+    # the shipped sampler): against formed MANOVA matrices at
+    # beta = 1, 2 the pooled moments matched to ~0.003 and the pooled
+    # KS distance was 0.005 at (p, n1, n2) = (20, 40, 60), 400 reps;
+    # the Wachter bulk and the manovaTW edge means below matched at
+    # the same accuracy.
+    dj = BetaJacobi(2, 40, 80, 120)
+    @test length(dj) == 40
+    λj0 = rand(MersenneTwister(7), dj)
+    @test length(λj0) == 40 && issorted(λj0) && all(λ -> 0 <= λ <= 1, λj0)
+    @test insupport(dj, λj0)
+    @test !insupport(dj, reverse(λj0))
+    @test size(rand(MersenneTwister(7), dj, 3)) == (40, 3)
+    @test rand(MersenneTwister(7), dj) == λj0   # seeded reproducibility
+    @test mean(dj) == fill(80 / 200, 40)
+    # Validation: the model covers the nonsingular regime n_i >= p.
+    @test_throws ArgumentError BetaJacobi(0, 10, 20, 20)
+    @test_throws ArgumentError BetaJacobi(-1, 10, 20, 20)
+    @test_throws ArgumentError BetaJacobi(NaN, 10, 20, 20)
+    @test_throws ArgumentError BetaJacobi(1, 0, 20, 20)
+    @test_throws ArgumentError BetaJacobi(1, 10, 9, 20)
+    @test_throws ArgumentError BetaJacobi(1, 10, 20, 9)
+    # p = 1: the single eigenvalue is Beta(beta n1/2, beta n2/2).
+    rngj1 = MersenneTwister(20261125)
+    x1 = [rand(rngj1, BetaJacobi(2, 1, 7, 11))[1] for _ in 1:4000]
+    @test 0.36 < mean(x1) < 0.42        # Beta(7, 11) mean 7/18 = 0.3889
+    @test 0.009 < var(x1) < 0.017       # Beta(7, 11) var 0.0126
+    # Trace identity E[sum lam] = p n1/(n1 + n2) is exact at every
+    # beta (calibration ratios 0.997-1.003 at 300 reps).
+    rngjt = MersenneTwister(20261121)
+    for β in (0.5, 1.0, 2.0, 4.0, 3.7)
+        specs = [rand(rngjt, BetaJacobi(β, 30, 45, 75)) for _ in 1:300]
+        @test 0.98 < mean(sum, specs) / (30 * 45 / 120) < 1.02
+        @test all(λ -> 0 <= minimum(λ) && maximum(λ) <= 1, specs)
+    end
+    # Pooled moments vs formed MANOVA matrices at beta = 1, 2
+    # (calibration: model 0.4006/0.0494/0.1257 and 0.3994/0.0479/
+    # 0.1230 for mean/var/m3; MANOVA 0.4009/0.0500/0.1268 and
+    # 0.4002/0.0479/0.1235).
+    rngjm = MersenneTwister(20261122)
+    for β in (1.0, 2.0)
+        xs = reduce(vcat, [rand(rngjm, BetaJacobi(β, 20, 40, 60))
+                           for _ in 1:300])
+        @test 0.385 < mean(xs) < 0.415
+        @test 0.043 < var(xs; corrected = false) < 0.055
+        @test 0.112 < mean(xs .^ 3) < 0.138
+    end
+    rngmf = MersenneTwister(20261126)
+    ys = reduce(vcat, [
+        begin
+            Am = let X = randn(rngmf, 40, 20); X' * X end
+            Bm = let X = randn(rngmf, 60, 20); X' * X end
+            eigvals(Symmetric(Am), Symmetric(Am + Bm))
+        end for _ in 1:300])
+    xs1 = reduce(vcat, [rand(rngmf, BetaJacobi(1, 20, 40, 60))
+                        for _ in 1:300])
+    @test abs(mean(xs1) - mean(ys)) < 0.008
+    @test abs(var(xs1; corrected = false) - var(ys; corrected = false)) < 0.006
+    @test abs(mean(xs1 .^ 3) - mean(ys .^ 3)) < 0.010
+    # Wachter bulk: (p, n1, n2) = (100, 200, 150) has gamma = (0.5, 2/3),
+    # Wachter mean 0.5714, var 0.0700 (calibration 0.5714 / 0.0705).
+    rngjw = MersenneTwister(20261123)
+    xw = reduce(vcat, [rand(rngjw, BetaJacobi(1, 100, 200, 150))
+                       for _ in 1:200])
+    @test 0.555 < mean(xw) < 0.588
+    @test 0.062 < var(xw; corrected = false) < 0.079
+    # Swap symmetry: 1 .- spectrum of the (n2, n1) ensemble has the
+    # (n1, n2) law (calibration m2 0.2079 vs reflected 0.2077).
+    rngjs = MersenneTwister(20261124)
+    xa = reduce(vcat, [rand(rngjs, BetaJacobi(2, 20, 40, 60))
+                       for _ in 1:300])
+    xb = reduce(vcat, [1 .- rand(rngjs, BetaJacobi(2, 20, 60, 40))
+                        for _ in 1:300])
+    @test abs(mean(xa .^ 2) - mean(xb .^ 2)) < 0.012
+    # Same-draws consistency: the tridiagonal assembly's spectrum
+    # equals the spectrum of the explicitly formed M M' on identical
+    # Killip-Nenciu factor draws.
+    let β = 2.0, p = 30, n1 = 50, n2 = 70
+        T = RandomMatrix._beta_jacobi_tridiagonal(Xoshiro(99), β, p, n1, n2)
+        d, s = RandomMatrix._beta_jacobi_factors(Xoshiro(99), β, p, n1, n2)
+        M = zeros(p, p)
+        for i in 1:p
+            M[i, i] = d[i]
+        end
+        for k in 1:(p - 1)
+            M[k + 1, k] = s[k]
+        end
+        @test eigvals(T) ≈ eigvals(Hermitian(M * transpose(M))) atol = 1e-10
+    end
+    # Jacobi edge vs Johnstone's MANOVA scaling at beta = 1, 2: our
+    # numerator Wishart A (n1 dof) is the hypothesis matrix of
+    # manovaTWScaling(p, m, n), so m = n2, n = n1 (calibration z means
+    # -1.121 at beta = 1 and -1.765 at beta = 2, 400 reps at
+    # (40, 80, 120); TW means -1.207 / -1.771).
+    for (β, lo, hi) in ((1, -1.65, -0.75), (2, -2.05, -1.45))
+        μj, σj = manovaTWScaling(40, 120, 80; beta = β)
+        rngje = MersenneTwister(20261120 + β)
+        zj = [(log(maximum(λ) / (1 - maximum(λ))) - μj) / σj
+              for λ in (rand(rngje, BetaJacobi(β, 40, 80, 120))
+                        for _ in 1:300)]
+        @test lo < mean(zj) < hi
+    end
 end
 
 @testset "Free probability" begin

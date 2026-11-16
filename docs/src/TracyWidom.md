@@ -16,6 +16,7 @@ twScaling
 twTest
 BetaHermite
 BetaLaguerre
+BetaJacobi
 ```
 
 ## Worked example
@@ -213,4 +214,18 @@ follow `MarchenkoPastur(p/n)` — here ``p/n = 1/4``, so the mean is
 ```@example tw
 μ = rand(BetaLaguerre(1, 400, 100)) ./ 400
 (round(mean(μ), digits = 3), round(maximum(μ), digits = 2))
+```
+
+[`BetaJacobi`](@ref) completes the family: it samples the full
+MANOVA spectrum at any ``\beta > 0`` from the Killip–Nenciu
+bidiagonal model. At ``\beta = 1, 2`` its spectra are exactly the
+eigenvalues of ``(A + B)^{-1} A`` for real / complex Wisharts, and
+at every ``\beta`` the mean eigenvalue is exactly
+``n_1 / (n_1 + n_2)`` — here ``200 / 500 = 0.4`` — with the bulk
+following `Wachter(p/n_1, p/n_2)`:
+
+```@example tw
+ν = rand(BetaJacobi(1, 100, 200, 300))
+(round(mean(ν), digits = 3), round(minimum(ν), digits = 3),
+ round(maximum(ν), digits = 3))
 ```

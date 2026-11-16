@@ -26,8 +26,21 @@
 # eigenvalues are the nonsingular ensemble with (n, p) exchanged, so
 # the singular case routes through the same bidiagonal builder with
 # the arguments swapped. E[sum lam] = n p holds in both cases.
+#
+# Jacobi: the Killip-Nenciu model (Killip & Nenciu, Int. Math. Res.
+# Not. 2004(50)) gives a lower bidiagonal M, built from independent
+# square roots of Beta variables (the cosine/sine factors below),
+# whose MM' has eigenvalue density
+#     prod_i lam_i^a (1 - lam_i)^b * prod_{i<j} |lam_i - lam_j|^beta,
+#     a = beta/2 (n1 - p + 1) - 1,  b = beta/2 (n2 - p + 1) - 1,
+# the beta-Jacobi (MANOVA) ensemble: at beta = 1 and beta = 2 these
+# are exactly the eigenvalue laws of (A + B)^{-1} A for real and
+# complex Wisharts A ~ W_p(I, n1), B ~ W_p(I, n2). The exact identity
+# E[sum lam] = p n1 / (n1 + n2) holds at every beta (the matrix-Beta
+# mean at beta = 1, 2; the Aomoto integral for the joint density in
+# general), and the empirical law tends to Wachter(p/n1, p/n2).
 
-export BetaHermite, BetaLaguerre
+export BetaHermite, BetaLaguerre, BetaJacobi
 
 function _beta_hermite_tridiagonal(rng::Random.AbstractRNG, β::Real, N::Integer)
     dv = sqrt(2 / β) .* randn(rng, N)
@@ -173,5 +186,114 @@ function Distributions._rand!(rng::Random.AbstractRNG, d::BetaLaguerre,
         x[(d.p - d.n + 1):end] .=
             eigvals(_beta_laguerre_tridiagonal(rng, d.β, d.p, d.n))
     end
+    return x
+end
+
+# The Killip-Nenciu factors of the beta-Jacobi bidiagonal M: `d` is
+# its diagonal (length p) and `s` its subdiagonal (length p - 1,
+# s[k] = M[k + 1, k]). With C_k, Ct_k independent and
+# S_k = sqrt(1 - C_k^2), St_k = sqrt(1 - Ct_k^2):
+#   d[k] = C_k * St_k (k < p),  d[p] = C_p;   s[k] = S_{k + 1} * Ct_k,
+#   C_k  ~ sqrt(Beta(beta/2 (n1 - p + k), beta/2 (n2 - p + k))),
+#   Ct_k ~ sqrt(Beta(beta/2 k, beta/2 (n1 + n2 - 2p + k + 1))).
+# (Statement as in Holcomb & Moreno Flores, arXiv:1203.4170, Thm. 2.)
+# Draw order is C_1..C_p then Ct_1..Ct_{p-1}; tests rely on it.
+function _beta_jacobi_factors(rng::Random.AbstractRNG, β::Real,
+                              p::Integer, n1::Integer, n2::Integer)
+    C = [sqrt(rand(rng, Beta(β / 2 * (n1 - p + k), β / 2 * (n2 - p + k))))
+         for k in 1:p]
+    Ct = [sqrt(rand(rng, Beta(β / 2 * k, β / 2 * (n1 + n2 - 2p + k + 1))))
+          for k in 1:(p - 1)]
+    S = sqrt.(1 .- C .^ 2)
+    St = sqrt.(1 .- Ct .^ 2)
+    d = vcat(C[1:(p - 1)] .* St, C[p])
+    s = S[2:p] .* Ct
+    return d, s
+end
+
+function _beta_jacobi_tridiagonal(rng::Random.AbstractRNG, β::Real,
+                                  p::Integer, n1::Integer, n2::Integer)
+    d, s = _beta_jacobi_factors(rng, β, p, n1, n2)
+    # T = M M' for the lower bidiagonal M with diagonal d and
+    # subdiagonal s: T_ii = d_i^2 + s_{i-1}^2 (with s_0 := 0) and
+    # T_{i,i+1} = d_i s_i. Both pieces come from the SAME M: pairing
+    # this diagonal with the M'M off-diagonal instead assembles a
+    # matrix that is neither Gram matrix (the BetaLaguerre hard-edge
+    # bug of 2026-11-14 was exactly that pairing mistake).
+    td = d .^ 2 .+ vcat(0.0, s .^ 2)
+    te = d[1:(p - 1)] .* s
+    return SymTridiagonal(td, te)
+end
+
+"""
+    BetaJacobi(beta, p, n1, n2)
+
+The Jacobi (MANOVA) `beta`-ensemble: the eigenvalue distribution of
+``(A + B)^{-1} A`` at general `beta > 0`, sampled from the
+Killip–Nenciu bidiagonal model. The joint density of the `p`
+eigenvalues on `[0, 1]` is
+
+    prodᵢ λᵢ^a (1 - λᵢ)^b * prod_{i<j} |λᵢ - λⱼ|^beta,
+    a = beta/2 * (n1 - p + 1) - 1,  b = beta/2 * (n2 - p + 1) - 1,
+
+so at `beta = 1` and `beta = 2` these are exactly the eigenvalues of
+``(A + B)^{-1} A`` for real and complex Wishart matrices
+``A \\sim W_p(I, n_1)``, ``B \\sim W_p(I, n_2)``. `rand` returns the
+`p` eigenvalues as a sorted vector; `rand(rng, d, k)` draws `k`
+spectra as the columns of a `p x k` matrix. Requires `n1 >= p` and
+`n2 >= p` (the nonsingular regime: for `n_i < p` the spectrum has
+atoms at `0` or `1`, which the Beta factors of the model do not
+reach — the same restriction `BetaLaguerre` originally carried).
+
+The exact identity `E[sum λᵢ] = p * n1 / (n1 + n2)` holds at every
+`beta`, so `mean(d) = fill(n1 / (n1 + n2), p)`; the empirical
+distribution converges to [`Wachter`](@ref)`(p/n1, p/n2)`. Swapping
+`n1` and `n2` reflects the spectrum: `1 .- reverse(λ)` for
+`BetaJacobi(beta, p, n2, n1)` has the law of
+`BetaJacobi(beta, p, n1, n2)`. At `p = 1` the single eigenvalue is
+`Beta(beta * n1 / 2, beta * n2 / 2)` distributed. The largest
+eigenvalue, on the logit scale, is centered by
+[`manovaTWScaling`](@ref) at `beta = 1, 2`.
+
+```julia
+rand(BetaJacobi(1, 100, 200, 300))   # one real MANOVA spectrum
+rand(BetaJacobi(4, 50, 80, 80))      # a beta = 4 spectrum, no matrix exists
+```
+
+References: Killip & Nenciu, "Matrix models for circular
+ensembles", Int. Math. Res. Not. 2004(50), 2004, 2665–2701;
+Edelman & Sutton, "The beta-Jacobi matrix model, the CS
+decomposition, and generalized singular value problems", Found.
+Comput. Math. 8, 2008, 259–285; the bidiagonal statement used here
+is Theorem 2 of Holcomb & Moreno Flores, "Edge scaling of the
+β-Jacobi ensemble", arXiv:1203.4170.
+"""
+struct BetaJacobi <: ContinuousMultivariateDistribution
+    β::Float64
+    p::Int
+    n1::Int
+    n2::Int
+    function BetaJacobi(β::Real, p::Integer, n1::Integer, n2::Integer)
+        (isfinite(β) && β > 0) ||
+            throw(ArgumentError("beta must be positive and finite, got β = $β"))
+        p >= 1 || throw(ArgumentError("BetaJacobi requires p >= 1, got p = $p"))
+        n1 >= p || throw(ArgumentError(
+            "BetaJacobi requires n1 >= p (nonsingular numerator Wishart), got n1 = $n1, p = $p"))
+        n2 >= p || throw(ArgumentError(
+            "BetaJacobi requires n2 >= p (nonsingular denominator Wishart), got n2 = $n2, p = $p"))
+        new(float(β), Int(p), Int(n1), Int(n2))
+    end
+end
+
+Base.length(d::BetaJacobi) = d.p
+
+Distributions.insupport(d::BetaJacobi, x::AbstractVector) =
+    length(x) == d.p && issorted(x) && all(λ -> 0 <= λ <= 1, x)
+
+Distributions.mean(d::BetaJacobi) = fill(d.n1 / (d.n1 + d.n2), d.p)
+
+function Distributions._rand!(rng::Random.AbstractRNG, d::BetaJacobi,
+                              x::AbstractVector{<:Real})
+    x .= eigvals(_beta_jacobi_tridiagonal(rng, d.β, d.p, d.n1, d.n2))
     return x
 end
