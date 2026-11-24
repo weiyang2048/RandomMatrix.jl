@@ -12,6 +12,17 @@ user triggers Registrator.
 
 ### Added
 
+- `gapRatios(evals)` / `meanGapRatio(evals)`: adjacent gap ratios
+  $r_n = \min(s_n, s_{n+1}) / \max(s_n, s_{n+1})$ of consecutive
+  spacings, in `src/Spacing.jl`. The ratio needs no unfolding (the
+  local density cancels), so the mean is a one-number diagnostic of
+  local spectral statistics against the Atas, Bogomolny, Giraud &
+  Roux (Phys. Rev. Lett. 110, 084101 (2013)) anchors: Poisson
+  $2 \log 2 - 1 \approx 0.3863$, GOE $\approx 0.5307$,
+  GUE $\approx 0.5996$, GSE $\approx 0.6744$. Calibrated before test
+  bands against the package's own `BetaHermite` samplers and Poisson
+  spectra.
+
 - `BetaCircular(beta, n)`: the circular beta-ensemble eigenangle
   sampler, completing the classical beta families next to
   `BetaHermite`, `BetaLaguerre` and `BetaJacobi`. The sampler

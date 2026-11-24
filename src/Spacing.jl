@@ -1,4 +1,4 @@
-export wignersurmise, unfoldedeigvals, unfoldedSpacings, numberVariance
+export wignersurmise, unfoldedeigvals, unfoldedSpacings, numberVariance, gapRatios, meanGapRatio
 
 """
 ```julia
@@ -110,3 +110,61 @@ function numberVariance(E::Array, l::Float64)
 
     return stat / n
 end
+
+"""
+    gapRatios(E)
+
+Adjacent gap ratios of the spectrum `E`: with the spacings
+``s_n = E_{n+1} - E_n`` of the sorted eigenvalues,
+
+```math
+r_n = \\frac{\\min(s_n, s_{n+1})}{\\max(s_n, s_{n+1})} \\in [0, 1].
+```
+
+Unlike the spacing distribution or [`numberVariance`](@ref), the ratio
+needs no unfolding: the local level density cancels between consecutive
+spacings, so `gapRatios` applies directly to a raw spectrum. A ratio of
+exactly `0` is returned where both spacings of a pair vanish (a triple
+degeneracy). `E` is not mutated. See [`meanGapRatio`](@ref) for the
+standard summary statistic and its exact reference values.
+
+Reference: Atas, Bogomolny, Giraud & Roux, "Distribution of the ratio
+of consecutive level spacings in random matrix ensembles", Phys. Rev.
+Lett. 110, 084101 (2013).
+
+# Examples
+```julia
+gapRatios([0.0, 1.0, 3.0, 4.0])   # spacings 1, 2, 1 -> [0.5, 0.5]
+```
+"""
+function gapRatios(E::AbstractVector{<:Real})
+    n = length(E)
+    n >= 3 || throw(ArgumentError("gapRatios needs at least 3 eigenvalues, got $n"))
+    all(isfinite, E) || throw(ArgumentError("gapRatios needs finite eigenvalues"))
+    s = diff(sort!(collect(E)))
+    return [iszero(max(s[i], s[i + 1])) ? 0.0 : min(s[i], s[i + 1]) / max(s[i], s[i + 1])
+            for i in 1:(length(s) - 1)]
+end
+
+"""
+    meanGapRatio(E)
+
+Mean adjacent gap ratio ``\\langle r \\rangle`` of the spectrum `E`
+(see [`gapRatios`](@ref)). Because the ratio needs no unfolding, this
+single number is the standard first diagnostic for the local statistics
+of a spectrum. Exact / large-``n`` reference values (Atas et al. 2013):
+
+- uncorrelated (Poisson) levels: ``2 \\log 2 - 1 \\approx 0.3863``,
+- GOE (``\\beta = 1``): ``\\approx 0.5307``,
+- GUE (``\\beta = 2``): ``\\approx 0.5996``,
+- GSE (``\\beta = 4``): ``\\approx 0.6744``.
+
+Finite spectra sit slightly above these bulk values; compare bulk
+(interior) eigenvalues for a sharp test.
+
+# Examples
+```julia
+meanGapRatio([0.0, 1.0, 3.0, 4.0])   # 0.5
+```
+"""
+meanGapRatio(E::AbstractVector{<:Real}) = sum(gapRatios(E)) / (length(E) - 2)

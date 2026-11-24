@@ -338,6 +338,30 @@ end
     E = sort(randn(50))
     @test length(unfoldedSpacings(E)) == 49
     @test numberVariance(float.(collect(1:20)), 2.0) >= 0
+    # Adjacent gap ratios: exact deterministic anchors
+    @test gapRatios([0.0, 1.0, 3.0, 4.0]) == [0.5, 0.5]
+    @test gapRatios([3.0, 0.0, 4.0, 1.0]) == [0.5, 0.5]  # sorts internally
+    @test gapRatios(float.(collect(1:10))) == ones(8)    # equal spacings
+    @test gapRatios([0.0, 0.0, 0.0, 1.0]) == [0.0, 0.0]  # degenerate pair -> 0
+    @test meanGapRatio([0.0, 1.0, 3.0, 4.0]) == 0.5
+    @test_throws ArgumentError gapRatios([1.0, 2.0])
+    @test_throws ArgumentError gapRatios([1.0, NaN, 3.0])
+    Ecopy = [3.0, 0.0, 4.0, 1.0]
+    gapRatios(Ecopy)
+    @test Ecopy == [3.0, 0.0, 4.0, 1.0]  # input not mutated
+    # Seeded calibration against the Atas et al. (2013) anchors:
+    # Poisson 2 log 2 - 1 = 0.3863, GOE 0.5307, GUE 0.5996 (bulk values;
+    # finite spectra sit slightly above, bands set from the prototype run)
+    grng = MersenneTwister(20261123)
+    @test abs(meanGapRatio(rand(grng, 4000)) - (2 * log(2) - 1)) < 0.02
+    for (beta, anchor) in ((1, 0.5307), (2, 0.5996))
+        pooled = Float64[]
+        for _ in 1:40
+            bulk = rand(grng, BetaHermite(beta, 120))[21:100]
+            append!(pooled, gapRatios(bulk))
+        end
+        @test abs(sum(pooled) / length(pooled) - anchor) < 0.02
+    end
     A = randHermitian(6)
     R = Resolvent(A)
     @test R(0.5 + 0.1im) * (A - (0.5 + 0.1im) * I) ≈ I atol = 1e-8

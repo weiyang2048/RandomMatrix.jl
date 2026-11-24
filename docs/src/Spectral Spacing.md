@@ -16,6 +16,30 @@ unfoldedSpacings
 ```@docs
 numberVariance
 ```
+
+## Adjacent gap ratios
+
+The adjacent gap ratio $r_n = \min(s_n, s_{n+1}) / \max(s_n, s_{n+1})$
+of consecutive spacings needs no unfolding — the local level density
+cancels in the ratio — so its mean is a one-number diagnostic of the
+local statistics: $\langle r \rangle \approx 0.3863$ for uncorrelated
+(Poisson) levels, $0.5307$ (GOE), $0.5996$ (GUE) and $0.6744$ (GSE)
+(Atas, Bogomolny, Giraud & Roux, Phys. Rev. Lett. 110, 084101 (2013)).
+
+```@docs
+gapRatios
+```
+
+```@docs
+meanGapRatio
+```
+
+```@example
+using RandomMatrix, Random
+E = rand(MersenneTwister(42), BetaHermite(2, 200))
+meanGapRatio(E[41:160])   # bulk of a GUE spectrum: near the 0.5996 anchor
+```
+
 ## Spectral form factor
 
 The spectral form factor is the dynamical companion of the spacing
