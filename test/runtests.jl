@@ -362,6 +362,19 @@ end
         end
         @test abs(sum(pooled) / length(pooled) - anchor) < 0.02
     end
+    # fitGapRatioBeta: surmise-mean inversion (Atas et al. 2013).
+    # Deterministic anchors: <r> = 0.5 inverts to beta ≈ 0.63 (prototype);
+    # equal spacings give <r> = 1, reached only as beta -> Inf (cap 64).
+    @test abs(fitGapRatioBeta([0.0, 1.0, 3.0, 4.0]) - 0.63) < 0.05
+    @test fitGapRatioBeta(float.(collect(1:10))) == 64.0
+    @test_throws ArgumentError fitGapRatioBeta([1.0, 2.0])
+    # Seeded calibration (bands from the 2026-11-24 prototype run):
+    # Poisson spectra clamp to 0; a BetaHermite(2) bulk spectrum
+    # recovers beta within the surmise's systematic bias.
+    @test fitGapRatioBeta(rand(MersenneTwister(20261124), 4000)) == 0.0
+    brng = MersenneTwister(20261124)
+    bspect = rand(brng, BetaHermite(2, 300))[61:240]
+    @test abs(fitGapRatioBeta(bspect) - 2) < 0.8
     A = randHermitian(6)
     R = Resolvent(A)
     @test R(0.5 + 0.1im) * (A - (0.5 + 0.1im) * I) ≈ I atol = 1e-8

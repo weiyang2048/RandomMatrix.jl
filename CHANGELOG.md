@@ -12,6 +12,11 @@ user triggers Registrator.
 
 ### Added
 
+- `fitGapRatioBeta(evals)`: effective Dyson index estimated by
+  inverting the mean adjacent gap ratio against the Atas et al.
+  (2013) Wigner-like surmise mean, in `src/Spacing.jl`. Calibrated
+  on seeded `BetaHermite` bulk spectra (true β = 0.5…4 recovered
+  within ≈ 0.25); Poisson-level means clamp to 0.
 - `gapRatios(evals)` / `meanGapRatio(evals)`: adjacent gap ratios
   $r_n = \min(s_n, s_{n+1}) / \max(s_n, s_{n+1})$ of consecutive
   spacings, in `src/Spacing.jl`. The ratio needs no unfolding (the

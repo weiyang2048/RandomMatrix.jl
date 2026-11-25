@@ -1,4 +1,4 @@
-export wignersurmise, unfoldedeigvals, unfoldedSpacings, numberVariance, gapRatios, meanGapRatio
+export wignersurmise, unfoldedeigvals, unfoldedSpacings, numberVariance, gapRatios, meanGapRatio, fitGapRatioBeta
 
 """
 ```julia
@@ -168,3 +168,61 @@ meanGapRatio([0.0, 1.0, 3.0, 4.0])   # 0.5
 ```
 """
 meanGapRatio(E::AbstractVector{<:Real}) = sum(gapRatios(E)) / (length(E) - 2)
+
+# Mean of the Atas et al. (2013) Wigner-like surmise for the ratio
+# distribution, P_beta(r) ∝ (r + r^2)^beta / (1 + r + r^2)^(1 + 3 beta / 2)
+# on [0, 1], by Simpson quadrature on a fixed grid. Monotone increasing
+# in beta, from ≈ 0.4086 at beta = 0 toward 1 as beta → ∞.
+function _gap_ratio_surmise_mean(beta::Float64)
+    n = 2000
+    num = 0.0
+    den = 0.0
+    for i in 0:n
+        r = i / n
+        w = (i == 0 || i == n) ? 1.0 : (isodd(i) ? 4.0 : 2.0)
+        f = (r + r^2)^beta / (1 + r + r^2)^(1 + 1.5 * beta)
+        den += w * f
+        num += w * r * f
+    end
+    return num / den
+end
+
+"""
+    fitGapRatioBeta(E)
+
+Effective Dyson index ``\\beta`` of the spectrum `E`, estimated by
+inverting the mean adjacent gap ratio: returns the ``\\beta`` whose
+Atas et al. (2013) Wigner-like surmise mean ``\\langle r \\rangle(\\beta)``
+equals [`meanGapRatio`](@ref)`(E)`. The surmise mean is monotone in
+``\\beta``, so the inversion is a bisection on ``[0, 64]``.
+
+The estimate is an *effective* index, useful for intermediate-statistics
+spectra (crossover ensembles, critical statistics): it is calibrated on
+the 3-level surmise, not the exact large-``n`` ratio distribution, so
+it carries a small systematic bias (seeded `BetaHermite` calibration:
+true ``\\beta = 0.5, 1, 1.5, 2, 3, 4`` recovered as ``\\approx 0.39,
+0.93, 1.55, 1.94, 2.77, 4.01`` from pooled bulk spectra). A mean ratio
+at or below the surmise's ``\\beta = 0`` value ``\\approx 0.4086`` —
+which includes the exact Poisson mean ``2 \\log 2 - 1 \\approx 0.3863``
+— returns `0.0`; a mean ratio the surmise reaches only as
+``\\beta \\to \\infty`` returns the bracket cap `64.0`.
+
+Reference: Atas, Bogomolny, Giraud & Roux, Phys. Rev. Lett. 110,
+084101 (2013).
+
+# Examples
+```julia
+fitGapRatioBeta([0.0, 1.0, 3.0, 4.0])   # <r> = 0.5 -> beta ≈ 0.63
+```
+"""
+function fitGapRatioBeta(E::AbstractVector{<:Real})
+    mr = meanGapRatio(E)
+    mr <= _gap_ratio_surmise_mean(0.0) && return 0.0
+    lo, hi = 0.0, 64.0
+    _gap_ratio_surmise_mean(hi) <= mr && return hi
+    for _ in 1:50
+        mid = (lo + hi) / 2
+        _gap_ratio_surmise_mean(mid) < mr ? (lo = mid) : (hi = mid)
+    end
+    return (lo + hi) / 2
+end
