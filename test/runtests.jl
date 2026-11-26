@@ -375,6 +375,20 @@ end
     brng = MersenneTwister(20261124)
     bspect = rand(brng, BetaHermite(2, 300))[61:240]
     @test abs(fitGapRatioBeta(bspect) - 2) < 0.8
+    # fitGapRatioBetaCI: block bootstrap over the spacing sequence.
+    # Deterministic anchors: equal spacings collapse onto the cap;
+    # argument validation; seeded reproducibility under a fixed rng.
+    ci_flat = fitGapRatioBetaCI(float.(collect(1:50)); rng = MersenneTwister(1), nboot = 50)
+    @test ci_flat.beta == 64.0 && ci_flat.lo == 64.0 && ci_flat.hi == 64.0
+    @test_throws ArgumentError fitGapRatioBetaCI(bspect; level = 1.5)
+    @test_throws ArgumentError fitGapRatioBetaCI(bspect; nboot = 5)
+    @test_throws ArgumentError fitGapRatioBetaCI([1.0, 2.0])
+    ci1 = fitGapRatioBetaCI(bspect; rng = MersenneTwister(20261125), nboot = 200)
+    ci2 = fitGapRatioBetaCI(bspect; rng = MersenneTwister(20261125), nboot = 200)
+    @test ci1 == ci2
+    @test ci1.lo <= ci1.beta <= ci1.hi
+    @test ci1.lo <= 2 <= ci1.hi  # seeded BetaHermite(2) bulk: band covers the truth
+    @test ci1.blocklength == max(2, round(Int, sqrt(length(bspect) - 1)))
     A = randHermitian(6)
     R = Resolvent(A)
     @test R(0.5 + 0.1im) * (A - (0.5 + 0.1im) * I) ≈ I atol = 1e-8

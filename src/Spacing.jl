@@ -1,4 +1,4 @@
-export wignersurmise, unfoldedeigvals, unfoldedSpacings, numberVariance, gapRatios, meanGapRatio, fitGapRatioBeta
+export wignersurmise, unfoldedeigvals, unfoldedSpacings, numberVariance, gapRatios, meanGapRatio, fitGapRatioBeta, fitGapRatioBetaCI
 
 """
 ```julia
@@ -216,7 +216,11 @@ fitGapRatioBeta([0.0, 1.0, 3.0, 4.0])   # <r> = 0.5 -> beta ≈ 0.63
 ```
 """
 function fitGapRatioBeta(E::AbstractVector{<:Real})
-    mr = meanGapRatio(E)
+    return _beta_from_mean_ratio(meanGapRatio(E))
+end
+
+# Bisection inversion of the Atas surmise mean (see fitGapRatioBeta).
+function _beta_from_mean_ratio(mr::Float64)
     mr <= _gap_ratio_surmise_mean(0.0) && return 0.0
     lo, hi = 0.0, 64.0
     _gap_ratio_surmise_mean(hi) <= mr && return hi
@@ -225,4 +229,79 @@ function fitGapRatioBeta(E::AbstractVector{<:Real})
         _gap_ratio_surmise_mean(mid) < mr ? (lo = mid) : (hi = mid)
     end
     return (lo + hi) / 2
+end
+
+# Linear-interpolation quantile of a sorted sample (no Statistics import).
+function _sorted_quantile(sortedx::AbstractVector{Float64}, q::Float64)
+    n = length(sortedx)
+    n == 1 && return sortedx[1]
+    pos = 1 + q * (n - 1)
+    lo = floor(Int, pos)
+    lo >= n && return sortedx[n]
+    frac = pos - lo
+    return sortedx[lo] * (1 - frac) + sortedx[lo + 1] * frac
+end
+
+"""
+    fitGapRatioBetaCI(E; level=0.95, nboot=1000, blocklength=nothing, rng=Random.default_rng())
+
+Sampling uncertainty for [`fitGapRatioBeta`](@ref): a circular block
+bootstrap over the observed spacing sequence of `E`. Blocks of
+`blocklength` consecutive spacings (default
+``\\max(2, \\mathrm{round}(\\sqrt{m}))`` for ``m`` spacings) are resampled
+with replacement until a full-length spacing sequence is rebuilt, so
+each replicate's adjacent gap ratios keep the consecutive-pairing
+``r_n = \\min(s_n, s_{n+1}) / \\max(s_n, s_{n+1})`` and the short-range
+dependence between neighbouring ratios. Each replicate's mean ratio is
+inverted through the same Atas et al. (2013) surmise as
+`fitGapRatioBeta`, and the returned interval is the percentile band of
+the replicate estimates at `level`.
+
+Returns a NamedTuple `(beta, lo, hi, level, nboot, blocklength)`, where
+`beta` is the point estimate `fitGapRatioBeta(E)`. The band measures
+sampling variation of ``\\langle r \\rangle`` only: it does not remove
+the surmise's systematic bias documented in `fitGapRatioBeta`, so for
+short spectra the band — not the point — is the honest summary.
+
+Calibration (seeded, this package's test suite): bulk spectra of
+`BetaHermite(2, 300)` recover ``\\beta = 2`` inside the 95% band, and
+the band for an equal-spaced spectrum collapses onto the bracket cap.
+
+# Examples
+```julia
+fitGapRatioBetaCI(sort(randn(200)); rng=Random.MersenneTwister(1))
+```
+"""
+function fitGapRatioBetaCI(E::AbstractVector{<:Real}; level::Float64 = 0.95,
+                           nboot::Int = 1000, blocklength::Union{Nothing,Int} = nothing,
+                           rng::Random.AbstractRNG = Random.default_rng())
+    0 < level < 1 || throw(ArgumentError("level must lie in (0, 1), got $level"))
+    nboot >= 20 || throw(ArgumentError("nboot must be at least 20, got $nboot"))
+    beta = fitGapRatioBeta(E)  # validates E (length, finiteness)
+    s = diff(sort!(collect(Float64, E)))
+    m = length(s)
+    bl = blocklength === nothing ? max(2, round(Int, sqrt(m))) : blocklength
+    1 <= bl <= m || throw(ArgumentError("blocklength must lie in 1:$m, got $bl"))
+    nblocks = cld(m, bl)
+    estimates = Vector{Float64}(undef, nboot)
+    for b in 1:nboot
+        resampled = Vector{Float64}(undef, nblocks * bl)
+        for k in 1:nblocks
+            start = rand(rng, 1:m)
+            for j in 0:(bl - 1)
+                resampled[(k - 1) * bl + j + 1] = s[mod1(start + j, m)]
+            end
+        end
+        resize!(resampled, m)
+        ratios = [iszero(max(resampled[i], resampled[i + 1])) ? 0.0 :
+                  min(resampled[i], resampled[i + 1]) / max(resampled[i], resampled[i + 1])
+                  for i in 1:(m - 1)]
+        estimates[b] = _beta_from_mean_ratio(sum(ratios) / length(ratios))
+    end
+    sort!(estimates)
+    alpha = (1 - level) / 2
+    return (beta = beta,
+            lo = _sorted_quantile(estimates, alpha),
+            hi = _sorted_quantile(estimates, 1 - alpha),
+            level = level, nboot = nboot, blocklength = bl)
 end

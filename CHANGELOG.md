@@ -12,6 +12,13 @@ user triggers Registrator.
 
 ### Added
 
+- `fitGapRatioBetaCI(evals)`: percentile confidence band for
+  `fitGapRatioBeta` from a circular block bootstrap over the
+  observed spacing sequence (blocks of consecutive spacings, so
+  neighbouring gap ratios keep their pairing), in `src/Spacing.jl`.
+  Coverage calibrated before test bands were fixed: seeded
+  `BetaHermite` bulk spectra (n = 180) covered the true β in
+  18/20 (β = 1) and 20/20 (β = 2) of 95% bands.
 - `fitGapRatioBeta(evals)`: effective Dyson index estimated by
   inverting the mean adjacent gap ratio against the Atas et al.
   (2013) Wigner-like surmise mean, in `src/Spacing.jl`. Calibrated

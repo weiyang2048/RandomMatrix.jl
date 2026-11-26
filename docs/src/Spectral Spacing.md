@@ -38,6 +38,10 @@ meanGapRatio
 fitGapRatioBeta
 ```
 
+```@docs
+fitGapRatioBetaCI
+```
+
 ```@example
 using RandomMatrix, Random
 E = rand(MersenneTwister(42), BetaHermite(2, 200))
