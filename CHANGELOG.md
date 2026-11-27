@@ -12,6 +12,15 @@ user triggers Registrator.
 
 ### Added
 
+- `fitGapRatioBetaDist(evals)`: full-distribution estimate of the
+  effective Dyson index — maximum likelihood against the Atas et al.
+  (2013) surmise density for the gap-ratio distribution, the
+  whole-distribution counterpart of `fitGapRatioBeta`'s mean-ratio
+  inversion, in `src/Spacing.jl`. Retained on a pre-registered
+  calibration gate (seeded `BetaHermite` bulk spectra, β ∈ {0.5, 1,
+  2, 4}, bulk sizes {100, 200, 400}, 100 trials per config, both
+  estimators on identical spectra): its RMSE beat the mean
+  estimator's in all twelve configs, pooled 0.412 against 0.447.
 - `fitGapRatioBetaCI(evals; method=:bca)`: BCa (bias-corrected and
   accelerated) confidence band alongside the percentile band — the
   percentile levels adjusted by a bias correction from the bootstrap

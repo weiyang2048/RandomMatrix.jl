@@ -408,6 +408,20 @@ end
     # BCa and percentile share the replicate stream, so on this spectrum
     # the bands are close (both centred on the same bootstrap distribution).
     @test abs(cib1.lo - ci1.lo) < 0.5 && abs(cib1.hi - ci1.hi) < 0.5
+    # fitGapRatioBetaDist: full-distribution (surmise likelihood) fit.
+    # Anchors: the two-ratio toy [0.5, 0.5] maximizes the surmise
+    # likelihood at beta ≈ 2.32; equal spacings push beta to the cap;
+    # a Poisson spectrum sits at the beta = 0 boundary.
+    @test abs(fitGapRatioBetaDist([0.0, 1.0, 3.0, 4.0]) - 2.32) < 0.05
+    @test fitGapRatioBetaDist(float.(collect(1:10))) > 63.9
+    @test_throws ArgumentError fitGapRatioBetaDist([1.0, 2.0])
+    @test fitGapRatioBetaDist(rand(MersenneTwister(20261124), 4000)) < 0.01
+    # Seeded calibration (2026-11-27, 100 trials/config, bulk = middle m
+    # of BetaHermite(beta, 3m/2)): dist RMSE beat the mean inversion in
+    # all 12 configs; pooled 0.412 vs 0.447. Same seeded spectrum as
+    # the fitGapRatioBeta test above: recovers beta = 2 well inside
+    # the mean estimator's tolerance.
+    @test abs(fitGapRatioBetaDist(bspect) - 2) < 0.8
     A = randHermitian(6)
     R = Resolvent(A)
     @test R(0.5 + 0.1im) * (A - (0.5 + 0.1im) * I) ≈ I atol = 1e-8

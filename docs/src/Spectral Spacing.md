@@ -42,6 +42,10 @@ fitGapRatioBeta
 fitGapRatioBetaCI
 ```
 
+```@docs
+fitGapRatioBetaDist
+```
+
 `fitGapRatioBetaCI` reports the percentile band by default; pass
 `method = :bca` for the BCa (bias-corrected and accelerated) band —
 the percentile levels adjusted by the replicate distribution's bias
