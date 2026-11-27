@@ -12,6 +12,17 @@ user triggers Registrator.
 
 ### Added
 
+- `fitGapRatioBetaCI(evals; method=:bca)`: BCa (bias-corrected and
+  accelerated) confidence band alongside the percentile band — the
+  percentile levels adjusted by a bias correction from the bootstrap
+  replicate distribution and an acceleration from a jackknife over
+  the same spacing blocks the bootstrap resamples (Efron 1987).
+  The returned NamedTuple gains a `method` field. Coverage
+  calibrated before test bands were fixed (seeded `BetaHermite`
+  bulk spectra, 20 trials per config, 95% level): BCa covered the
+  true β in 18/20 (β = 1) and 17/20 (β = 2) at bulk size 180, and
+  19/20 at both β at bulk size 100 — comparable to the percentile
+  band (20/20, 18/20, 18/20, 19/20 respectively).
 - `fitGapRatioBetaCI(evals)`: percentile confidence band for
   `fitGapRatioBeta` from a circular block bootstrap over the
   observed spacing sequence (blocks of consecutive spacings, so

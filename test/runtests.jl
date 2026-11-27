@@ -389,6 +389,25 @@ end
     @test ci1.lo <= ci1.beta <= ci1.hi
     @test ci1.lo <= 2 <= ci1.hi  # seeded BetaHermite(2) bulk: band covers the truth
     @test ci1.blocklength == max(2, round(Int, sqrt(length(bspect) - 1)))
+    @test ci1.method === :percentile
+    # fitGapRatioBetaCI method=:bca — BCa band (Efron 1987): same bootstrap
+    # replicates, levels adjusted by z0 and the block-jackknife acceleration.
+    # Calibration before bands (2026-11-26 prototype, 20 trials/config,
+    # nboot=400): bulk 180 — BCa 18/20 (beta=1), 17/20 (beta=2);
+    # bulk 100 — BCa 19/20 at both betas; comparable to percentile.
+    cib_flat = fitGapRatioBetaCI(float.(collect(1:50)); method = :bca,
+                                 rng = MersenneTwister(1), nboot = 50)
+    @test cib_flat.beta == 64.0 && cib_flat.lo == 64.0 && cib_flat.hi == 64.0
+    @test_throws ArgumentError fitGapRatioBetaCI(bspect; method = :studentized)
+    cib1 = fitGapRatioBetaCI(bspect; method = :bca, rng = MersenneTwister(20261125), nboot = 200)
+    cib2 = fitGapRatioBetaCI(bspect; method = :bca, rng = MersenneTwister(20261125), nboot = 200)
+    @test cib1 == cib2
+    @test cib1.method === :bca
+    @test cib1.lo <= cib1.beta <= cib1.hi
+    @test cib1.lo <= 2 <= cib1.hi  # same seeded spectrum: BCa band covers the truth
+    # BCa and percentile share the replicate stream, so on this spectrum
+    # the bands are close (both centred on the same bootstrap distribution).
+    @test abs(cib1.lo - ci1.lo) < 0.5 && abs(cib1.hi - ci1.hi) < 0.5
     A = randHermitian(6)
     R = Resolvent(A)
     @test R(0.5 + 0.1im) * (A - (0.5 + 0.1im) * I) ≈ I atol = 1e-8

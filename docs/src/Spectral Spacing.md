@@ -42,6 +42,14 @@ fitGapRatioBeta
 fitGapRatioBetaCI
 ```
 
+`fitGapRatioBetaCI` reports the percentile band by default; pass
+`method = :bca` for the BCa (bias-corrected and accelerated) band —
+the percentile levels adjusted by the replicate distribution's bias
+correction and a jackknife acceleration over the same spacing blocks
+the bootstrap resamples. Prefer BCa for short spectra, where the
+replicate distribution is skewed; the docstring records the seeded
+coverage calibration of both bands.
+
 ```@example
 using RandomMatrix, Random
 E = rand(MersenneTwister(42), BetaHermite(2, 200))
